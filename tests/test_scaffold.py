@@ -380,4 +380,4 @@ def test_review_command_exits_cleanly_when_unimplemented() -> None:
     # Click converts ClickException to SystemExit — no unhandled exception escaped.
     assert result.exception is None or isinstance(result.exception, SystemExit)
     assert "Traceback" not in (result.output or "")
-    assert "not yet implemented" in result.output
+    assert "not yet available" in result.output
