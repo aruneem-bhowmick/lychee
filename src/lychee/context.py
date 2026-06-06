@@ -11,4 +11,4 @@ class ReviewContext(pydantic.BaseModel):
 
 def build_context(client: object, pr_ref: str, config: object) -> ReviewContext:
     """Fetch and assemble all PR context needed for a review."""
-    ...
+    raise NotImplementedError("build_context not implemented")

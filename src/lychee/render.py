@@ -9,4 +9,4 @@ def render_comment(result: ReviewResult, cost_line: str | None = None) -> str:
     Produces a single GitHub PR comment with the hidden lychee:review marker,
     Ripeness badge, Nectar, The Peel, grouped Pits, and optional cost footer.
     """
-    ...
+    raise NotImplementedError("render_comment not implemented")

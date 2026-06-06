@@ -13,4 +13,4 @@ class LycheeConfig(pydantic.BaseModel):
 
 def load_config(path: Path | None = None) -> LycheeConfig:
     """Load and validate .lychee.yml from the given path or the current directory."""
-    ...
+    raise NotImplementedError("load_config not implemented")

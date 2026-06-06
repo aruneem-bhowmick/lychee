@@ -10,4 +10,4 @@ class SummaryPoster:
 
     def post(self, pr_ref: str, comment_body: str) -> None:
         """Create or update the lychee review comment on a PR."""
-        ...
+        raise NotImplementedError("SummaryPoster.post not implemented")
