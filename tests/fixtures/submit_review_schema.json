@@ -1,0 +1,135 @@
+{
+  "description": "Submit a structured PR review result.",
+  "input_schema": {
+    "$defs": {
+      "Category": {
+        "description": "Classification of a Finding (Pit).",
+        "enum": [
+          "correctness",
+          "security",
+          "performance",
+          "tests",
+          "style",
+          "docs",
+          "other"
+        ],
+        "title": "Category",
+        "type": "string"
+      },
+      "Finding": {
+        "additionalProperties": false,
+        "description": "A single review finding (a Pit / Seed).\n\n`line` is None when the finding applies to the whole file.\n`suggestion` is None when no concrete fix is provided.",
+        "properties": {
+          "category": {
+            "$ref": "#/$defs/Category"
+          },
+          "file": {
+            "title": "File",
+            "type": "string"
+          },
+          "line": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Line"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "severity": {
+            "$ref": "#/$defs/Severity"
+          },
+          "suggestion": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Suggestion"
+          }
+        },
+        "required": [
+          "file",
+          "severity",
+          "category",
+          "message"
+        ],
+        "title": "Finding",
+        "type": "object"
+      },
+      "Ripeness": {
+        "description": "Merge-readiness verdict for a PR.",
+        "enum": [
+          "ripe",
+          "unripe",
+          "sour"
+        ],
+        "title": "Ripeness",
+        "type": "string"
+      },
+      "Severity": {
+        "description": "Severity level of a Finding (Pit).",
+        "enum": [
+          "info",
+          "minor",
+          "major",
+          "critical"
+        ],
+        "title": "Severity",
+        "type": "string"
+      }
+    },
+    "additionalProperties": false,
+    "description": "The structured output of a Lychee review (produced by `submit_review` tool call).\n\n`usage` mirrors the Anthropic SDK InputCostTokens / OutputCostTokens dict verbatim\nfor cost tracking downstream.",
+    "properties": {
+      "findings": {
+        "items": {
+          "$ref": "#/$defs/Finding"
+        },
+        "title": "Findings",
+        "type": "array"
+      },
+      "model": {
+        "title": "Model",
+        "type": "string"
+      },
+      "ripeness": {
+        "$ref": "#/$defs/Ripeness"
+      },
+      "summary": {
+        "title": "Summary",
+        "type": "string"
+      },
+      "usage": {
+        "title": "Usage",
+        "type": "object"
+      },
+      "walkthrough": {
+        "title": "Walkthrough",
+        "type": "string"
+      }
+    },
+    "required": [
+      "ripeness",
+      "summary",
+      "walkthrough",
+      "findings",
+      "model",
+      "usage"
+    ],
+    "title": "ReviewResult",
+    "type": "object"
+  },
+  "name": "submit_review"
+}
