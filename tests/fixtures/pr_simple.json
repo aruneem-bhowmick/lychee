@@ -1,0 +1,18 @@
+{
+  "number": 42,
+  "title": "Add utility functions for string processing",
+  "body": "This PR adds several utility functions for string processing and updates the main module to use them.",
+  "head": {
+    "ref": "feat/string-utils",
+    "sha": "abc123def456789abcdef0123456789abcdef012"
+  },
+  "base": {
+    "ref": "main"
+  },
+  "user": {
+    "login": "octocat"
+  },
+  "changed_files": 3,
+  "additions": 45,
+  "deletions": 12
+}

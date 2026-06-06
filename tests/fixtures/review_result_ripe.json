@@ -1,0 +1,19 @@
+{
+  "ripeness": "ripe",
+  "summary": "This PR adds well-structured utility functions with clear naming and good test coverage. The changes are clean, minimal, and follow existing conventions.",
+  "walkthrough": "## Changes\n\nAdded string utility functions in `src/utils.py` and updated `src/main.py` to use them. Tests were added in `tests/test_utils.py` covering the happy path and edge cases.",
+  "findings": [
+    {
+      "file": "src/utils.py",
+      "line": 12,
+      "severity": "minor",
+      "category": "style",
+      "message": "Function name could be more descriptive."
+    }
+  ],
+  "model": "claude-sonnet-4-6",
+  "usage": {
+    "input_tokens": 1200,
+    "output_tokens": 250
+  }
+}
