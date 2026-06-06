@@ -10,6 +10,7 @@ Framework: pytest.  Coverage target: ≥ 90% on src/lychee/config.py.
 
 import json
 from pathlib import Path
+from unittest.mock import patch
 
 import pydantic
 import pytest
@@ -140,6 +141,25 @@ def test_malformed_yaml_raises(tmp_path: Path) -> None:
 
     with pytest.raises(LycheeConfigError, match="Malformed"):
         load_config(bad)
+
+
+def test_permission_error_raises(tmp_path: Path) -> None:
+    """A file that exists but raises OSError on read produces LycheeConfigError."""
+    cfg = tmp_path / ".lychee.yml"
+    cfg.write_text("model:\n  default: test\n", encoding="utf-8")
+
+    with patch.object(Path, "read_text", side_effect=OSError("Permission denied")):
+        with pytest.raises(LycheeConfigError, match="Cannot read"):
+            load_config(cfg)
+
+
+def test_encoding_error_raises(tmp_path: Path) -> None:
+    """A file containing non-UTF-8 bytes raises LycheeConfigError on read."""
+    cfg = tmp_path / ".lychee.yml"
+    cfg.write_bytes(b"\xff\xfe\x00 not valid utf-8")
+
+    with pytest.raises(LycheeConfigError, match="Cannot read"):
+        load_config(cfg)
 
 
 def test_invalid_max_files_type_raises(tmp_path: Path) -> None:
