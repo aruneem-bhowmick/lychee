@@ -121,6 +121,7 @@ def load_config(path: Path | None = None) -> LycheeConfig:
     - If the resolved file does not exist, all-defaults `LycheeConfig` is returned.
 
     Raises `LycheeConfigError` when:
+    - The file exists but cannot be read (permission denied, encoding error, I/O failure).
     - The YAML is syntactically malformed.
     - An unknown key appears at any nesting level.
     - A field value fails type or constraint validation (e.g. wrong type, bad enum).
@@ -134,6 +135,12 @@ def load_config(path: Path | None = None) -> LycheeConfig:
 
     try:
         raw_text = resolved.read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError) as exc:
+        raise LycheeConfigError(
+            f"Cannot read .lychee.yml at {resolved}: {exc}"
+        ) from exc
+
+    try:
         raw: dict[str, Any] | None = yaml.safe_load(raw_text)
     except yaml.YAMLError as exc:
         raise LycheeConfigError(f"Malformed .lychee.yml: {exc}") from exc
