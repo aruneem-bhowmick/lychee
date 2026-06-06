@@ -354,21 +354,6 @@ def test_render_comment_raises_not_implemented() -> None:
         render_comment(result)
 
 
-def test_from_tool_input_raises_not_implemented() -> None:
-    """ReviewResult.from_tool_input raises NotImplementedError."""  # P0-R1
-    from lychee.models import ReviewResult
-
-    with pytest.raises(NotImplementedError, match="from_tool_input"):
-        ReviewResult.from_tool_input({})
-
-
-def test_to_tool_schema_raises_not_implemented() -> None:
-    """ReviewResult.to_tool_schema raises NotImplementedError."""  # P0-R1
-    from lychee.models import ReviewResult
-
-    with pytest.raises(NotImplementedError, match="to_tool_schema"):
-        ReviewResult.to_tool_schema()
-
 
 def test_summary_poster_post_raises_not_implemented() -> None:
     """SummaryPoster.post raises NotImplementedError rather than silently no-oping."""  # P0-R1
