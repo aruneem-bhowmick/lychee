@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 import pydantic
 
 
-class Severity(str, Enum):
+class Severity(StrEnum):
     """Severity level of a Finding (Pit)."""
 
     info = "info"
@@ -17,7 +17,7 @@ class Severity(str, Enum):
     critical = "critical"
 
 
-class Ripeness(str, Enum):
+class Ripeness(StrEnum):
     """Merge-readiness verdict for a PR."""
 
     ripe = "ripe"
@@ -25,7 +25,7 @@ class Ripeness(str, Enum):
     sour = "sour"
 
 
-class Category(str, Enum):
+class Category(StrEnum):
     """Classification of a Finding (Pit)."""
 
     correctness = "correctness"
@@ -58,7 +58,9 @@ class Finding(pydantic.BaseModel):
     def suggestion_must_be_nonempty(cls, v: str | None) -> str | None:
         """Reject empty-string suggestions; use None for absent suggestions."""
         if v is not None and v == "":
-            raise ValueError("suggestion must be non-empty if provided; use None instead")
+            raise ValueError(
+                "suggestion must be non-empty if provided; use None instead"
+            )
         return v
 
 

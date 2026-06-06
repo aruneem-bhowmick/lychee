@@ -87,7 +87,15 @@ def test_ripeness_values() -> None:
 
 def test_category_values() -> None:
     """Category enum has all seven members with correct string values."""
-    expected = {"correctness", "security", "performance", "tests", "style", "docs", "other"}
+    expected = {
+        "correctness",
+        "security",
+        "performance",
+        "tests",
+        "style",
+        "docs",
+        "other",
+    }
     assert {m.value for m in Category} == expected
 
 
@@ -271,14 +279,14 @@ def test_from_tool_input_invalid_ripeness() -> None:
 
 
 def test_model_dump_lossless() -> None:
-    """model_dump() produces a dict that round-trips back to an identical ReviewResult."""
+    """model_dump() round-trips back to an identical ReviewResult."""
     original = _make_review_result()
     d = original.model_dump()
     assert ReviewResult.model_validate(d) == original
 
 
 def test_model_dump_json_lossless() -> None:
-    """model_dump_json() produces JSON that round-trips back to an identical ReviewResult."""
+    """model_dump_json() round-trips back to an identical ReviewResult via JSON."""
     original = _make_review_result()
     s = original.model_dump_json()
     assert ReviewResult.model_validate_json(s) == original
@@ -290,7 +298,7 @@ def test_model_dump_json_lossless() -> None:
 
 
 def test_minimal_review_result_constructs() -> None:
-    """The simplest valid ReviewResult (no findings, ripe, non-empty fields) raises no error."""
+    """Simplest valid ReviewResult (no findings, ripe, non-empty fields) constructs."""
     r = ReviewResult(
         ripeness=Ripeness.ripe,
         summary="ok",
@@ -332,7 +340,7 @@ def test_accept_invalid_payload_raises_typed_error() -> None:
 
 
 def test_accept_schema_matches_spec() -> None:
-    """The submit_review tool schema includes all required fields with correct structure."""
+    """The submit_review tool schema includes all required fields."""
     schema = ReviewResult.to_tool_schema()
     assert schema["name"] == "submit_review"
     assert "description" in schema
