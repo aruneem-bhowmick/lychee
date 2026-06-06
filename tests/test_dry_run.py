@@ -169,7 +169,7 @@ def test_dry_run_no_network_calls() -> None:
 
 
 def test_dry_run_engine_full_flow(default_config: LycheeConfig) -> None:
-    """run_review_dry returns a complete, non-empty comment with the ripe ripeness badge."""
+    """run_review_dry returns a complete, non-empty comment with the ripe badge."""
     result = run_review_dry(PR_SIMPLE_FIXTURE, default_config)
     assert result  # non-empty string
     assert "🟢 **Ripe**" in result
@@ -188,7 +188,10 @@ def test_dry_run_deterministic(default_config: LycheeConfig) -> None:
 
 
 def test_accept_dry_run_prints_complete_comment() -> None:
-    """Dry-run CLI output contains all five comment sections: Header, Nectar, The Peel, Pits, Footer."""
+    """Dry-run CLI output contains all five comment sections.
+
+    Checks for Header (marker), Nectar, The Peel, Pits, and Footer.
+    """
     runner = CliRunner()
     result = runner.invoke(
         cli, ["review", "--dry-run", "--fixture", str(PR_SIMPLE_FIXTURE)]

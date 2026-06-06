@@ -1,4 +1,4 @@
-"""Review engine — orchestrates context fetch, prompt construction, and Claude invocation."""
+"""Review engine — orchestrates context fetch, prompt construction, and Claude call."""
 
 from __future__ import annotations
 
@@ -17,7 +17,9 @@ _logger = logging.getLogger(__name__)
 
 # Resolved relative to this file: src/lychee/review.py → src/lychee → src → project root
 _PROJECT_ROOT: Path = Path(__file__).parent.parent.parent
-_BUNDLED_RESULT_PATH: Path = _PROJECT_ROOT / "tests" / "fixtures" / "review_result_ripe.json"
+_BUNDLED_RESULT_PATH: Path = (
+    _PROJECT_ROOT / "tests" / "fixtures" / "review_result_ripe.json"
+)
 
 
 def run_review(
@@ -57,7 +59,7 @@ def run_review_dry(
         raise ValueError(f"Invalid fixture JSON at {fixture_path}: {exc}") from exc
 
     # Locate the companion ReviewResult fixture.
-    # Dry-run always uses the ripe fixture; live mode will replace this with a real Claude call.
+    # Dry-run always uses the ripe fixture; live mode replaces this with a Claude call.
     result_path: Path = fixture_path.parent / "review_result_ripe.json"
     if not result_path.exists():
         result_path = _BUNDLED_RESULT_PATH
