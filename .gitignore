@@ -4,3 +4,6 @@
 .history/
 .specstory/
 .cursorindexingignore
+
+# Project docs (non-source)
+docs-lychee/
