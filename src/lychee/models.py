@@ -58,9 +58,7 @@ class Finding(pydantic.BaseModel):
     def suggestion_must_be_nonempty(cls, v: str | None) -> str | None:
         """Reject empty-string suggestions; use None for absent suggestions."""
         if v is not None and v == "":
-            raise ValueError(
-                "suggestion must be non-empty if provided; use None instead"
-            )
+            raise ValueError("suggestion must be non-empty if provided; use None instead")
         return v
 
 

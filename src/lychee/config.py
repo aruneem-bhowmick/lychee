@@ -136,9 +136,7 @@ def load_config(path: Path | None = None) -> LycheeConfig:
     try:
         raw_text = resolved.read_text(encoding="utf-8")
     except (OSError, UnicodeDecodeError) as exc:
-        raise LycheeConfigError(
-            f"Cannot read .lychee.yml at {resolved}: {exc}"
-        ) from exc
+        raise LycheeConfigError(f"Cannot read .lychee.yml at {resolved}: {exc}") from exc
 
     try:
         raw: dict[str, Any] | None = yaml.safe_load(raw_text)

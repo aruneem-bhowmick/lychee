@@ -54,9 +54,7 @@ def test_run_review_dry_output_contains_marker(default_config: LycheeConfig) -> 
 
 def test_run_review_dry_output_contains_nectar(default_config: LycheeConfig) -> None:
     """run_review_dry output contains the summary text from the ripe result fixture."""
-    expected_summary = json.loads(
-        REVIEW_RESULT_RIPE_FIXTURE.read_text(encoding="utf-8")
-    )["summary"]
+    expected_summary = json.loads(REVIEW_RESULT_RIPE_FIXTURE.read_text(encoding="utf-8"))["summary"]
 
     result = run_review_dry(PR_SIMPLE_FIXTURE, default_config)
 
@@ -88,9 +86,7 @@ def test_run_review_dry_fallback_to_bundled_result(
     """run_review_dry falls back to the bundled result fixture when no sidecar exists."""
     # Write a valid PR fixture to an isolated temp directory (no sidecar alongside it).
     isolated_fixture = tmp_path / "pr_isolated.json"
-    isolated_fixture.write_text(
-        PR_SIMPLE_FIXTURE.read_text(encoding="utf-8"), encoding="utf-8"
-    )
+    isolated_fixture.write_text(PR_SIMPLE_FIXTURE.read_text(encoding="utf-8"), encoding="utf-8")
 
     # No review_result_ripe.json exists in tmp_path, so the fallback path is exercised.
     result = run_review_dry(isolated_fixture, default_config)
@@ -107,9 +103,7 @@ def test_run_review_dry_fallback_to_bundled_result(
 def test_cli_dry_run_invocation() -> None:
     """CLI dry-run exits 0 and prints the lychee:review marker."""
     runner = CliRunner()
-    result = runner.invoke(
-        cli, ["review", "--dry-run", "--fixture", str(PR_SIMPLE_FIXTURE)]
-    )
+    result = runner.invoke(cli, ["review", "--dry-run", "--fixture", str(PR_SIMPLE_FIXTURE)])
     assert result.exit_code == 0
     assert REVIEW_MARKER in result.output
 
@@ -125,9 +119,7 @@ def test_cli_dry_run_missing_fixture_flag() -> None:
 def test_cli_dry_run_full_sections() -> None:
     """CLI dry-run output contains Nectar and The Peel headings and the footer tag line."""
     runner = CliRunner()
-    result = runner.invoke(
-        cli, ["review", "--dry-run", "--fixture", str(PR_SIMPLE_FIXTURE)]
-    )
+    result = runner.invoke(cli, ["review", "--dry-run", "--fixture", str(PR_SIMPLE_FIXTURE)])
     assert result.exit_code == 0
     assert "Nectar" in result.output
     assert "The Peel" in result.output
@@ -137,9 +129,7 @@ def test_cli_dry_run_full_sections() -> None:
 def test_cli_dry_run_nonexistent_fixture() -> None:
     """CLI rejects a --fixture path that does not exist with a non-zero exit code."""
     runner = CliRunner()
-    result = runner.invoke(
-        cli, ["review", "--dry-run", "--fixture", "/does/not/exist.json"]
-    )
+    result = runner.invoke(cli, ["review", "--dry-run", "--fixture", "/does/not/exist.json"])
     assert result.exit_code != 0
 
 
@@ -158,12 +148,8 @@ def test_cli_live_mode_not_available() -> None:
 def test_dry_run_no_network_calls() -> None:
     """Dry-run makes zero network calls: patching socket.__init__ to raise never fires."""
     runner = CliRunner()
-    with patch(
-        "socket.socket.__init__", side_effect=AssertionError("network call made")
-    ):
-        result = runner.invoke(
-            cli, ["review", "--dry-run", "--fixture", str(PR_SIMPLE_FIXTURE)]
-        )
+    with patch("socket.socket.__init__", side_effect=AssertionError("network call made")):
+        result = runner.invoke(cli, ["review", "--dry-run", "--fixture", str(PR_SIMPLE_FIXTURE)])
     # If a socket were opened the AssertionError would propagate and set exit_code != 0.
     assert result.exit_code == 0
 
@@ -193,9 +179,7 @@ def test_accept_dry_run_prints_complete_comment() -> None:
     Checks for Header (marker), Nectar, The Peel, Pits, and Footer.
     """
     runner = CliRunner()
-    result = runner.invoke(
-        cli, ["review", "--dry-run", "--fixture", str(PR_SIMPLE_FIXTURE)]
-    )
+    result = runner.invoke(cli, ["review", "--dry-run", "--fixture", str(PR_SIMPLE_FIXTURE)])
     assert result.exit_code == 0
     # Header
     assert REVIEW_MARKER in result.output
@@ -212,30 +196,22 @@ def test_accept_dry_run_prints_complete_comment() -> None:
 def test_accept_dry_run_exits_zero() -> None:
     """Dry-run CLI exits with code 0 on a successful run."""
     runner = CliRunner()
-    result = runner.invoke(
-        cli, ["review", "--dry-run", "--fixture", str(PR_SIMPLE_FIXTURE)]
-    )
+    result = runner.invoke(cli, ["review", "--dry-run", "--fixture", str(PR_SIMPLE_FIXTURE)])
     assert result.exit_code == 0
 
 
 def test_accept_zero_network_calls() -> None:
     """Acceptance: no socket is opened during a dry-run CLI invocation."""
     runner = CliRunner()
-    with patch(
-        "socket.socket.__init__", side_effect=AssertionError("network call made")
-    ):
-        result = runner.invoke(
-            cli, ["review", "--dry-run", "--fixture", str(PR_SIMPLE_FIXTURE)]
-        )
+    with patch("socket.socket.__init__", side_effect=AssertionError("network call made")):
+        result = runner.invoke(cli, ["review", "--dry-run", "--fixture", str(PR_SIMPLE_FIXTURE)])
     assert result.exit_code == 0
 
 
 def test_accept_output_contains_ripe_badge() -> None:
     """Acceptance: dry-run output contains the ripe ripeness badge from the fixture."""
     runner = CliRunner()
-    result = runner.invoke(
-        cli, ["review", "--dry-run", "--fixture", str(PR_SIMPLE_FIXTURE)]
-    )
+    result = runner.invoke(cli, ["review", "--dry-run", "--fixture", str(PR_SIMPLE_FIXTURE)])
     assert "🟢 **Ripe**" in result.output
 
 
@@ -261,8 +237,8 @@ def test_cli_group_help() -> None:
 
 def test_dry_run_imports() -> None:
     """All public names used by the dry-run path import cleanly."""
-    from lychee.__main__ import cli  # noqa: F401
-    from lychee.review import run_review_dry  # noqa: F401
+    from lychee.__main__ import cli
+    from lychee.review import run_review_dry
 
     assert cli and run_review_dry
 

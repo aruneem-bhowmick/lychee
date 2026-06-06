@@ -54,7 +54,7 @@ def _make_review_result(**kwargs: object) -> ReviewResult:
 
 def test_models_import() -> None:
     """All domain types import cleanly from lychee.models."""
-    from lychee.models import (  # noqa: F401
+    from lychee.models import (
         Category,
         Finding,
         ReviewResult,
