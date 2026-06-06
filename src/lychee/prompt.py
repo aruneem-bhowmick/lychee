@@ -2,7 +2,10 @@
 
 from typing import Any
 
+from lychee.config import LycheeConfig
+from lychee.context import ReviewContext
 
-def build_messages(context: object, config: object) -> list[dict[str, Any]]:
+
+def build_messages(context: ReviewContext, config: LycheeConfig) -> list[dict[str, Any]]:
     """Construct the Anthropic Messages API payload for a PR review."""
-    ...
+    raise NotImplementedError("build_messages not implemented")
