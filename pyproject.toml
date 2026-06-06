@@ -50,3 +50,7 @@ target-version = ["py311"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+addopts = "-m 'not e2e'"
+markers = [
+    "e2e: end-to-end tests that invoke the installed CLI via subprocess (excluded from the default run; use -m e2e to run them explicitly)",
+]
