@@ -1,0 +1,6 @@
+# Tool/editor directories
+.claude/
+.vscode/
+.history/
+.specstory/
+.cursorindexingignore
