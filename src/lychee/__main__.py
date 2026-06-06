@@ -23,7 +23,7 @@ def cli() -> None:
 )
 def review(dry_run: bool, fixture: str | None) -> None:
     """Run a PR review (Peel)."""
-    raise NotImplementedError
+    raise click.ClickException("lychee review is not yet implemented.")
 
 
 if __name__ == "__main__":
