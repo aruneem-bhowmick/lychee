@@ -321,12 +321,12 @@ def test_to_tool_schema_is_classmethod() -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_load_config_raises_not_implemented() -> None:
-    """load_config raises NotImplementedError explicitly, not returns None."""  # P0-R1
-    from lychee.config import load_config
+def test_load_config_returns_lychee_config() -> None:
+    """load_config() returns a LycheeConfig instance rather than raising."""
+    from lychee.config import LycheeConfig, load_config
 
-    with pytest.raises(NotImplementedError, match="load_config"):
-        load_config()
+    result = load_config()
+    assert isinstance(result, LycheeConfig)
 
 
 def test_build_context_raises_not_implemented() -> None:

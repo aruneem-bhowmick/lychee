@@ -1,0 +1,21 @@
+{
+  "conventions_file": null,
+  "features": {
+    "commands": false,
+    "cost_footer": true,
+    "inline_comments": false
+  },
+  "model": {
+    "default": "claude-sonnet-4-6",
+    "large_pr": "claude-opus-4-8",
+    "triage": "claude-haiku-4-5-20251001"
+  },
+  "review": {
+    "ignore_globs": [],
+    "language": "en",
+    "max_file_bytes": 102400,
+    "max_files": 50,
+    "severity_threshold": "info",
+    "tone": "balanced"
+  }
+}

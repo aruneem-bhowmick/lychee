@@ -1,0 +1,24 @@
+{
+  "conventions_file": "CONVENTIONS.md",
+  "features": {
+    "commands": true,
+    "cost_footer": false,
+    "inline_comments": true
+  },
+  "model": {
+    "default": "claude-opus-4-8",
+    "large_pr": "claude-opus-4-8",
+    "triage": "claude-sonnet-4-6"
+  },
+  "review": {
+    "ignore_globs": [
+      "*.lock",
+      "dist/**"
+    ],
+    "language": "fr",
+    "max_file_bytes": 51200,
+    "max_files": 25,
+    "severity_threshold": "major",
+    "tone": "concise"
+  }
+}
