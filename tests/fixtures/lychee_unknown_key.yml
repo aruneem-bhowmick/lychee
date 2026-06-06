@@ -1,0 +1,3 @@
+# Contains one unknown nested key to verify that the loader rejects it.
+review:
+  unknown_setting: oops

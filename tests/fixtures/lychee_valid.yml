@@ -1,0 +1,24 @@
+# Fully-populated config with every key set to a non-default value.
+# Used by tests to verify that all fields can be overridden.
+
+model:
+  default: claude-opus-4-8
+  triage: claude-sonnet-4-6
+  large_pr: claude-opus-4-8
+
+review:
+  ignore_globs:
+    - "*.lock"
+    - "dist/**"
+  max_files: 25
+  max_file_bytes: 51200
+  severity_threshold: major
+  tone: concise
+  language: fr
+
+features:
+  inline_comments: true
+  cost_footer: false
+  commands: true
+
+conventions_file: CONVENTIONS.md
