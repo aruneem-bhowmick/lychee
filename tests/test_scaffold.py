@@ -337,9 +337,9 @@ def test_build_context_raises_not_implemented() -> None:
         build_context(object(), "owner/repo#1", object())
 
 
-def test_render_comment_raises_not_implemented() -> None:
-    """render_comment raises NotImplementedError rather than silently returning None."""  # P0-R1
-    from lychee.models import Finding, Ripeness, ReviewResult, Severity, Category
+def test_render_comment_returns_string() -> None:
+    """render_comment returns a non-empty string for a valid ReviewResult."""  # P0-R1
+    from lychee.models import Ripeness, ReviewResult
     from lychee.render import render_comment
 
     result = ReviewResult(
@@ -350,8 +350,8 @@ def test_render_comment_raises_not_implemented() -> None:
         model="claude-sonnet-4-6",
         usage={},
     )
-    with pytest.raises(NotImplementedError, match="render_comment"):
-        render_comment(result)
+    output = render_comment(result)
+    assert isinstance(output, str) and len(output) > 0
 
 
 
