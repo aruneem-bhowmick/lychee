@@ -1,0 +1,22 @@
+# Lychee configuration — all keys at their documented defaults.
+# Unknown keys are rejected with a descriptive error.
+
+model:
+  default: claude-sonnet-4-6
+  triage: claude-haiku-4-5-20251001
+  large_pr: claude-opus-4-8
+
+review:
+  ignore_globs: []
+  max_files: 50
+  max_file_bytes: 102400  # 100 KB per file
+  severity_threshold: info
+  tone: professional
+  language: en
+
+features:
+  inline_comments: false
+  cost_footer: true
+  commands: true
+
+conventions_file: null
