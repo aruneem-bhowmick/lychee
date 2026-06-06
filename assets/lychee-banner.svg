@@ -1,31 +1,26 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 200" width="600" height="200">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 210" width="420" height="210">
   <defs>
-    <linearGradient id="lycheeGradient" x1="0" y1="0" x2="600" y2="0" gradientUnits="userSpaceOnUse">
-      <stop offset="0%"   stop-color="rgb(58,125,68)"  />
-      <stop offset="25%"  stop-color="rgb(115,169,66)" />
-      <stop offset="50%"  stop-color="rgb(224,58,62)"  />
-      <stop offset="75%"  stop-color="rgb(233,75,138)" />
-      <stop offset="100%" stop-color="rgb(253,254,254)" />
+    <linearGradient id="g" x1="0" y1="0" x2="420" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0%"   stop-color="#3a7d44"/>
+      <stop offset="25%"  stop-color="#73a942"/>
+      <stop offset="50%"  stop-color="#e03a3e"/>
+      <stop offset="75%"  stop-color="#e94b8a"/>
+      <stop offset="100%" stop-color="#fdfefd"/>
     </linearGradient>
-    <filter id="softGlow" x="-10%" y="-10%" width="120%" height="120%">
-      <feDropShadow dx="0" dy="8" stdDeviation="6" flood-color="#000000" flood-opacity="0.5" />
-    </filter>
   </defs>
-  <rect width="600" height="200" fill="#0d1117" rx="12"/>
+  <rect width="420" height="210" fill="#0d1117" rx="12"/>
   <text
     font-family="'Courier New', Courier, monospace"
-    font-size="15"
-    fill="url(#lycheeGradient)"
-    filter="url(#softGlow)"
-    text-anchor="middle"
-    x="300"
+    font-size="16"
+    fill="url(#g)"
+    xml:space="preserve"
   >
-    <tspan x="300" dy="35">&#x2584;&#x2584;             &#x2584;&#x2584;                </tspan>
-    <tspan x="300" dy="22">&#x2588;&#x2588;             &#x2588;&#x2588;                </tspan>
-    <tspan x="300" dy="22">&#x2588;&#x2588; &#x2588;&#x2588; &#x2588;&#x2588; &#x2584;&#x2588;&#x2588;&#x2588;&#x2588; &#x2588;&#x2588;&#x2588;&#x2588;&#x2584; &#x2584;&#x2588;&#x2580;&#x2588;&#x2584; &#x2584;&#x2588;&#x2580;&#x2588;&#x2584; </tspan>
-    <tspan x="300" dy="22">&#x2588;&#x2588; &#x2588;&#x2588;&#x2584;&#x2588;&#x2588; &#x2588;&#x2588;    &#x2588;&#x2588; &#x2588;&#x2588; &#x2588;&#x2588;&#x2584;&#x2588;&#x2580; &#x2588;&#x2588;&#x2584;&#x2588;&#x2580; </tspan>
-    <tspan x="300" dy="22">&#x2588;&#x2588;  &#x2580;&#x2588;&#x2588;&#x2580; &#x2580;&#x2588;&#x2588;&#x2588;&#x2588; &#x2588;&#x2588; &#x2588;&#x2588; &#x2580;&#x2588;&#x2584;&#x2584;&#x2584; &#x2580;&#x2588;&#x2584;&#x2584;&#x2584; </tspan>
-    <tspan x="300" dy="22">     &#x2588;&#x2588;                          </tspan>
-    <tspan x="300" dy="22">   &#x2580;&#x2580;&#x2580;                           </tspan>
+    <tspan x="52" y="50">▄▄             ▄▄                </tspan>
+    <tspan x="52" y="72">██             ██                </tspan>
+    <tspan x="52" y="94">██ ██ ██ ▄████ ████▄ ▄█▀█▄ ▄█▀█▄ </tspan>
+    <tspan x="52" y="116">██ ██▄██ ██    ██ ██ ██▄█▀ ██▄█▀ </tspan>
+    <tspan x="52" y="138">██  ▀██▀ ▀████ ██ ██ ▀█▄▄▄ ▀█▄▄▄ </tspan>
+    <tspan x="52" y="160">     ██                          </tspan>
+    <tspan x="52" y="182">   ▀▀▀                           </tspan>
   </text>
 </svg>
