@@ -263,3 +263,136 @@ def test_lychee_yml_features_keys() -> None:
     features = cfg["features"]
     for key in ("inline_comments", "cost_footer", "commands"):
         assert key in features, f"features.{key} missing from .lychee.yml"
+
+
+# ---------------------------------------------------------------------------
+# Unit tests — enum members (populated after CodeRabbit feedback)
+# ---------------------------------------------------------------------------
+
+
+def test_severity_members() -> None:
+    """Severity enum has exactly the four expected string members."""  # P0-R1
+    from lychee.models import Severity
+
+    assert Severity.info.value == "info"
+    assert Severity.minor.value == "minor"
+    assert Severity.major.value == "major"
+    assert Severity.critical.value == "critical"
+    assert len(Severity) == 4
+
+
+def test_ripeness_members() -> None:
+    """Ripeness enum has exactly the three expected string members."""  # P0-R1
+    from lychee.models import Ripeness
+
+    assert Ripeness.ripe.value == "ripe"
+    assert Ripeness.unripe.value == "unripe"
+    assert Ripeness.sour.value == "sour"
+    assert len(Ripeness) == 3
+
+
+def test_category_members() -> None:
+    """Category enum has exactly the seven expected string members."""  # P0-R1
+    from lychee.models import Category
+
+    expected = {"correctness", "security", "performance", "tests", "style", "docs", "other"}
+    assert {m.value for m in Category} == expected
+
+
+def test_severity_is_str_enum() -> None:
+    """Severity members compare equal to their raw string values."""  # P0-R1
+    from lychee.models import Severity
+
+    assert Severity.critical == "critical"
+    assert Severity.info == "info"
+
+
+def test_to_tool_schema_is_classmethod() -> None:
+    """ReviewResult.to_tool_schema is accessible as a classmethod without an instance."""  # P0-R1
+    import inspect
+
+    from lychee.models import ReviewResult
+
+    assert isinstance(inspect.getattr_static(ReviewResult, "to_tool_schema"), classmethod)
+
+
+# ---------------------------------------------------------------------------
+# Unit tests — fail-fast behavior on unimplemented stubs
+# ---------------------------------------------------------------------------
+
+
+def test_load_config_raises_not_implemented() -> None:
+    """load_config raises NotImplementedError explicitly, not returns None."""  # P0-R1
+    from lychee.config import load_config
+
+    with pytest.raises(NotImplementedError, match="load_config"):
+        load_config()
+
+
+def test_build_context_raises_not_implemented() -> None:
+    """build_context raises NotImplementedError rather than silently returning None."""  # P0-R1
+    from lychee.context import build_context
+
+    with pytest.raises(NotImplementedError, match="build_context"):
+        build_context(object(), "owner/repo#1", object())
+
+
+def test_render_comment_raises_not_implemented() -> None:
+    """render_comment raises NotImplementedError rather than silently returning None."""  # P0-R1
+    from lychee.models import Finding, Ripeness, ReviewResult, Severity, Category
+    from lychee.render import render_comment
+
+    result = ReviewResult(
+        ripeness=Ripeness.ripe,
+        summary="ok",
+        walkthrough="lgtm",
+        findings=[],
+        model="claude-sonnet-4-6",
+        usage={},
+    )
+    with pytest.raises(NotImplementedError, match="render_comment"):
+        render_comment(result)
+
+
+def test_from_tool_input_raises_not_implemented() -> None:
+    """ReviewResult.from_tool_input raises NotImplementedError."""  # P0-R1
+    from lychee.models import ReviewResult
+
+    with pytest.raises(NotImplementedError, match="from_tool_input"):
+        ReviewResult.from_tool_input({})
+
+
+def test_to_tool_schema_raises_not_implemented() -> None:
+    """ReviewResult.to_tool_schema raises NotImplementedError."""  # P0-R1
+    from lychee.models import ReviewResult
+
+    with pytest.raises(NotImplementedError, match="to_tool_schema"):
+        ReviewResult.to_tool_schema()
+
+
+def test_summary_poster_post_raises_not_implemented() -> None:
+    """SummaryPoster.post raises NotImplementedError rather than silently no-oping."""  # P0-R1
+    from lychee.poster import SummaryPoster
+
+    poster = SummaryPoster(github_client=object())
+    with pytest.raises(NotImplementedError, match="SummaryPoster.post"):
+        poster.post("owner/repo#1", "body")
+
+
+# ---------------------------------------------------------------------------
+# Acceptance tests — CLI error path
+# ---------------------------------------------------------------------------
+
+
+def test_review_command_exits_cleanly_when_unimplemented() -> None:
+    """Running 'lychee review' exits with a formatted error, no Python traceback."""  # P0-R1
+    from lychee.__main__ import cli
+
+    runner = CliRunner()
+    result = runner.invoke(cli, ["review"])
+
+    assert result.exit_code != 0
+    # Click converts ClickException to SystemExit — no unhandled exception escaped.
+    assert result.exception is None or isinstance(result.exception, SystemExit)
+    assert "Traceback" not in (result.output or "")
+    assert "not yet implemented" in result.output
