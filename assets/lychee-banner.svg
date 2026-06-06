@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 200" width="600" height="200">
+  <defs>
+    <linearGradient id="lycheeGradient" x1="0" y1="0" x2="600" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0%"   stop-color="rgb(58,125,68)"  />
+      <stop offset="25%"  stop-color="rgb(115,169,66)" />
+      <stop offset="50%"  stop-color="rgb(224,58,62)"  />
+      <stop offset="75%"  stop-color="rgb(233,75,138)" />
+      <stop offset="100%" stop-color="rgb(253,254,254)" />
+    </linearGradient>
+    <filter id="softGlow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="8" stdDeviation="6" flood-color="#000000" flood-opacity="0.5" />
+    </filter>
+  </defs>
+  <rect width="600" height="200" fill="#0d1117" rx="12"/>
+  <text
+    font-family="'Courier New', Courier, monospace"
+    font-size="15"
+    fill="url(#lycheeGradient)"
+    filter="url(#softGlow)"
+    text-anchor="middle"
+    x="300"
+  >
+    <tspan x="300" dy="35">&#x2584;&#x2584;             &#x2584;&#x2584;                </tspan>
+    <tspan x="300" dy="22">&#x2588;&#x2588;             &#x2588;&#x2588;                </tspan>
+    <tspan x="300" dy="22">&#x2588;&#x2588; &#x2588;&#x2588; &#x2588;&#x2588; &#x2584;&#x2588;&#x2588;&#x2588;&#x2588; &#x2588;&#x2588;&#x2588;&#x2588;&#x2584; &#x2584;&#x2588;&#x2580;&#x2588;&#x2584; &#x2584;&#x2588;&#x2580;&#x2588;&#x2584; </tspan>
+    <tspan x="300" dy="22">&#x2588;&#x2588; &#x2588;&#x2588;&#x2584;&#x2588;&#x2588; &#x2588;&#x2588;    &#x2588;&#x2588; &#x2588;&#x2588; &#x2588;&#x2588;&#x2584;&#x2588;&#x2580; &#x2588;&#x2588;&#x2584;&#x2588;&#x2580; </tspan>
+    <tspan x="300" dy="22">&#x2588;&#x2588;  &#x2580;&#x2588;&#x2588;&#x2580; &#x2580;&#x2588;&#x2588;&#x2588;&#x2588; &#x2588;&#x2588; &#x2588;&#x2588; &#x2580;&#x2588;&#x2584;&#x2584;&#x2584; &#x2580;&#x2588;&#x2584;&#x2584;&#x2584; </tspan>
+    <tspan x="300" dy="22">     &#x2588;&#x2588;                          </tspan>
+    <tspan x="300" dy="22">   &#x2580;&#x2580;&#x2580;                           </tspan>
+  </text>
+</svg>
