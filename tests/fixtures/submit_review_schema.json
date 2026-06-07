@@ -112,6 +112,7 @@
         "type": "string"
       },
       "usage": {
+        "additionalProperties": true,
         "title": "Usage",
         "type": "object"
       },
