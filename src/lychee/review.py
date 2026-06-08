@@ -17,9 +17,7 @@ _logger = logging.getLogger(__name__)
 
 # Resolved relative to this file: src/lychee/review.py → src/lychee → src → project root
 _PROJECT_ROOT: Path = Path(__file__).parent.parent.parent
-_BUNDLED_RESULT_PATH: Path = (
-    _PROJECT_ROOT / "tests" / "fixtures" / "review_result_ripe.json"
-)
+_BUNDLED_RESULT_PATH: Path = _PROJECT_ROOT / "tests" / "fixtures" / "review_result_ripe.json"
 
 
 def run_review(

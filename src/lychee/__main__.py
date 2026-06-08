@@ -45,8 +45,7 @@ def review(dry_run: bool, fixture: Path | None) -> None:
         sys.exit(0)
     else:
         raise click.UsageError(
-            "Live review is not yet available. "
-            "Use --dry-run with --fixture for offline testing."
+            "Live review is not yet available. " "Use --dry-run with --fixture for offline testing."
         )
 
 

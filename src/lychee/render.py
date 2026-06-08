@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from lychee.models import Finding, ReviewResult, Ripeness, Severity
 
-
 REVIEW_MARKER = "<!-- lychee:review -->"
 
 _SEVERITY_ORDER: list[Severity] = [
@@ -50,9 +49,7 @@ def _render_header(result: ReviewResult) -> str:
     """Render the Header block: hidden marker, title, model name, and Ripeness badge."""
     badge = _RIPENESS_BADGE[result.ripeness]
     return (
-        f"{REVIEW_MARKER}\n"
-        f"🌴 Lychee peeled this PR\n\n"
-        f"**Model:** {result.model} | {badge}"
+        f"{REVIEW_MARKER}\n" f"🌴 Lychee peeled this PR\n\n" f"**Model:** {result.model} | {badge}"
     )
 
 
@@ -84,9 +81,7 @@ def _render_finding(finding: Finding) -> str:
     base = f"- **[{category}]** `{finding.file}`{line_ref}: {finding.message}"
 
     if finding.suggestion is not None:
-        suggestion_block = (
-            f"\n\n  ```suggestion\n  {finding.suggestion}\n  ```"
-        )
+        suggestion_block = f"\n\n  ```suggestion\n  {finding.suggestion}\n  ```"
         return base + suggestion_block
 
     return base

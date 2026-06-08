@@ -8,7 +8,6 @@ from pathlib import Path
 import pytest
 from click.testing import CliRunner
 
-
 # ---------------------------------------------------------------------------
 # Smoke tests — all modules must import without raising
 # ---------------------------------------------------------------------------
@@ -16,16 +15,16 @@ from click.testing import CliRunner
 
 def test_all_modules_import() -> None:
     """All lychee modules import cleanly with no side-effects or errors."""  # P0-R1
-    import lychee  # noqa: F401
-    import lychee.models  # noqa: F401
-    import lychee.config  # noqa: F401
-    import lychee.github_client  # noqa: F401
-    import lychee.context  # noqa: F401
-    import lychee.prompt  # noqa: F401
-    import lychee.claude  # noqa: F401
-    import lychee.render  # noqa: F401
+    import lychee
+    import lychee.claude
+    import lychee.config
+    import lychee.context
+    import lychee.github_client
+    import lychee.models
+    import lychee.poster
+    import lychee.prompt
+    import lychee.render
     import lychee.review  # noqa: F401
-    import lychee.poster  # noqa: F401
 
 
 # ---------------------------------------------------------------------------
@@ -339,7 +338,7 @@ def test_build_context_raises_not_implemented() -> None:
 
 def test_render_comment_returns_string() -> None:
     """render_comment returns a non-empty string for a valid ReviewResult."""  # P0-R1
-    from lychee.models import Ripeness, ReviewResult
+    from lychee.models import ReviewResult, Ripeness
     from lychee.render import render_comment
 
     result = ReviewResult(
@@ -354,13 +353,12 @@ def test_render_comment_returns_string() -> None:
     assert isinstance(output, str) and len(output) > 0
 
 
-
 def test_summary_poster_post_raises_not_implemented() -> None:
     """SummaryPoster.post raises NotImplementedError rather than silently no-oping."""  # P0-R1
     from lychee.poster import SummaryPoster
 
     poster = SummaryPoster(github_client=object())
-    with pytest.raises(NotImplementedError, match="SummaryPoster.post"):
+    with pytest.raises(NotImplementedError, match=r"SummaryPoster\.post"):
         poster.post("owner/repo#1", "body")
 
 
