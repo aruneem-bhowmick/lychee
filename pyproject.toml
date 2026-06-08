@@ -57,7 +57,21 @@ target-version = ["py311"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "-m 'not e2e'"
+addopts = "-m 'not e2e' --cov=src/lychee --cov-report=term-missing --cov-fail-under=80"
 markers = [
     "e2e: end-to-end tests that invoke the installed CLI via subprocess (excluded from the default run; use -m e2e to run them explicitly)",
+]
+
+[tool.coverage.run]
+branch = true
+source = ["src/lychee"]
+omit = ["tests/*", "scripts/*"]
+
+[tool.coverage.report]
+fail_under = 80
+show_missing = true
+exclude_lines = [
+    "pragma: no cover",
+    "raise NotImplementedError",
+    "if TYPE_CHECKING:",
 ]
