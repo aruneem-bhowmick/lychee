@@ -40,16 +40,19 @@ packages = ["src/lychee"]
 [tool.mypy]
 strict = true
 python_version = "3.11"
+files = ["src/lychee", "scripts", "tests"]
+ignore_missing_imports = false
 
 [tool.ruff]
-line-length = 88
+line-length = 100
 target-version = "py311"
+src = ["src"]
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "N", "W", "UP"]
+select = ["E", "F", "I", "N", "W", "UP", "B", "SIM", "RUF"]
 
 [tool.black]
-line-length = 88
+line-length = 100
 target-version = ["py311"]
 
 [tool.pytest.ini_options]
