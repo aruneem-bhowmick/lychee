@@ -9,11 +9,19 @@
       "severity": "minor",
       "category": "style",
       "message": "Function name could be more descriptive."
+    },
+    {
+      "file": "src/main.py",
+      "line": 7,
+      "severity": "minor",
+      "category": "docs",
+      "message": "Missing docstring for the updated import block."
     }
   ],
   "model": "claude-sonnet-4-6",
   "usage": {
     "input_tokens": 1200,
+    "cache_read_input_tokens": 800,
     "output_tokens": 250
   }
 }

@@ -2,17 +2,24 @@
   "number": 42,
   "title": "Add utility functions for string processing",
   "body": "This PR adds several utility functions for string processing and updates the main module to use them.",
+  "state": "open",
   "head": {
     "ref": "feat/string-utils",
     "sha": "abc123def456789abcdef0123456789abcdef012"
   },
   "base": {
-    "ref": "main"
+    "ref": "main",
+    "sha": "9f8e7d6c5b4a3f2e1d0c9b8a7f6e5d4c3b2a1f0e"
   },
   "user": {
     "login": "octocat"
   },
   "changed_files": 3,
   "additions": 45,
-  "deletions": 12
+  "deletions": 12,
+  "files": [
+    {"filename": "src/utils.py", "status": "added", "additions": 45, "deletions": 0, "changes": 45},
+    {"filename": "src/main.py", "status": "modified", "additions": 6, "deletions": 4, "changes": 10},
+    {"filename": "tests/test_utils.py", "status": "added", "additions": 58, "deletions": 0, "changes": 58}
+  ]
 }
