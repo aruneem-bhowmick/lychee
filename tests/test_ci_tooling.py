@@ -88,9 +88,12 @@ def test_hooks_pinned() -> None:
     data = _load_pre_commit()
     for repo in data["repos"]:
         rev = repo.get("rev", "")
-        assert rev not in ("main", "latest", "master", ""), (
-            f"Hook {repo['repo']} has unpinned rev: {rev}"
-        )
+        assert rev not in (
+            "main",
+            "latest",
+            "master",
+            "",
+        ), f"Hook {repo['repo']} has unpinned rev: {rev}"
 
 
 def test_ci_actions_pinned() -> None:
