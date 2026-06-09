@@ -122,9 +122,10 @@ def sour_result_fixture() -> ReviewResult:
 
 def test_render_module_imports() -> None:
     """render_comment and REVIEW_MARKER import cleanly from lychee.render."""
-    from lychee.render import REVIEW_MARKER, render_comment
+    from lychee.render import REVIEW_MARKER, render_comment  # noqa: F401
 
-    assert render_comment and REVIEW_MARKER
+    assert callable(render_comment)
+    assert isinstance(REVIEW_MARKER, str)
 
 
 # ---------------------------------------------------------------------------

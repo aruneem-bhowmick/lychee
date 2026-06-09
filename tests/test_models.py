@@ -62,7 +62,11 @@ def test_models_import() -> None:
         Severity,
     )
 
-    assert Severity and Ripeness and Category and Finding and ReviewResult
+    assert callable(Severity)
+    assert callable(Ripeness)
+    assert callable(Category)
+    assert callable(Finding)
+    assert callable(ReviewResult)
 
 
 # ---------------------------------------------------------------------------

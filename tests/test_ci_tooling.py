@@ -7,6 +7,7 @@ golden snapshots for regression detection.
 
 import tomllib
 from pathlib import Path
+from typing import Any
 
 import yaml
 
@@ -19,22 +20,24 @@ FIXTURES_DIR = Path(__file__).parent / "fixtures"
 # ---------------------------------------------------------------------------
 
 
-def _load_pyproject() -> dict:
+def _load_pyproject() -> dict[str, Any]:
     """Load and return the parsed pyproject.toml."""
     with open(PROJECT_ROOT / "pyproject.toml", "rb") as fh:
         return tomllib.load(fh)
 
 
-def _load_pre_commit() -> dict:
+def _load_pre_commit() -> dict[str, Any]:
     """Load and return the parsed .pre-commit-config.yaml."""
     with open(PROJECT_ROOT / ".pre-commit-config.yaml") as fh:
-        return yaml.safe_load(fh)
+        data: dict[str, Any] = yaml.safe_load(fh)
+        return data
 
 
-def _load_ci_workflow() -> dict:
+def _load_ci_workflow() -> dict[str, Any]:
     """Load and return the parsed .github/workflows/ci.yml."""
     with open(PROJECT_ROOT / ".github" / "workflows" / "ci.yml") as fh:
-        return yaml.safe_load(fh)
+        data: dict[str, Any] = yaml.safe_load(fh)
+        return data
 
 
 # ---------------------------------------------------------------------------

@@ -240,7 +240,8 @@ def test_dry_run_imports() -> None:
     from lychee.__main__ import cli
     from lychee.review import run_review_dry
 
-    assert cli and run_review_dry
+    assert callable(cli)
+    assert callable(run_review_dry)
 
 
 # ---------------------------------------------------------------------------

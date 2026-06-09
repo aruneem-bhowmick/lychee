@@ -43,6 +43,10 @@ python_version = "3.11"
 files = ["src/lychee", "scripts", "tests"]
 ignore_missing_imports = false
 
+[[tool.mypy.overrides]]
+module = "tests.*"
+warn_unused_ignores = false
+
 [tool.ruff]
 line-length = 100
 target-version = "py311"
