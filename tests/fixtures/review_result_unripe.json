@@ -1,0 +1,21 @@
+{
+  "ripeness": "unripe",
+  "summary": "The PR introduces a new authentication endpoint but lacks input validation on the token parameter, which could allow injection attacks. Needs revision before merge.",
+  "walkthrough": "## Changes\n\nAdded `src/auth/login.py` with a `/login` endpoint that accepts a bearer token. The token is passed directly to the database query without sanitization.\n\n## Concerns\n\nThe `authenticate()` function on line 15 interpolates user input into a raw SQL query. This must use parameterized queries instead.",
+  "findings": [
+    {
+      "file": "src/auth/login.py",
+      "line": 15,
+      "severity": "major",
+      "category": "security",
+      "message": "User-supplied token is interpolated into a raw SQL query. Use parameterized queries to prevent SQL injection.",
+      "suggestion": "cursor.execute(\"SELECT * FROM users WHERE token = ?\", (token,))"
+    }
+  ],
+  "model": "claude-sonnet-4-6",
+  "usage": {
+    "input_tokens": 980,
+    "cache_read_input_tokens": 450,
+    "output_tokens": 190
+  }
+}
