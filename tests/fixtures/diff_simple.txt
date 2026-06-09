@@ -1,0 +1,152 @@
+diff --git a/src/utils.py b/src/utils.py
+new file mode 100644
+index 0000000..a1b2c3d
+--- /dev/null
++++ b/src/utils.py
+@@ -0,0 +1,45 @@
++"""String processing utility functions."""
++
++from __future__ import annotations
++
++import re
++
++
++def slugify(text: str) -> str:
++    """Convert text to a URL-friendly slug.
++
++    Lowercases, replaces whitespace with hyphens, and removes
++    non-alphanumeric characters (except hyphens).
++    """
++    text = text.lower().strip()
++    text = re.sub(r"\s+", "-", text)
++    text = re.sub(r"[^a-z0-9\-]", "", text)
++    text = re.sub(r"-+", "-", text)
++    return text.strip("-")
++
++
++def truncate(text: str, max_length: int = 80, suffix: str = "...") -> str:
++    """Truncate text to max_length, appending suffix if truncated."""
++    if len(text) <= max_length:
++        return text
++    return text[: max_length - len(suffix)] + suffix
++
++
++def normalize_whitespace(text: str) -> str:
++    """Collapse consecutive whitespace into single spaces and strip."""
++    return re.sub(r"\s+", " ", text).strip()
++
++
++def count_words(text: str) -> int:
++    """Count the number of words in text."""
++    return len(text.split())
++
++
++def extract_emails(text: str) -> list[str]:
++    """Extract all email addresses from text."""
++    pattern = r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}"
++    return re.findall(pattern, text)
++
++
++def camel_to_snake(name: str) -> str:
++    """Convert camelCase or PascalCase to snake_case."""
++    s1 = re.sub(r"(.)([A-Z][a-z]+)", r"\1_\2", name)
++    return re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", s1).lower()
+diff --git a/src/main.py b/src/main.py
+index d4e5f6a..b7c8d9e 100644
+--- a/src/main.py
++++ b/src/main.py
+@@ -1,8 +1,10 @@
+ """Main application module."""
+
+ from __future__ import annotations
+
++from src.utils import slugify, truncate
++
+
+ def process_title(title: str) -> str:
+     """Process and normalize a title string."""
+-    return title.strip().lower()
++    return slugify(title)
+@@ -12,6 +14,7 @@
+
+ def format_summary(text: str, max_length: int = 200) -> str:
+     """Format a summary string with length limit."""
+-    if len(text) > max_length:
+-        return text[:max_length] + "..."
+-    return text
++    return truncate(text, max_length=max_length)
++
++
++TITLE_MAX_LENGTH = 120
+diff --git a/tests/test_utils.py b/tests/test_utils.py
+new file mode 100644
+index 0000000..f1e2a3b
+--- /dev/null
++++ b/tests/test_utils.py
+@@ -0,0 +1,58 @@
++"""Tests for string processing utilities."""
++
++from __future__ import annotations
++
++import pytest
++
++from src.utils import (
++    camel_to_snake,
++    count_words,
++    extract_emails,
++    normalize_whitespace,
++    slugify,
++    truncate,
++)
++
++
++class TestSlugify:
++    def test_basic(self) -> None:
++        assert slugify("Hello World") == "hello-world"
++
++    def test_special_chars(self) -> None:
++        assert slugify("Hello, World!") == "hello-world"
++
++    def test_multiple_spaces(self) -> None:
++        assert slugify("hello   world") == "hello-world"
++
++    def test_empty(self) -> None:
++        assert slugify("") == ""
++
++
++class TestTruncate:
++    def test_short_text(self) -> None:
++        assert truncate("hi", max_length=10) == "hi"
++
++    def test_exact_length(self) -> None:
++        assert truncate("hello", max_length=5) == "hello"
++
++    def test_long_text(self) -> None:
++        result = truncate("hello world", max_length=8)
++        assert result == "hello..."
++        assert len(result) == 8
++
++
++def test_normalize_whitespace() -> None:
++    assert normalize_whitespace("  hello   world  ") == "hello world"
++
++
++def test_count_words() -> None:
++    assert count_words("one two three") == 3
++
++
++def test_count_words_empty() -> None:
++    assert count_words("") == 1  # "".split() returns [""]
++
++
++def test_extract_emails() -> None:
++    text = "Contact user@example.com or admin@test.org for info."
++    assert extract_emails(text) == ["user@example.com", "admin@test.org"]
++
++
++def test_camel_to_snake() -> None:
++    assert camel_to_snake("camelCase") == "camel_case"
++
++
++def test_pascal_to_snake() -> None:
++    assert camel_to_snake("PascalCase") == "pascal_case"

@@ -1,0 +1,391 @@
+diff --git a/src/auth/oauth2.py b/src/auth/oauth2.py
+new file mode 100644
+index 0000000..1a2b3c4
+--- /dev/null
++++ b/src/auth/oauth2.py
+@@ -0,0 +1,95 @@
++"""OAuth2 authentication flow implementation."""
++
++from __future__ import annotations
++
++import hashlib
++import secrets
++from dataclasses import dataclass
++from typing import Any
++from urllib.parse import urlencode
++
++import httpx
++
++
++@dataclass(frozen=True)
++class OAuth2Config:
++    """Configuration for an OAuth2 provider."""
++
++    client_id: str
++    client_secret: str
++    authorize_url: str
++    token_url: str
++    scopes: list[str]
++    redirect_uri: str
++
++
++@dataclass(frozen=True)
++class OAuth2Token:
++    """Represents an OAuth2 token response."""
++
++    access_token: str
++    token_type: str
++    expires_in: int
++    refresh_token: str | None = None
++    scope: str | None = None
++
++
++class OAuth2Flow:
++    """Manages the OAuth2 authorization code flow with PKCE."""
++
++    def __init__(self, config: OAuth2Config) -> None:
++        self._config = config
++        self._code_verifier: str | None = None
++
++    def generate_authorize_url(self, state: str | None = None) -> str:
++        """Generate the authorization URL for redirecting the user."""
++        self._code_verifier = secrets.token_urlsafe(64)
++        code_challenge = hashlib.sha256(
++            self._code_verifier.encode()
++        ).hexdigest()
++
++        params: dict[str, str] = {
++            "client_id": self._config.client_id,
++            "redirect_uri": self._config.redirect_uri,
++            "response_type": "code",
++            "scope": " ".join(self._config.scopes),
++            "code_challenge": code_challenge,
++            "code_challenge_method": "S256",
++        }
++        if state is not None:
++            params["state"] = state
++
++        return f"{self._config.authorize_url}?{urlencode(params)}"
++
++    async def exchange_code(self, code: str) -> OAuth2Token:
++        """Exchange an authorization code for tokens."""
++        if self._code_verifier is None:
++            raise RuntimeError("Must call generate_authorize_url first")
++
++        payload: dict[str, str] = {
++            "grant_type": "authorization_code",
++            "code": code,
++            "redirect_uri": self._config.redirect_uri,
++            "client_id": self._config.client_id,
++            "client_secret": self._config.client_secret,
++            "code_verifier": self._code_verifier,
++        }
++
++        async with httpx.AsyncClient() as client:
++            response = await client.post(self._config.token_url, data=payload)
++            response.raise_for_status()
++            data: dict[str, Any] = response.json()
++
++        return OAuth2Token(
++            access_token=data["access_token"],
++            token_type=data["token_type"],
++            expires_in=data["expires_in"],
++            refresh_token=data.get("refresh_token"),
++            scope=data.get("scope"),
++        )
++
++    async def refresh_access_token(self, refresh_token: str) -> OAuth2Token:
++        """Refresh an expired access token."""
++        payload: dict[str, str] = {
++            "grant_type": "refresh_token",
++            "refresh_token": refresh_token,
++            "client_id": self._config.client_id,
++            "client_secret": self._config.client_secret,
++        }
++
++        async with httpx.AsyncClient() as client:
++            response = await client.post(self._config.token_url, data=payload)
++            response.raise_for_status()
++            data: dict[str, Any] = response.json()
++
++        return OAuth2Token(
++            access_token=data["access_token"],
++            token_type=data["token_type"],
++            expires_in=data["expires_in"],
++            refresh_token=data.get("refresh_token"),
++            scope=data.get("scope"),
++        )
+diff --git a/src/auth/token.py b/src/auth/token.py
+new file mode 100644
+index 0000000..2b3c4d5
+--- /dev/null
++++ b/src/auth/token.py
+@@ -0,0 +1,68 @@
++"""Token management and validation utilities."""
++
++from __future__ import annotations
++
++import time
++from dataclasses import dataclass, field
++
++
++@dataclass
++class TokenStore:
++    """In-memory token store with expiration tracking."""
++
++    _tokens: dict[str, StoredToken] = field(default_factory=dict)
++
++    def store(self, user_id: str, token: StoredToken) -> None:
++        """Store a token for a user."""
++        self._tokens[user_id] = token
++
++    def get(self, user_id: str) -> StoredToken | None:
++        """Retrieve a stored token, returning None if expired or absent."""
++        token = self._tokens.get(user_id)
++        if token is None:
++            return None
++        if token.is_expired():
++            del self._tokens[user_id]
++            return None
++        return token
++
++    def revoke(self, user_id: str) -> bool:
++        """Revoke a stored token. Returns True if a token was revoked."""
++        if user_id in self._tokens:
++            del self._tokens[user_id]
++            return True
++        return False
++
++    def count(self) -> int:
++        """Return the number of stored tokens."""
++        return len(self._tokens)
++
++
++@dataclass(frozen=True)
++class StoredToken:
++    """A token with metadata for storage."""
++
++    access_token: str
++    refresh_token: str | None
++    expires_at: float
++    provider: str
++    scopes: list[str]
++
++    def is_expired(self) -> bool:
++        """Check if the token has expired."""
++        return time.time() >= self.expires_at
++
++    def remaining_seconds(self) -> float:
++        """Return seconds until expiration (negative if expired)."""
++        return self.expires_at - time.time()
++
++    @classmethod
++    def from_oauth2_response(
++        cls,
++        access_token: str,
++        expires_in: int,
++        provider: str,
++        refresh_token: str | None = None,
++        scopes: list[str] | None = None,
++    ) -> StoredToken:
++        """Create a StoredToken from an OAuth2 token response."""
++        return cls(
++            access_token=access_token,
++            refresh_token=refresh_token,
++            expires_at=time.time() + expires_in,
++            provider=provider,
++            scopes=scopes or [],
++        )
+diff --git a/src/auth/session.py b/src/auth/session.py
+index 3c4d5e6..7f8a9b0 100644
+--- a/src/auth/session.py
++++ b/src/auth/session.py
+@@ -1,25 +1,42 @@
+ """Session management for authenticated users."""
+
+ from __future__ import annotations
+
+ import uuid
++from dataclasses import dataclass, field
+ from datetime import datetime, timedelta, timezone
+
+
+-class Session:
+-    """Represents an authenticated user session."""
++@dataclass
++class Session:
++    """Represents an authenticated user session with OAuth2 support."""
+
+-    def __init__(self, user_id: str, ttl_hours: int = 24) -> None:
+-        self.session_id = str(uuid.uuid4())
+-        self.user_id = user_id
+-        self.created_at = datetime.now(tz=timezone.utc)
+-        self.expires_at = self.created_at + timedelta(hours=ttl_hours)
++    user_id: str
++    ttl_hours: int = 24
++    session_id: str = field(default_factory=lambda: str(uuid.uuid4()))
++    created_at: datetime = field(
++        default_factory=lambda: datetime.now(tz=timezone.utc)
++    )
++    provider: str | None = None
++    scopes: list[str] = field(default_factory=list)
++
++    @property
++    def expires_at(self) -> datetime:
++        """Calculate expiration time from creation time and TTL."""
++        return self.created_at + timedelta(hours=self.ttl_hours)
+
+     def is_valid(self) -> bool:
+         """Check if the session has not expired."""
+         return datetime.now(tz=timezone.utc) < self.expires_at
+
+-    def remaining_minutes(self) -> int:
++    def remaining_minutes(self) -> float:
+         """Return the number of minutes remaining in this session."""
+         delta = self.expires_at - datetime.now(tz=timezone.utc)
+-        return max(0, int(delta.total_seconds() / 60))
++        return max(0.0, delta.total_seconds() / 60)
++
++    def has_scope(self, scope: str) -> bool:
++        """Check if the session has a specific OAuth2 scope."""
++        return scope in self.scopes
++
++    def refresh(self, ttl_hours: int | None = None) -> None:
++        """Refresh the session creation time, optionally updating TTL."""
++        self.created_at = datetime.now(tz=timezone.utc)  # type: ignore[misc]
++        if ttl_hours is not None:
++            self.ttl_hours = ttl_hours  # type: ignore[misc]
+diff --git a/src/auth/middleware.py b/src/auth/middleware.py
+index 4d5e6f7..8a9b0c1 100644
+--- a/src/auth/middleware.py
++++ b/src/auth/middleware.py
+@@ -1,30 +1,52 @@
+ """Authentication middleware for request processing."""
+
+ from __future__ import annotations
+
+-from typing import Any, Callable
++from collections.abc import Callable
++from typing import Any
+
++from src.auth.session import Session
+
+-def require_auth(handler: Callable[..., Any]) -> Callable[..., Any]:
++
++def require_auth(
++    handler: Callable[..., Any],
++    scopes: list[str] | None = None,
++) -> Callable[..., Any]:
+     """Decorator that ensures requests are authenticated.
+
+-    Wraps a request handler to validate the session before proceeding.
++    Wraps a request handler to validate the session and optionally
++    check for required OAuth2 scopes before proceeding.
+     """
+
+-    def wrapper(request: Any) -> Any:
++    def wrapper(request: Any, session: Session | None = None) -> Any:
+         """Validate authentication before calling the handler."""
+-        session = getattr(request, "session", None)
+         if session is None:
+-            return {"error": "Unauthorized", "status": 401}
++            session = getattr(request, "session", None)
++        if session is None or not session.is_valid():
++            return {
++                "error": "Unauthorized",
++                "status": 401,
++                "message": "Valid session required",
++            }
++
++        if scopes:
++            missing = [s for s in scopes if not session.has_scope(s)]
++            if missing:
++                return {
++                    "error": "Forbidden",
++                    "status": 403,
++                    "message": f"Missing scopes: {', '.join(missing)}",
++                }
+
+-        if not session.is_valid():
+-            return {"error": "Session expired", "status": 401}
+-
+         return handler(request)
+
+     return wrapper
+
+
+-def extract_session_id(headers: dict[str, str]) -> str | None:
+-    """Extract the session ID from request headers."""
+-    return headers.get("X-Session-ID") or headers.get("Authorization")
++def extract_session_id(
++    headers: dict[str, str],
++    cookie_name: str = "session_id",
++) -> str | None:
++    """Extract the session ID from request headers or cookies.
++
++    Checks Authorization header, X-Session-ID header, and cookies in order.
++    """
++    if auth := headers.get("Authorization"):
++        return auth.removeprefix("Bearer ").strip() or None
++    if session_id := headers.get("X-Session-ID"):
++        return session_id
++    cookies = headers.get("Cookie", "")
++    for part in cookies.split(";"):
++        part = part.strip()
++        if part.startswith(f"{cookie_name}="):
++            return part.split("=", 1)[1] or None
++    return None
+diff --git a/tests/unit/test_session.py b/tests/unit/test_session.py
+index 6f7a8b9..c0d1e2f 100644
+--- a/tests/unit/test_session.py
++++ b/tests/unit/test_session.py
+@@ -1,20 +1,45 @@
+ """Tests for session management."""
+
+ from __future__ import annotations
+
++from datetime import datetime, timezone
++
+ import pytest
+
+ from src.auth.session import Session
+
+
+ class TestSession:
+     def test_new_session_is_valid(self) -> None:
+-        session = Session(user_id="user-1")
++        session = Session(user_id="user-1", provider="github")
+         assert session.is_valid()
+
+     def test_session_has_user_id(self) -> None:
+         session = Session(user_id="user-1")
+         assert session.user_id == "user-1"
+
+-    def test_remaining_minutes_positive(self) -> None:
++    def test_session_default_no_provider(self) -> None:
++        session = Session(user_id="user-1")
++        assert session.provider is None
++
++    def test_session_with_scopes(self) -> None:
++        session = Session(
++            user_id="user-1",
++            provider="google",
++            scopes=["openid", "email"],
++        )
++        assert session.has_scope("openid")
++        assert session.has_scope("email")
++        assert not session.has_scope("admin")
++
++    def test_remaining_minutes_is_float(self) -> None:
+         session = Session(user_id="user-1", ttl_hours=1)
+-        assert session.remaining_minutes() > 0
++        minutes = session.remaining_minutes()
++        assert isinstance(minutes, float)
++        assert minutes > 0
++
++    def test_refresh_resets_creation_time(self) -> None:
++        session = Session(user_id="user-1")
++        old_created = session.created_at
++        session.refresh(ttl_hours=48)
++        assert session.created_at >= old_created
++        assert session.ttl_hours == 48
