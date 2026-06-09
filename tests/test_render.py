@@ -69,8 +69,7 @@ def unripe_result_fixture() -> ReviewResult:
     return ReviewResult(
         ripeness=Ripeness.unripe,
         summary=(
-            "This PR has a significant security issue"
-            " that must be addressed before merging."
+            "This PR has a significant security issue" " that must be addressed before merging."
         ),
         walkthrough="## Review\n\nThe authentication module needs improvement.",
         findings=[
@@ -93,10 +92,7 @@ def sour_result_fixture() -> ReviewResult:
     """Sour ReviewResult with critical and minor findings, no suggestions."""
     return ReviewResult(
         ripeness=Ripeness.sour,
-        summary=(
-            "This PR introduces critical security vulnerabilities"
-            " and must not be merged."
-        ),
+        summary=("This PR introduces critical security vulnerabilities" " and must not be merged."),
         walkthrough="## Review\n\nThe database module has severe issues.",
         findings=[
             Finding(
@@ -126,9 +122,10 @@ def sour_result_fixture() -> ReviewResult:
 
 def test_render_module_imports() -> None:
     """render_comment and REVIEW_MARKER import cleanly from lychee.render."""
-    from lychee.render import REVIEW_MARKER, render_comment  # noqa: F401
+    from lychee.render import REVIEW_MARKER, render_comment
 
-    assert render_comment and REVIEW_MARKER
+    assert callable(render_comment)
+    assert isinstance(REVIEW_MARKER, str)
 
 
 # ---------------------------------------------------------------------------
@@ -415,6 +412,6 @@ def test_accept_valid_markdown(
     ]:
         output = render_comment(result)
         fence_count = output.count("```")
-        assert fence_count % 2 == 0, (
-            f"Odd backtick fence count {fence_count} for ripeness={result.ripeness}"
-        )
+        assert (
+            fence_count % 2 == 0
+        ), f"Odd backtick fence count {fence_count} for ripeness={result.ripeness}"

@@ -5,8 +5,10 @@ validation rules, serialization round-trips, the submit_review tool
 schema, and the from_tool_input / to_tool_schema methods.
 """
 
+import copy
 import json
 from pathlib import Path
+from typing import Any
 
 import pydantic
 import pytest
@@ -54,7 +56,7 @@ def _make_review_result(**kwargs: object) -> ReviewResult:
 
 def test_models_import() -> None:
     """All domain types import cleanly from lychee.models."""
-    from lychee.models import (  # noqa: F401
+    from lychee.models import (
         Category,
         Finding,
         ReviewResult,
@@ -62,7 +64,11 @@ def test_models_import() -> None:
         Severity,
     )
 
-    assert Severity and Ripeness and Category and Finding and ReviewResult
+    assert callable(Severity)
+    assert callable(Ripeness)
+    assert callable(Category)
+    assert callable(Finding)
+    assert callable(ReviewResult)
 
 
 # ---------------------------------------------------------------------------
@@ -355,18 +361,38 @@ def test_accept_schema_matches_spec() -> None:
 # ---------------------------------------------------------------------------
 
 
+def _strip_additional_properties(schema: dict[str, Any]) -> dict[str, Any]:
+    """Strip additionalProperties from plain-object dict properties.
+
+    Pydantic emits different schemas for dict[str, Any] across versions:
+    some include ``additionalProperties: true``, others omit it. This
+    normalizer removes that key from properties whose type is ``object``
+    and that lack a ``properties`` sub-key (i.e., they represent a bare
+    dict, not a Pydantic model).
+    """
+    schema = copy.deepcopy(schema)
+    for prop in schema.get("input_schema", {}).get("properties", {}).values():
+        if (
+            prop.get("type") == "object"
+            and "properties" not in prop
+            and "additionalProperties" in prop
+        ):
+            del prop["additionalProperties"]
+    return schema
+
+
 def test_submit_review_schema_snapshot() -> None:
     """to_tool_schema() output matches the golden snapshot in tests/fixtures/."""
     schema = ReviewResult.to_tool_schema()
-    serialized = json.dumps(schema, sort_keys=True, indent=2)
 
     snapshot_path = FIXTURES_DIR / "submit_review_schema.json"
     if not snapshot_path.exists():
+        serialized = json.dumps(schema, sort_keys=True, indent=2)
         snapshot_path.write_text(serialized, encoding="utf-8")
         return
 
-    saved = snapshot_path.read_text(encoding="utf-8")
-    assert serialized == saved, (
+    saved = json.loads(snapshot_path.read_text(encoding="utf-8"))
+    assert _strip_additional_properties(schema) == _strip_additional_properties(saved), (
         "submit_review schema changed. If intentional, delete "
         "tests/fixtures/submit_review_schema.json and re-run to regenerate."
     )

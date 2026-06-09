@@ -34,7 +34,7 @@ FIXTURES_DIR = Path(__file__).parent / "fixtures"
 
 def test_config_module_imports() -> None:
     """All public names import cleanly from lychee.config."""
-    from lychee.config import (  # noqa: F401
+    from lychee.config import (
         FeaturesConfig,
         LycheeConfig,
         LycheeConfigError,
@@ -124,7 +124,7 @@ def test_unknown_top_level_key_rejected(tmp_path: Path) -> None:
     bad = tmp_path / ".lychee.yml"
     bad.write_text("foo: bar\n", encoding="utf-8")
 
-    with pytest.raises(LycheeConfigError, match="[Uu]nknown"):
+    with pytest.raises(LycheeConfigError, match=r"[Uu]nknown"):
         load_config(bad)
 
 
@@ -148,9 +148,11 @@ def test_permission_error_raises(tmp_path: Path) -> None:
     cfg = tmp_path / ".lychee.yml"
     cfg.write_text("model:\n  default: test\n", encoding="utf-8")
 
-    with patch.object(Path, "read_text", side_effect=OSError("Permission denied")):
-        with pytest.raises(LycheeConfigError, match="Cannot read"):
-            load_config(cfg)
+    with (
+        patch.object(Path, "read_text", side_effect=OSError("Permission denied")),
+        pytest.raises(LycheeConfigError, match="Cannot read"),
+    ):
+        load_config(cfg)
 
 
 def test_encoding_error_raises(tmp_path: Path) -> None:
@@ -212,7 +214,7 @@ def test_unknown_features_key_rejected(tmp_path: Path) -> None:
     bad = tmp_path / ".lychee.yml"
     bad.write_text("features:\n  turbo_mode: true\n", encoding="utf-8")
 
-    with pytest.raises(LycheeConfigError, match="[Uu]nknown"):
+    with pytest.raises(LycheeConfigError, match=r"[Uu]nknown"):
         load_config(bad)
 
 
@@ -221,7 +223,7 @@ def test_unknown_model_key_rejected(tmp_path: Path) -> None:
     bad = tmp_path / ".lychee.yml"
     bad.write_text("model:\n  experimental: gpt-9\n", encoding="utf-8")
 
-    with pytest.raises(LycheeConfigError, match="[Uu]nknown"):
+    with pytest.raises(LycheeConfigError, match=r"[Uu]nknown"):
         load_config(bad)
 
 
@@ -302,7 +304,10 @@ def test_review_all_tones_accepted(tmp_path: Path) -> None:
 def test_ignore_globs_list_loaded(tmp_path: Path) -> None:
     """A non-empty ignore_globs list is loaded as a list of strings."""
     cfg = tmp_path / ".lychee.yml"
-    cfg.write_text("review:\n  ignore_globs:\n    - '*.lock'\n    - 'node_modules/**'\n", encoding="utf-8")
+    cfg.write_text(
+        "review:\n  ignore_globs:\n    - '*.lock'\n    - 'node_modules/**'\n",
+        encoding="utf-8",
+    )
     result = load_config(cfg)
     assert result.review.ignore_globs == ["*.lock", "node_modules/**"]
 
@@ -321,7 +326,7 @@ def test_model_config_has_correct_sub_model_types() -> None:
 
 
 def test_all_defaults_present() -> None:
-    """Every field of a default LycheeConfig is non-None except conventions_file (None by design)."""
+    """Every field of a default LycheeConfig is non-None except conventions_file."""
     config = LycheeConfig()
     assert config.model is not None
     assert config.review is not None
