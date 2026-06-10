@@ -16,6 +16,7 @@ from lychee.github_client import ChangedFile, GitHubClient, PullRequestRef
 
 def test_github_client_imports() -> None:
     """All public names are importable from lychee.github_client."""
+    # P1-R1
     from lychee import github_client as mod
 
     assert hasattr(mod, "PullRequestRef")
@@ -30,6 +31,7 @@ def test_github_client_imports() -> None:
 
 def test_parse_valid_ref() -> None:
     """parse() splits a well-formed 'owner/repo#123' into its components."""
+    # P1-R1
     ref = PullRequestRef.parse("octocat/hello-world#42")
     assert ref.owner == "octocat"
     assert ref.repo == "hello-world"
@@ -38,6 +40,7 @@ def test_parse_valid_ref() -> None:
 
 def test_parse_ref_with_org_slash() -> None:
     """parse() handles owner/repo where repo has no extra slashes."""
+    # P1-R1
     ref = PullRequestRef.parse("my-org/my-repo#1")
     assert ref.owner == "my-org"
     assert ref.repo == "my-repo"
@@ -46,6 +49,7 @@ def test_parse_ref_with_org_slash() -> None:
 
 def test_parse_ref_full_name() -> None:
     """full_name property returns 'owner/repo'."""
+    # P1-R1
     ref = PullRequestRef.parse("owner/repo#10")
     assert ref.full_name == "owner/repo"
 
@@ -63,24 +67,28 @@ def test_parse_ref_full_name() -> None:
 )
 def test_parse_ref_invalid_format(bad_ref: str) -> None:
     """parse() raises ValueError for malformed references."""
+    # P1-R1
     with pytest.raises(ValueError, match="Invalid PR reference"):
         PullRequestRef.parse(bad_ref)
 
 
 def test_parse_ref_non_integer_number() -> None:
     """parse() raises ValueError when the PR number is not an integer."""
+    # P1-R1
     with pytest.raises(ValueError, match="must be an integer"):
         PullRequestRef.parse("owner/repo#abc")
 
 
 def test_parse_ref_negative_number() -> None:
     """parse() raises ValueError when the PR number is negative."""
+    # P1-R1
     with pytest.raises(ValueError, match="must be a positive integer"):
         PullRequestRef.parse("owner/repo#-1")
 
 
 def test_parse_ref_zero_number() -> None:
     """parse() raises ValueError when the PR number is zero."""
+    # P1-R1
     with pytest.raises(ValueError, match="must be a positive integer"):
         PullRequestRef.parse("owner/repo#0")
 
@@ -92,6 +100,7 @@ def test_parse_ref_zero_number() -> None:
 
 def test_changed_file_dataclass_fields() -> None:
     """ChangedFile stores all expected fields."""
+    # P1-R1
     f = ChangedFile(
         filename="src/main.py",
         status="modified",
@@ -112,6 +121,7 @@ def test_changed_file_dataclass_fields() -> None:
 
 def test_changed_file_frozen() -> None:
     """ChangedFile instances are immutable."""
+    # P1-R1
     f = ChangedFile(
         filename="a.py",
         status="added",
@@ -126,6 +136,7 @@ def test_changed_file_frozen() -> None:
 
 def test_changed_file_serialization() -> None:
     """ChangedFile can be serialized to a dict via dataclasses.asdict."""
+    # P1-R1
     f = ChangedFile(
         filename="test.py",
         status="added",
@@ -148,6 +159,7 @@ def test_changed_file_serialization() -> None:
 
 def test_github_client_instantiates() -> None:
     """GitHubClient can be instantiated with a token string."""
+    # P1-R1
     with patch("lychee.github_client.github.Github"):
         client = GitHubClient(token="fake-token")
         assert client is not None
@@ -160,6 +172,7 @@ def test_github_client_instantiates() -> None:
 
 def test_pr_ref_parse_snapshot() -> None:
     """PullRequestRef.parse produces consistent output (regression guard)."""
+    # P1-R1
     ref = PullRequestRef.parse("anthropics/claude#999")
     assert ref.owner == "anthropics"
     assert ref.repo == "claude"
@@ -169,6 +182,7 @@ def test_pr_ref_parse_snapshot() -> None:
 
 def test_changed_file_serialization_snapshot() -> None:
     """ChangedFile serialization structure is stable (regression guard)."""
+    # P1-R1
     f = ChangedFile(
         filename="README.md",
         status="modified",
@@ -223,6 +237,7 @@ def test_get_pull_request_returns_pr(
     ref: PullRequestRef,
 ) -> None:
     """get_pull_request fetches PR via get_repo().get_pull()."""
+    # P1-R1
     mock_repo = MagicMock()
     mock_pr = MagicMock()
     _mock_github.get_repo.return_value = mock_repo
@@ -240,6 +255,7 @@ def test_get_diff_returns_string(
     ref: PullRequestRef,
 ) -> None:
     """get_diff returns a diff string from the GitHub API."""
+    # P1-R1
     fake_diff = "diff --git a/x.py b/x.py\n+hello\n"
     with patch("lychee.github_client.httpx.get") as mock_get:
         mock_response = MagicMock()
@@ -257,6 +273,7 @@ def test_github_api_diff_accept_header(
     ref: PullRequestRef,
 ) -> None:
     """get_diff sends the correct Accept header for the diff media type."""
+    # P1-R1
     with patch("lychee.github_client.httpx.get") as mock_get:
         mock_response = MagicMock()
         mock_response.text = ""
@@ -293,6 +310,7 @@ def test_get_changed_files_respects_max_files(
     _mock_github: MagicMock,
 ) -> None:
     """get_changed_files stops collecting after max_files."""
+    # P1-R1
     mock_pr = MagicMock()
     mock_pr.base.repo.full_name = "owner/repo"
     mock_pr.head.sha = "abc123"
@@ -309,6 +327,7 @@ def test_get_changed_files_skips_ignored_globs(
     _mock_github: MagicMock,
 ) -> None:
     """get_changed_files excludes files matching ignore_globs patterns."""
+    # P1-R1
     mock_pr = MagicMock()
     mock_pr.base.repo.full_name = "owner/repo"
     mock_pr.head.sha = "abc123"
@@ -319,9 +338,7 @@ def test_get_changed_files_skips_ignored_globs(
     ]
 
     with patch.object(client, "get_file_content", return_value="content"):
-        result = client.get_changed_files(
-            mock_pr, ignore_globs=["*.lock", "package-lock.json"]
-        )
+        result = client.get_changed_files(mock_pr, ignore_globs=["*.lock", "package-lock.json"])
 
     filenames = [f.filename for f in result]
     assert "src/main.py" in filenames
@@ -334,6 +351,7 @@ def test_get_changed_files_skips_deleted(
     _mock_github: MagicMock,
 ) -> None:
     """get_changed_files does not fetch content for deleted files."""
+    # P1-R1
     mock_pr = MagicMock()
     mock_pr.base.repo.full_name = "owner/repo"
     mock_pr.head.sha = "abc123"
@@ -354,6 +372,7 @@ def test_get_changed_files_handles_renamed(
     _mock_github: MagicMock,
 ) -> None:
     """get_changed_files preserves previous_filename for renamed files."""
+    # P1-R1
     mock_pr = MagicMock()
     mock_pr.base.repo.full_name = "owner/repo"
     mock_pr.head.sha = "abc123"
@@ -373,6 +392,7 @@ def test_get_changed_files_skips_binary(
     _mock_github: MagicMock,
 ) -> None:
     """get_changed_files returns None content for binary files."""
+    # P1-R1
     mock_pr = MagicMock()
     mock_pr.base.repo.full_name = "owner/repo"
     mock_pr.head.sha = "abc123"
@@ -392,6 +412,7 @@ def test_get_changed_files_skips_large_files(
     _mock_github: MagicMock,
 ) -> None:
     """get_changed_files passes max_file_bytes to get_file_content."""
+    # P1-R1
     mock_pr = MagicMock()
     mock_pr.base.repo.full_name = "owner/repo"
     mock_pr.head.sha = "abc123"
@@ -415,6 +436,7 @@ def test_get_file_content_success(
     _mock_github: MagicMock,
 ) -> None:
     """get_file_content returns decoded UTF-8 text for a base64-encoded file."""
+    # P1-R1
     mock_repo = MagicMock()
     _mock_github.get_repo.return_value = mock_repo
 
@@ -433,6 +455,7 @@ def test_get_file_content_404_returns_none(
     _mock_github: MagicMock,
 ) -> None:
     """get_file_content returns None when file is not found (404)."""
+    # P1-R1
     import github
 
     mock_repo = MagicMock()
@@ -450,6 +473,7 @@ def test_get_file_content_binary_returns_none(
     _mock_github: MagicMock,
 ) -> None:
     """get_file_content returns None for non-base64 (binary) files."""
+    # P1-R1
     mock_repo = MagicMock()
     _mock_github.get_repo.return_value = mock_repo
 
@@ -466,6 +490,7 @@ def test_get_file_content_oversized_returns_none(
     _mock_github: MagicMock,
 ) -> None:
     """get_file_content returns None when file exceeds max_bytes."""
+    # P1-R1
     mock_repo = MagicMock()
     _mock_github.get_repo.return_value = mock_repo
 
@@ -483,6 +508,7 @@ def test_get_file_content_directory_returns_none(
     _mock_github: MagicMock,
 ) -> None:
     """get_file_content returns None when path resolves to a directory."""
+    # P1-R1
     mock_repo = MagicMock()
     _mock_github.get_repo.return_value = mock_repo
     mock_repo.get_contents.return_value = [MagicMock(), MagicMock()]
@@ -496,6 +522,7 @@ def test_github_api_file_content_ref(
     _mock_github: MagicMock,
 ) -> None:
     """get_file_content passes the ref argument to get_contents."""
+    # P1-R1
     mock_repo = MagicMock()
     _mock_github.get_repo.return_value = mock_repo
 
@@ -515,6 +542,7 @@ def test_get_commit_messages_order(
     _mock_github: MagicMock,
 ) -> None:
     """get_commit_messages returns messages in order (oldest first)."""
+    # P1-R1
     mock_pr = MagicMock()
     commits = []
     for msg in ["first commit", "second commit", "third commit"]:
@@ -532,6 +560,7 @@ def test_get_conventions_file_found(
     _mock_github: MagicMock,
 ) -> None:
     """get_conventions_file returns file content when the file exists."""
+    # P1-R1
     with patch.object(client, "get_file_content", return_value="# Conventions\n") as mock:
         result = client.get_conventions_file("owner/repo", "CONVENTIONS.md", "abc123")
 
@@ -544,6 +573,7 @@ def test_get_conventions_file_not_found(
     _mock_github: MagicMock,
 ) -> None:
     """get_conventions_file returns None when file content is not found."""
+    # P1-R1
     with patch.object(client, "get_file_content", return_value=None):
         result = client.get_conventions_file("owner/repo", "CONVENTIONS.md", "abc123")
 
@@ -554,5 +584,6 @@ def test_get_conventions_file_path_none(
     client: GitHubClient,
 ) -> None:
     """get_conventions_file returns None when path is None."""
+    # P1-R1
     result = client.get_conventions_file("owner/repo", None, "abc123")
     assert result is None

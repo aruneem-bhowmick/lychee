@@ -11,7 +11,7 @@ import pydantic
 from lychee.config import LycheeConfig
 from lychee.github_client import GitHubClient, PullRequestRef
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 class ReviewContext(pydantic.BaseModel):
@@ -35,7 +35,7 @@ class ReviewContext(pydantic.BaseModel):
 
 def build_context(
     client: GitHubClient,
-    pr_ref: str,
+    pr_ref: PullRequestRef,
     config: LycheeConfig,
 ) -> ReviewContext:
     """Fetch and assemble all PR context needed for a review.
@@ -43,10 +43,8 @@ def build_context(
     Orchestrates calls to GitHubClient to gather PR metadata, diff,
     changed file contents, commit messages, and an optional conventions file.
     """
-    ref = PullRequestRef.parse(pr_ref)
-
-    pr = client.get_pull_request(ref)
-    diff = client.get_diff(ref)
+    pr = client.get_pull_request(pr_ref)
+    diff = client.get_diff(pr_ref)
 
     changed_files = client.get_changed_files(
         pr,
@@ -58,14 +56,14 @@ def build_context(
     commit_messages = client.get_commit_messages(pr)
 
     conventions = client.get_conventions_file(
-        repo_full_name=ref.full_name,
+        repo_full_name=pr_ref.full_name,
         path=config.conventions_file,
         ref=pr.head.sha,
     )
 
     serialized_files = [dataclasses.asdict(f) for f in changed_files]
 
-    logger.info(
+    _logger.info(
         "Built review context for PR #%d: %d files, diff=%d chars, conventions=%s",
         pr.number,
         len(changed_files),
@@ -81,7 +79,7 @@ def build_context(
         base_ref=pr.base.ref,
         head_ref=pr.head.ref,
         head_sha=pr.head.sha,
-        repo_full_name=ref.full_name,
+        repo_full_name=pr_ref.full_name,
         diff=diff,
         changed_files=serialized_files,
         commit_messages=commit_messages,

@@ -13,7 +13,7 @@ import httpx
 if TYPE_CHECKING:
     from github.PullRequest import PullRequest
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 @dataclasses.dataclass(frozen=True)
@@ -136,11 +136,11 @@ class GitHubClient:
 
         for f in pr.get_files():
             if len(result) >= max_files:
-                logger.debug("Reached max_files limit (%d), stopping.", max_files)
+                _logger.debug("Reached max_files limit (%d), stopping.", max_files)
                 break
 
             if any(fnmatch.fnmatch(f.filename, pat) for pat in globs):
-                logger.debug("Skipping ignored file: %s", f.filename)
+                _logger.debug("Skipping ignored file: %s", f.filename)
                 continue
 
             content: str | None = None
@@ -183,26 +183,26 @@ class GitHubClient:
             contents = repo.get_contents(path, ref=ref)
         except github.GithubException as exc:
             if exc.status == 404:
-                logger.debug("File not found: %s @ %s", path, ref)
+                _logger.debug("File not found: %s @ %s", path, ref)
                 return None
             raise
 
         if isinstance(contents, list):
-            logger.debug("Path is a directory, not a file: %s", path)
+            _logger.debug("Path is a directory, not a file: %s", path)
             return None
 
         if contents.encoding != "base64":
-            logger.debug("Skipping non-base64 (likely binary) file: %s", path)
+            _logger.debug("Skipping non-base64 (likely binary) file: %s", path)
             return None
 
         if contents.size > max_bytes:
-            logger.debug("Skipping oversized file (%d bytes): %s", contents.size, path)
+            _logger.debug("Skipping oversized file (%d bytes): %s", contents.size, path)
             return None
 
         try:
             return contents.decoded_content.decode("utf-8")
         except UnicodeDecodeError:
-            logger.debug("Skipping binary (non-UTF-8) file: %s", path)
+            _logger.debug("Skipping binary (non-UTF-8) file: %s", path)
             return None
 
     def get_commit_messages(self, pr: PullRequest) -> list[str]:

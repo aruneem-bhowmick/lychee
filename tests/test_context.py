@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from typing import Any
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
+import pydantic
 import pytest
 
 from lychee.config import LycheeConfig
@@ -18,6 +18,7 @@ from lychee.github_client import ChangedFile, PullRequestRef
 
 def test_context_imports() -> None:
     """ReviewContext and build_context are importable from lychee.context."""
+    # P1-R1
     from lychee import context as mod
 
     assert hasattr(mod, "ReviewContext")
@@ -32,6 +33,7 @@ def test_context_imports() -> None:
 
 def test_review_context_construction() -> None:
     """ReviewContext can be constructed with all required fields."""
+    # P1-R1
     ctx = ReviewContext(
         pr_number=42,
         pr_title="Test PR",
@@ -53,6 +55,7 @@ def test_review_context_construction() -> None:
 
 def test_review_context_optional_conventions() -> None:
     """ReviewContext defaults conventions to None."""
+    # P1-R1
     ctx = ReviewContext(
         pr_number=1,
         pr_title="t",
@@ -71,6 +74,7 @@ def test_review_context_optional_conventions() -> None:
 
 def test_review_context_frozen() -> None:
     """ReviewContext is immutable after construction."""
+    # P1-R1
     ctx = ReviewContext(
         pr_number=1,
         pr_title="t",
@@ -84,24 +88,26 @@ def test_review_context_frozen() -> None:
         changed_files=[],
         commit_messages=[],
     )
-    with pytest.raises(Exception):
+    with pytest.raises(pydantic.ValidationError):
         ctx.pr_number = 99  # type: ignore[misc]
 
 
 # ---------------------------------------------------------------------------
-# Sanity tests — ReviewContext fixtures
+# Sanity tests
 # ---------------------------------------------------------------------------
 
 
 def test_review_context_simple_fixture(review_context_simple: ReviewContext) -> None:
     """review_context_simple fixture produces a valid ReviewContext."""
+    # P1-R1
     assert isinstance(review_context_simple, ReviewContext)
     assert review_context_simple.pr_number == 42
     assert len(review_context_simple.changed_files) == 1
 
 
-def test_review_context_minimal_fixture(review_context_minimal: ReviewContext) -> None:
-    """review_context_minimal fixture produces a valid minimal ReviewContext."""
+def test_review_context_minimal(review_context_minimal: ReviewContext) -> None:
+    """A minimal valid ReviewContext constructs without error."""
+    # P1-R1
     assert isinstance(review_context_minimal, ReviewContext)
     assert review_context_minimal.pr_number == 1
     assert review_context_minimal.changed_files == []
@@ -143,6 +149,7 @@ def _build_mock_pr(
 
 def test_build_context_full() -> None:
     """build_context assembles a full ReviewContext from GitHubClient calls."""
+    # P1-R1
     mock_client = MagicMock()
     mock_pr = _build_mock_pr()
     mock_client.get_pull_request.return_value = mock_pr
@@ -161,8 +168,9 @@ def test_build_context_full() -> None:
     mock_client.get_conventions_file.return_value = "# Style Guide\n"
 
     config = LycheeConfig(conventions_file="CONVENTIONS.md")
+    ref = PullRequestRef.parse("owner/repo#42")
 
-    ctx = build_context(mock_client, "owner/repo#42", config)
+    ctx = build_context(mock_client, ref, config)
 
     assert isinstance(ctx, ReviewContext)
     assert ctx.pr_number == 42
@@ -182,6 +190,7 @@ def test_build_context_full() -> None:
 
 def test_build_context_no_conventions() -> None:
     """build_context sets conventions=None when no conventions_file is configured."""
+    # P1-R1
     mock_client = MagicMock()
     mock_pr = _build_mock_pr()
     mock_client.get_pull_request.return_value = mock_pr
@@ -191,8 +200,9 @@ def test_build_context_no_conventions() -> None:
     mock_client.get_conventions_file.return_value = None
 
     config = LycheeConfig()  # conventions_file defaults to None
+    ref = PullRequestRef.parse("owner/repo#42")
 
-    ctx = build_context(mock_client, "owner/repo#42", config)
+    ctx = build_context(mock_client, ref, config)
 
     assert ctx.conventions is None
     mock_client.get_conventions_file.assert_called_once_with(
@@ -204,6 +214,7 @@ def test_build_context_no_conventions() -> None:
 
 def test_build_context_empty_pr() -> None:
     """build_context handles a PR with no files, no commits, empty diff."""
+    # P1-R1
     mock_client = MagicMock()
     mock_pr = _build_mock_pr(body=None)
     mock_client.get_pull_request.return_value = mock_pr
@@ -213,8 +224,9 @@ def test_build_context_empty_pr() -> None:
     mock_client.get_conventions_file.return_value = None
 
     config = LycheeConfig()
+    ref = PullRequestRef.parse("owner/repo#42")
 
-    ctx = build_context(mock_client, "owner/repo#42", config)
+    ctx = build_context(mock_client, ref, config)
 
     assert ctx.pr_body is None
     assert ctx.diff == ""
@@ -224,6 +236,7 @@ def test_build_context_empty_pr() -> None:
 
 def test_build_context_passes_config_limits() -> None:
     """build_context forwards max_files, max_file_bytes, and ignore_globs from config."""
+    # P1-R1
     mock_client = MagicMock()
     mock_pr = _build_mock_pr()
     mock_client.get_pull_request.return_value = mock_pr
@@ -235,8 +248,9 @@ def test_build_context_passes_config_limits() -> None:
     config = LycheeConfig(
         review={"max_files": 10, "max_file_bytes": 2048, "ignore_globs": ["*.lock"]},  # type: ignore[arg-type]
     )
+    ref = PullRequestRef.parse("owner/repo#42")
 
-    build_context(mock_client, "owner/repo#42", config)
+    build_context(mock_client, ref, config)
 
     mock_client.get_changed_files.assert_called_once_with(
         mock_pr,
@@ -246,36 +260,6 @@ def test_build_context_passes_config_limits() -> None:
     )
 
 
-def test_build_context_parses_ref() -> None:
-    """build_context parses the PR reference string correctly."""
-    mock_client = MagicMock()
-    mock_pr = _build_mock_pr()
-    mock_client.get_pull_request.return_value = mock_pr
-    mock_client.get_diff.return_value = ""
-    mock_client.get_changed_files.return_value = []
-    mock_client.get_commit_messages.return_value = []
-    mock_client.get_conventions_file.return_value = None
-
-    config = LycheeConfig()
-
-    build_context(mock_client, "my-org/my-repo#99", config)
-
-    call_args = mock_client.get_pull_request.call_args[0][0]
-    assert isinstance(call_args, PullRequestRef)
-    assert call_args.owner == "my-org"
-    assert call_args.repo == "my-repo"
-    assert call_args.number == 99
-
-
-def test_build_context_invalid_ref() -> None:
-    """build_context raises ValueError for an invalid PR reference."""
-    mock_client = MagicMock()
-    config = LycheeConfig()
-
-    with pytest.raises(ValueError, match="Invalid PR reference"):
-        build_context(mock_client, "not-a-valid-ref", config)
-
-
 # ---------------------------------------------------------------------------
 # Acceptance tests
 # ---------------------------------------------------------------------------
@@ -283,6 +267,7 @@ def test_build_context_invalid_ref() -> None:
 
 def test_accept_complete_context() -> None:
     """End-to-end: build_context produces a fully populated ReviewContext."""
+    # P1-R1
     mock_client = MagicMock()
     mock_pr = _build_mock_pr(
         number=100,
@@ -301,8 +286,9 @@ def test_accept_complete_context() -> None:
     mock_client.get_conventions_file.return_value = "Follow PEP 8."
 
     config = LycheeConfig(conventions_file="STYLE.md")
+    ref = PullRequestRef.parse("owner/repo#100")
 
-    ctx = build_context(mock_client, "owner/repo#100", config)
+    ctx = build_context(mock_client, ref, config)
 
     assert ctx.pr_number == 100
     assert ctx.pr_title == "Big Feature"
@@ -317,6 +303,7 @@ def test_accept_complete_context() -> None:
 
 def test_accept_respects_max_files() -> None:
     """build_context passes max_files from config to get_changed_files."""
+    # P1-R1
     mock_client = MagicMock()
     mock_pr = _build_mock_pr()
     mock_client.get_pull_request.return_value = mock_pr
@@ -326,8 +313,9 @@ def test_accept_respects_max_files() -> None:
     mock_client.get_conventions_file.return_value = None
 
     config = LycheeConfig(review={"max_files": 5})  # type: ignore[arg-type]
+    ref = PullRequestRef.parse("owner/repo#1")
 
-    build_context(mock_client, "owner/repo#1", config)
+    build_context(mock_client, ref, config)
 
     _, kwargs = mock_client.get_changed_files.call_args
     assert kwargs["max_files"] == 5
@@ -335,6 +323,7 @@ def test_accept_respects_max_files() -> None:
 
 def test_accept_respects_max_file_bytes() -> None:
     """build_context passes max_file_bytes from config to get_changed_files."""
+    # P1-R1
     mock_client = MagicMock()
     mock_pr = _build_mock_pr()
     mock_client.get_pull_request.return_value = mock_pr
@@ -344,8 +333,9 @@ def test_accept_respects_max_file_bytes() -> None:
     mock_client.get_conventions_file.return_value = None
 
     config = LycheeConfig(review={"max_file_bytes": 2048})  # type: ignore[arg-type]
+    ref = PullRequestRef.parse("owner/repo#1")
 
-    build_context(mock_client, "owner/repo#1", config)
+    build_context(mock_client, ref, config)
 
     _, kwargs = mock_client.get_changed_files.call_args
     assert kwargs["max_file_bytes"] == 2048
@@ -353,6 +343,7 @@ def test_accept_respects_max_file_bytes() -> None:
 
 def test_accept_handles_binary_deleted_renamed() -> None:
     """build_context serializes ChangedFile objects with various statuses to dicts."""
+    # P1-R1
     mock_client = MagicMock()
     mock_pr = _build_mock_pr()
     mock_client.get_pull_request.return_value = mock_pr
@@ -366,8 +357,9 @@ def test_accept_handles_binary_deleted_renamed() -> None:
     mock_client.get_conventions_file.return_value = None
 
     config = LycheeConfig()
+    ref = PullRequestRef.parse("owner/repo#1")
 
-    ctx = build_context(mock_client, "owner/repo#1", config)
+    ctx = build_context(mock_client, ref, config)
 
     assert len(ctx.changed_files) == 3
     # Binary
