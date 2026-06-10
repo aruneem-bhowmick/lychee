@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any
 from unittest.mock import MagicMock
 
+from lychee.github_client import PullRequestRef
 from lychee.models import Finding, ReviewResult, Ripeness
 
 FIXTURES_DIR: Path = Path(__file__).parent / "fixtures"
@@ -53,6 +54,8 @@ def test_conftest_imports() -> None:
         "diff_large",
         "mock_github_client",
         "mock_claude_client",
+        "review_context_simple",
+        "review_context_minimal",
     ]
     for name in names:
         assert hasattr(_conftest, name), f"conftest missing: {name}"
@@ -271,8 +274,9 @@ def test_accept_mocks_deterministic(
     mock_claude_client: MagicMock,
 ) -> None:
     """Client mocks return identical values across multiple calls."""
-    first_pr = mock_github_client.get_pull_request()
-    second_pr = mock_github_client.get_pull_request()
+    ref = PullRequestRef(owner="owner", repo="repo", number=1)
+    first_pr = mock_github_client.get_pull_request(ref)
+    second_pr = mock_github_client.get_pull_request(ref)
     assert first_pr == second_pr
 
     first_review: ReviewResult = mock_claude_client.review()

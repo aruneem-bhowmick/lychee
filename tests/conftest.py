@@ -5,10 +5,12 @@ from __future__ import annotations
 import json
 from pathlib import Path
 from typing import Any
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, create_autospec
 
 import pytest
 
+from lychee.context import ReviewContext
+from lychee.github_client import GitHubClient
 from lychee.models import (
     Category,
     Finding,
@@ -90,14 +92,25 @@ def diff_large() -> str:
 
 @pytest.fixture()
 def mock_github_client() -> MagicMock:
-    """MagicMock standing in for GitHubClient (no spec, stub only)."""
-    mock = MagicMock()
-    mock.get_pull_request.return_value = {
-        "number": 1,
-        "title": "mock-pr",
-        "state": "open",
-    }
+    """Auto-specced MagicMock for GitHubClient with sensible return values."""
+    mock = create_autospec(GitHubClient, instance=True)
+
+    # Configure a mock PR object
+    mock_pr = MagicMock()
+    mock_pr.number = 1
+    mock_pr.title = "mock-pr"
+    mock_pr.body = "mock body"
+    mock_pr.user.login = "mock-user"
+    mock_pr.base.ref = "main"
+    mock_pr.base.repo.full_name = "owner/repo"
+    mock_pr.head.ref = "feat/mock"
+    mock_pr.head.sha = "abc123"
+    mock.get_pull_request.return_value = mock_pr
+
     mock.get_diff.return_value = "diff --git a/f.py b/f.py\n"
+    mock.get_changed_files.return_value = []
+    mock.get_commit_messages.return_value = ["initial commit"]
+    mock.get_conventions_file.return_value = None
     return mock
 
 
@@ -122,3 +135,51 @@ def mock_claude_client() -> MagicMock:
         usage={"input_tokens": 0, "output_tokens": 0},
     )
     return mock
+
+
+@pytest.fixture()
+def review_context_simple() -> ReviewContext:
+    """A simple ReviewContext fixture for testing downstream consumers."""
+    return ReviewContext(
+        pr_number=42,
+        pr_title="Add utility functions",
+        pr_body="This PR adds utility functions.",
+        pr_author="octocat",
+        base_ref="main",
+        head_ref="feat/utils",
+        head_sha="abc123def456",
+        repo_full_name="owner/repo",
+        diff="diff --git a/f.py b/f.py\n+hello\n",
+        changed_files=[
+            {
+                "filename": "src/utils.py",
+                "status": "added",
+                "additions": 10,
+                "deletions": 0,
+                "patch": "@@ -0,0 +1,10 @@\n+code here",
+                "content_at_head": "# utils\ndef helper(): pass\n",
+                "previous_filename": None,
+            }
+        ],
+        commit_messages=["Add utility functions"],
+        conventions=None,
+    )
+
+
+@pytest.fixture()
+def review_context_minimal() -> ReviewContext:
+    """A minimal ReviewContext with empty changed files and no conventions."""
+    return ReviewContext(
+        pr_number=1,
+        pr_title="Empty PR",
+        pr_body=None,
+        pr_author="bot",
+        base_ref="main",
+        head_ref="fix/empty",
+        head_sha="000000",
+        repo_full_name="owner/repo",
+        diff="",
+        changed_files=[],
+        commit_messages=[],
+        conventions=None,
+    )
