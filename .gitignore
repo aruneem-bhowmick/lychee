@@ -9,5 +9,5 @@ __pycache__/
 .specstory/
 .cursorindexingignore
 
-# Project docs (non-source)
+# Private local documentation
 docs-lychee/

@@ -14,7 +14,7 @@ from click.testing import CliRunner
 
 
 def test_all_modules_import() -> None:
-    """All lychee modules import cleanly with no side-effects or errors."""  # P0-R1
+    """All lychee modules import cleanly with no side-effects or errors."""
     import lychee
     import lychee.claude
     import lychee.config
@@ -33,14 +33,14 @@ def test_all_modules_import() -> None:
 
 
 def test_version_string() -> None:
-    """Package exposes __version__ equal to '0.1.0'."""  # P0-R1
+    """Package exposes __version__ equal to '0.1.0'."""
     import lychee
 
     assert lychee.__version__ == "0.1.0"
 
 
 def test_module_signatures_models() -> None:
-    """lychee.models exposes the expected public names."""  # P0-R1
+    """lychee.models exposes the expected public names."""
     import lychee.models as m
 
     for name in ("Severity", "Ripeness", "Category", "Finding", "ReviewResult"):
@@ -48,7 +48,7 @@ def test_module_signatures_models() -> None:
 
 
 def test_module_signatures_config() -> None:
-    """lychee.config exposes LycheeConfig and load_config."""  # P0-R1
+    """lychee.config exposes LycheeConfig and load_config."""
     import lychee.config as m
 
     assert hasattr(m, "LycheeConfig")
@@ -57,14 +57,14 @@ def test_module_signatures_config() -> None:
 
 
 def test_module_signatures_github_client() -> None:
-    """lychee.github_client exposes GitHubClient."""  # P0-R1
+    """lychee.github_client exposes GitHubClient."""
     import lychee.github_client as m
 
     assert hasattr(m, "GitHubClient")
 
 
 def test_module_signatures_context() -> None:
-    """lychee.context exposes ReviewContext and build_context."""  # P0-R1
+    """lychee.context exposes ReviewContext and build_context."""
     import lychee.context as m
 
     assert hasattr(m, "ReviewContext")
@@ -73,7 +73,7 @@ def test_module_signatures_context() -> None:
 
 
 def test_module_signatures_prompt() -> None:
-    """lychee.prompt exposes build_messages."""  # P0-R1
+    """lychee.prompt exposes build_messages."""
     import lychee.prompt as m
 
     assert hasattr(m, "build_messages")
@@ -81,14 +81,14 @@ def test_module_signatures_prompt() -> None:
 
 
 def test_module_signatures_claude() -> None:
-    """lychee.claude exposes ClaudeClient."""  # P0-R1
+    """lychee.claude exposes ClaudeClient."""
     import lychee.claude as m
 
     assert hasattr(m, "ClaudeClient")
 
 
 def test_module_signatures_render() -> None:
-    """lychee.render exposes render_comment."""  # P0-R1
+    """lychee.render exposes render_comment."""
     import lychee.render as m
 
     assert hasattr(m, "render_comment")
@@ -96,7 +96,7 @@ def test_module_signatures_render() -> None:
 
 
 def test_module_signatures_review() -> None:
-    """lychee.review exposes run_review."""  # P0-R1
+    """lychee.review exposes run_review."""
     import lychee.review as m
 
     assert hasattr(m, "run_review")
@@ -104,7 +104,7 @@ def test_module_signatures_review() -> None:
 
 
 def test_module_signatures_poster() -> None:
-    """lychee.poster exposes SummaryPoster."""  # P0-R1
+    """lychee.poster exposes SummaryPoster."""
     import lychee.poster as m
 
     assert hasattr(m, "SummaryPoster")
@@ -116,7 +116,7 @@ def test_module_signatures_poster() -> None:
 
 
 def test_cli_help() -> None:
-    """'lychee --help' exits 0 and mentions 'lychee' in the output."""  # P0-R1
+    """'lychee --help' exits 0 and mentions 'lychee' in the output."""
     from lychee.__main__ import cli
 
     runner = CliRunner()
@@ -126,7 +126,7 @@ def test_cli_help() -> None:
 
 
 def test_review_subcommand_help() -> None:
-    """'lychee review --help' lists --dry-run and --fixture options."""  # P0-R1
+    """'lychee review --help' lists --dry-run and --fixture options."""
     from lychee.__main__ import cli
 
     runner = CliRunner()
@@ -137,7 +137,7 @@ def test_review_subcommand_help() -> None:
 
 
 def test_review_subcommand_is_registered() -> None:
-    """The 'review' subcommand appears in the main --help listing."""  # P0-R1
+    """The 'review' subcommand appears in the main --help listing."""
     from lychee.__main__ import cli
 
     runner = CliRunner()
@@ -152,7 +152,7 @@ def test_review_subcommand_is_registered() -> None:
 
 
 def test_entry_point_wired() -> None:
-    """'python -m lychee --help' exits 0, confirming the entry point is wired."""  # P0-R1
+    """'python -m lychee --help' exits 0, confirming the entry point is wired."""
     result = subprocess.run(
         [sys.executable, "-m", "lychee", "--help"],
         capture_output=True,
@@ -167,7 +167,7 @@ def test_entry_point_wired() -> None:
 
 
 def test_pyproject_has_required_keys() -> None:
-    """pyproject.toml contains all required packaging and entry-point keys."""  # P0-R1
+    """pyproject.toml contains all required packaging and entry-point keys."""
     root = Path(__file__).parent.parent
     with open(root / "pyproject.toml", "rb") as fh:
         data = tomllib.load(fh)
@@ -179,7 +179,7 @@ def test_pyproject_has_required_keys() -> None:
 
 
 def test_pyproject_requires_python() -> None:
-    """pyproject.toml declares requires-python >= 3.11."""  # P0-R1
+    """pyproject.toml declares requires-python >= 3.11."""
     root = Path(__file__).parent.parent
     with open(root / "pyproject.toml", "rb") as fh:
         data = tomllib.load(fh)
@@ -189,7 +189,7 @@ def test_pyproject_requires_python() -> None:
 
 
 def test_pyproject_has_runtime_dependencies() -> None:
-    """pyproject.toml lists all required runtime dependencies."""  # P0-R1
+    """pyproject.toml lists all required runtime dependencies."""
     root = Path(__file__).parent.parent
     with open(root / "pyproject.toml", "rb") as fh:
         data = tomllib.load(fh)
@@ -205,7 +205,7 @@ def test_pyproject_has_runtime_dependencies() -> None:
 
 
 def test_lychee_yml_has_required_sections() -> None:
-    """Default .lychee.yml contains model, review, and features sections."""  # P0-R1
+    """Default .lychee.yml contains model, review, and features sections."""
     import yaml
 
     root = Path(__file__).parent.parent
@@ -218,7 +218,7 @@ def test_lychee_yml_has_required_sections() -> None:
 
 
 def test_lychee_yml_model_keys() -> None:
-    """Default .lychee.yml defines model.default, model.triage, and model.large_pr."""  # P0-R1
+    """Default .lychee.yml defines model.default, model.triage, and model.large_pr."""
     import yaml
 
     root = Path(__file__).parent.parent
@@ -232,7 +232,7 @@ def test_lychee_yml_model_keys() -> None:
 
 
 def test_lychee_yml_review_keys() -> None:
-    """Default .lychee.yml defines all expected review sub-keys."""  # P0-R1
+    """Default .lychee.yml defines all expected review sub-keys."""
     import yaml
 
     root = Path(__file__).parent.parent
@@ -252,7 +252,7 @@ def test_lychee_yml_review_keys() -> None:
 
 
 def test_lychee_yml_features_keys() -> None:
-    """Default .lychee.yml defines features.inline_comments, cost_footer, and commands."""  # P0-R1
+    """Default .lychee.yml defines features.inline_comments, cost_footer, and commands."""
     import yaml
 
     root = Path(__file__).parent.parent
@@ -270,7 +270,7 @@ def test_lychee_yml_features_keys() -> None:
 
 
 def test_severity_members() -> None:
-    """Severity enum has exactly the four expected string members."""  # P0-R1
+    """Severity enum has exactly the four expected string members."""
     from lychee.models import Severity
 
     assert Severity.info.value == "info"
@@ -281,7 +281,7 @@ def test_severity_members() -> None:
 
 
 def test_ripeness_members() -> None:
-    """Ripeness enum has exactly the three expected string members."""  # P0-R1
+    """Ripeness enum has exactly the three expected string members."""
     from lychee.models import Ripeness
 
     assert Ripeness.ripe.value == "ripe"
@@ -291,7 +291,7 @@ def test_ripeness_members() -> None:
 
 
 def test_category_members() -> None:
-    """Category enum has exactly the seven expected string members."""  # P0-R1
+    """Category enum has exactly the seven expected string members."""
     from lychee.models import Category
 
     expected = {"correctness", "security", "performance", "tests", "style", "docs", "other"}
@@ -299,7 +299,7 @@ def test_category_members() -> None:
 
 
 def test_severity_is_str_enum() -> None:
-    """Severity members compare equal to their raw string values."""  # P0-R1
+    """Severity members compare equal to their raw string values."""
     from lychee.models import Severity
 
     assert Severity.critical == "critical"
@@ -307,7 +307,7 @@ def test_severity_is_str_enum() -> None:
 
 
 def test_to_tool_schema_is_classmethod() -> None:
-    """ReviewResult.to_tool_schema is accessible as a classmethod without an instance."""  # P0-R1
+    """ReviewResult.to_tool_schema is accessible as a classmethod without an instance."""
     import inspect
 
     from lychee.models import ReviewResult
@@ -329,14 +329,14 @@ def test_load_config_returns_lychee_config() -> None:
 
 
 def test_build_context_is_callable() -> None:
-    """build_context is a callable function (no longer a stub)."""  # P0-R1
+    """build_context is a callable function (no longer a stub)."""
     from lychee.context import build_context
 
     assert callable(build_context)
 
 
 def test_render_comment_returns_string() -> None:
-    """render_comment returns a non-empty string for a valid ReviewResult."""  # P0-R1
+    """render_comment returns a non-empty string for a valid ReviewResult."""
     from lychee.models import ReviewResult, Ripeness
     from lychee.render import render_comment
 
@@ -353,7 +353,7 @@ def test_render_comment_returns_string() -> None:
 
 
 def test_summary_poster_post_raises_not_implemented() -> None:
-    """SummaryPoster.post raises NotImplementedError rather than silently no-oping."""  # P0-R1
+    """SummaryPoster.post raises NotImplementedError rather than silently no-oping."""
     from lychee.poster import SummaryPoster
 
     poster = SummaryPoster(github_client=object())
@@ -367,7 +367,7 @@ def test_summary_poster_post_raises_not_implemented() -> None:
 
 
 def test_review_command_exits_cleanly_when_unimplemented() -> None:
-    """Running 'lychee review' exits with a formatted error, no Python traceback."""  # P0-R1
+    """Running 'lychee review' exits with a formatted error, no Python traceback."""
     from lychee.__main__ import cli
 
     runner = CliRunner()
