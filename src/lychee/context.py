@@ -9,7 +9,7 @@ from typing import Any
 import pydantic
 
 from lychee.config import LycheeConfig
-from lychee.github_client import ChangedFile, GitHubClient, PullRequestRef
+from lychee.github_client import GitHubClient, PullRequestRef
 
 logger = logging.getLogger(__name__)
 

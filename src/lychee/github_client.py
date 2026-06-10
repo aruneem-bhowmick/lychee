@@ -31,29 +31,25 @@ class PullRequestRef:
         Raises ``ValueError`` with a descriptive message on malformed input.
         """
         if "/" not in ref or "#" not in ref:
-            raise ValueError(
-                f"Invalid PR reference '{ref}': expected format 'owner/repo#number'"
-            )
+            raise ValueError(f"Invalid PR reference '{ref}': expected format 'owner/repo#number'")
 
         try:
             owner_repo, number_str = ref.rsplit("#", 1)
         except ValueError:
             raise ValueError(
                 f"Invalid PR reference '{ref}': expected format 'owner/repo#number'"
-            )
+            ) from None
 
         parts = owner_repo.split("/", 1)
         if len(parts) != 2 or not parts[0] or not parts[1]:
-            raise ValueError(
-                f"Invalid PR reference '{ref}': expected format 'owner/repo#number'"
-            )
+            raise ValueError(f"Invalid PR reference '{ref}': expected format 'owner/repo#number'")
 
         try:
             number = int(number_str)
         except ValueError:
             raise ValueError(
                 f"Invalid PR reference '{ref}': PR number must be an integer, got '{number_str}'"
-            )
+            ) from None
 
         if number <= 0:
             raise ValueError(
