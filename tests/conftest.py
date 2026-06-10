@@ -93,7 +93,7 @@ def diff_large() -> str:
 @pytest.fixture()
 def mock_github_client() -> MagicMock:
     """Auto-specced MagicMock for GitHubClient with sensible return values."""
-    mock = create_autospec(GitHubClient, instance=True)
+    mock: MagicMock = create_autospec(GitHubClient, instance=True)
 
     # Configure a mock PR object
     mock_pr = MagicMock()
