@@ -328,12 +328,11 @@ def test_load_config_returns_lychee_config() -> None:
     assert isinstance(result, LycheeConfig)
 
 
-def test_build_context_raises_not_implemented() -> None:
-    """build_context raises NotImplementedError rather than silently returning None."""  # P0-R1
+def test_build_context_is_callable() -> None:
+    """build_context is a callable function (no longer a stub)."""  # P0-R1
     from lychee.context import build_context
 
-    with pytest.raises(NotImplementedError, match="build_context"):
-        build_context(object(), "owner/repo#1", object())
+    assert callable(build_context)
 
 
 def test_render_comment_returns_string() -> None:
