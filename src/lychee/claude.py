@@ -6,6 +6,7 @@ import logging
 from typing import Any
 
 import anthropic
+import pydantic
 
 from lychee.models import ReviewResult
 
@@ -61,5 +62,48 @@ class ClaudeClient:
         return usage
 
     def review(self, messages: list[dict[str, Any]], system: str | None = None) -> ReviewResult:
-        """Send messages to Claude and return a parsed ReviewResult."""
-        raise NotImplementedError("ClaudeClient.review not implemented")
+        """Send messages to Claude and return a parsed ReviewResult.
+
+        Raises ClaudeReviewError on API errors, connection failures,
+        missing tool blocks, or invalid tool input.
+        """
+        tools = [ReviewResult.to_tool_schema()]
+        tool_choice: dict[str, str] = {"type": "tool", "name": "submit_review"}
+
+        create_kwargs: dict[str, Any] = {
+            "model": self._model,
+            "max_tokens": 4096,
+            "messages": messages,
+            "tools": tools,
+            "tool_choice": tool_choice,
+        }
+        if system is not None:
+            create_kwargs["system"] = system
+
+        logger.info("Calling Claude API (model=%s)", self._model)
+        try:
+            response = self._client.messages.create(**create_kwargs)
+        except anthropic.APIConnectionError as exc:
+            logger.warning("Claude API connection error: %s", exc)
+            raise ClaudeReviewError(f"API connection error: {exc}") from exc
+        except anthropic.APIError as exc:
+            logger.warning("Claude API error: %s", exc)
+            raise ClaudeReviewError(f"API error: {exc}") from exc
+
+        tool_input = self._extract_tool_use(response)
+        usage = self._extract_usage(response)
+
+        try:
+            result = ReviewResult.from_tool_input(
+                {**tool_input, "model": self._model, "usage": usage}
+            )
+        except pydantic.ValidationError as exc:
+            logger.warning("Invalid tool input from Claude: %s", exc)
+            raise ClaudeReviewError(f"Invalid tool input: {exc}") from exc
+
+        logger.info(
+            "Review complete (ripeness=%s, findings=%d)",
+            result.ripeness,
+            len(result.findings),
+        )
+        return result
