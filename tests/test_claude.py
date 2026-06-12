@@ -7,6 +7,8 @@ API responses, and snapshot-based regression tests.
 
 from __future__ import annotations
 
+import json
+from pathlib import Path
 from typing import Any
 from unittest.mock import MagicMock, patch
 
@@ -15,6 +17,9 @@ import anthropic.types
 import pytest
 
 from lychee.claude import ClaudeClient, ClaudeReviewError
+from lychee.models import ReviewResult
+
+FIXTURES_DIR = Path(__file__).parent / "fixtures"
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -329,3 +334,156 @@ class TestReviewIntegration:
 
         with pytest.raises(ClaudeReviewError, match="No tool_use block found"):
             client.review(messages=[{"role": "user", "content": "Review."}])
+
+
+# ---------------------------------------------------------------------------
+# Acceptance tests
+# ---------------------------------------------------------------------------
+
+
+class TestAcceptance:
+    """End-to-end-style acceptance tests with mocked API."""
+
+    def _make_client(self) -> ClaudeClient:
+        """Create a ClaudeClient with a mocked Anthropic client."""
+        client = ClaudeClient(api_key="sk-test", model="claude-sonnet-4-6")
+        client._client = MagicMock(spec=anthropic.Anthropic)
+        return client
+
+    def test_accept_mocked_tool_response_parses(self) -> None:
+        """A realistic mocked tool response parses into a valid ReviewResult."""
+        tool_input = _make_tool_input(
+            findings=[
+                {
+                    "file": "src/main.py",
+                    "line": 10,
+                    "severity": "minor",
+                    "category": "style",
+                    "message": "Consider renaming this variable.",
+                }
+            ],
+        )
+        client = self._make_client()
+        message = _make_message(
+            content=[_make_text_block(), _make_tool_use_block(tool_input)],
+        )
+        client._client.messages.create.return_value = message
+
+        result = client.review(messages=[{"role": "user", "content": "Review."}])
+
+        assert result.ripeness.value == "ripe"
+        assert len(result.findings) == 1
+        assert result.findings[0].file == "src/main.py"
+        assert result.findings[0].severity.value == "minor"
+
+    def test_accept_malformed_response_raises_typed_error(self) -> None:
+        """A malformed tool response raises ClaudeReviewError, not a generic exception."""
+        client = self._make_client()
+        bad_input = {"ripeness": "invalid", "summary": "", "walkthrough": "", "findings": []}
+        message = _make_message(content=[_make_tool_use_block(bad_input)])
+        client._client.messages.create.return_value = message
+
+        with pytest.raises(ClaudeReviewError):
+            client.review(messages=[{"role": "user", "content": "Review."}])
+
+    def test_accept_usage_captured(self) -> None:
+        """Token usage from the API response is captured in the ReviewResult."""
+        client = self._make_client()
+        usage = _make_usage(
+            input_tokens=1200,
+            output_tokens=300,
+            cache_read_input_tokens=800,
+        )
+        client._client.messages.create.return_value = _make_message(usage=usage)
+
+        result = client.review(messages=[{"role": "user", "content": "Review."}])
+
+        assert result.usage["input_tokens"] == 1200
+        assert result.usage["output_tokens"] == 300
+        assert result.usage["cache_read_input_tokens"] == 800
+
+
+# ---------------------------------------------------------------------------
+# Regression tests
+# ---------------------------------------------------------------------------
+
+
+class TestRegression:
+    """Regression tests to guard against unintended changes."""
+
+    def _make_client(self) -> ClaudeClient:
+        """Create a ClaudeClient with a mocked Anthropic client."""
+        client = ClaudeClient(api_key="sk-test", model="claude-sonnet-4-6")
+        client._client = MagicMock(spec=anthropic.Anthropic)
+        return client
+
+    def test_tool_schema_used_in_call(self) -> None:
+        """review() passes the ReviewResult tool schema to the API call."""
+        client = self._make_client()
+        client._client.messages.create.return_value = _make_message()
+
+        client.review(messages=[{"role": "user", "content": "Review."}])
+
+        call_kwargs = client._client.messages.create.call_args
+        tools = call_kwargs.kwargs["tools"]
+        assert len(tools) == 1
+        assert tools[0]["name"] == "submit_review"
+        assert "input_schema" in tools[0]
+
+    def test_review_result_fields_snapshot(self) -> None:
+        """ReviewResult from a mocked review matches the pinned fixture snapshot."""
+        client = self._make_client()
+        client._client.messages.create.return_value = _make_message()
+
+        result = client.review(messages=[{"role": "user", "content": "Review."}])
+
+        snapshot_path = FIXTURES_DIR / "claude_review_result_snapshot.json"
+        expected = json.loads(snapshot_path.read_text(encoding="utf-8"))
+        actual = result.model_dump()
+        assert actual == expected, (
+            "ReviewResult snapshot mismatch. If intentional, update "
+            "tests/fixtures/claude_review_result_snapshot.json."
+        )
+
+
+# ---------------------------------------------------------------------------
+# API tests
+# ---------------------------------------------------------------------------
+
+
+class TestAPI:
+    """Tests verifying the shape of API call parameters."""
+
+    def _make_client(self) -> ClaudeClient:
+        """Create a ClaudeClient with a mocked Anthropic client."""
+        client = ClaudeClient(api_key="sk-test", model="claude-sonnet-4-6")
+        client._client = MagicMock(spec=anthropic.Anthropic)
+        return client
+
+    def test_api_messages_create_params(self) -> None:
+        """messages.create is called with expected parameters."""
+        client = self._make_client()
+        client._client.messages.create.return_value = _make_message()
+
+        client.review(
+            messages=[{"role": "user", "content": "Review."}],
+            system="Be concise.",
+        )
+
+        call_kwargs = client._client.messages.create.call_args.kwargs
+        assert call_kwargs["model"] == "claude-sonnet-4-6"
+        assert call_kwargs["max_tokens"] == 4096
+        assert call_kwargs["messages"] == [{"role": "user", "content": "Review."}]
+        assert call_kwargs["system"] == "Be concise."
+        assert call_kwargs["tool_choice"] == {"type": "tool", "name": "submit_review"}
+        assert len(call_kwargs["tools"]) == 1
+
+    def test_api_tool_schema_shape(self) -> None:
+        """The tool schema passed to the API has the expected structure."""
+        schema = ReviewResult.to_tool_schema()
+        assert schema["name"] == "submit_review"
+        assert "description" in schema
+        assert "input_schema" in schema
+        props = schema["input_schema"]["properties"]
+        for field in ("ripeness", "summary", "walkthrough", "findings"):
+            assert field in props, f"Missing field '{field}' in tool schema"
