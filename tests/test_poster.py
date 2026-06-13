@@ -277,3 +277,158 @@ def test_multiple_marker_comments_warns(caplog: pytest.LogCaptureFixture) -> Non
 
     assert result is first
     assert "extra comment(s) with review marker" in caplog.text
+
+
+# ---------------------------------------------------------------------------
+# Acceptance tests
+# ---------------------------------------------------------------------------
+
+
+def test_accept_first_run_creates() -> None:
+    """Acceptance: first call on a PR with no marker comments creates one."""
+    pr = _make_mock_pr(comments=[])
+    poster = SummaryPoster(MagicMock())
+
+    comment_id = poster.post(pr, f"{REVIEW_MARKER}\nReview body")
+
+    assert isinstance(comment_id, int)
+    pr.create_issue_comment.assert_called_once()
+
+
+def test_accept_subsequent_run_edits() -> None:
+    """Acceptance: second call with existing marker comment edits it."""
+    existing = _make_mock_comment(f"{REVIEW_MARKER}\nOld review", comment_id=50)
+    pr = _make_mock_pr(comments=[existing])
+    poster = SummaryPoster(MagicMock())
+
+    comment_id = poster.post(pr, f"{REVIEW_MARKER}\nNew review")
+
+    assert comment_id == 50
+    existing.edit.assert_called_once()
+    pr.create_issue_comment.assert_not_called()
+
+
+def test_accept_no_duplicate() -> None:
+    """Acceptance: after two post() calls, only one marker comment exists."""
+    # First call: no existing comments → creates one
+    pr = _make_mock_pr(comments=[])
+    poster = SummaryPoster(MagicMock())
+
+    poster.post(pr, f"{REVIEW_MARKER}\nFirst review")
+    pr.create_issue_comment.assert_called_once()
+
+    # Simulate the created comment now existing
+    created_comment = _make_mock_comment(
+        f"{REVIEW_MARKER}\nFirst review", comment_id=999
+    )
+    pr.get_issue_comments.return_value = [created_comment]
+
+    # Second call: finds existing → edits, no new comment
+    poster.post(pr, f"{REVIEW_MARKER}\nSecond review")
+    # create_issue_comment should still only have been called once (from the first post)
+    assert pr.create_issue_comment.call_count == 1
+    created_comment.edit.assert_called_once()
+
+
+def test_accept_state_marker_round_trips() -> None:
+    """Acceptance: state written by post() can be read back by extract_state()."""
+    pr = _make_mock_pr(comments=[])
+    poster = SummaryPoster(MagicMock())
+    state = {"last_reviewed_sha": "abc123"}
+
+    poster.post(pr, "Review body", state=state)
+
+    # Get the body that was posted
+    call_args = pr.create_issue_comment.call_args
+    posted_body: str = call_args.kwargs["body"]
+    extracted = SummaryPoster.extract_state(posted_body)
+    assert extracted == state
+
+
+# ---------------------------------------------------------------------------
+# Regression tests
+# ---------------------------------------------------------------------------
+
+
+def test_state_marker_format_snapshot() -> None:
+    """State marker for a known dict matches an exact pinned string."""
+    state = {"last_reviewed_sha": "abc123"}
+    body = SummaryPoster._append_state_marker("body", state)
+    expected_marker = '<!-- lychee:state {"last_reviewed_sha":"abc123"} -->'
+    assert expected_marker in body
+
+
+def test_upsert_idempotency() -> None:
+    """Posting the same body twice to a PR with existing comment results in one edit call."""
+    body = f"{REVIEW_MARKER}\nReview content"
+    existing = _make_mock_comment(body, comment_id=77)
+    pr = _make_mock_pr(comments=[existing])
+    poster = SummaryPoster(MagicMock())
+
+    poster.post(pr, body)
+    poster.post(pr, body)
+
+    assert existing.edit.call_count == 2
+    # Both edit calls should have the same body
+    first_body = existing.edit.call_args_list[0].kwargs["body"]
+    second_body = existing.edit.call_args_list[1].kwargs["body"]
+    assert first_body == second_body
+
+
+def test_extract_state_missing_suffix() -> None:
+    """extract_state returns None when the prefix exists but suffix is missing."""
+    body = '<!-- lychee:state {"sha":"abc"}'
+    assert SummaryPoster.extract_state(body) is None
+
+
+# ---------------------------------------------------------------------------
+# API tests
+# ---------------------------------------------------------------------------
+
+
+def test_api_create_comment_called_with_body() -> None:
+    """pr.create_issue_comment is called with the exact final body string."""
+    pr = _make_mock_pr(comments=[])
+    poster = SummaryPoster(MagicMock())
+    body = "Exact body content"
+
+    poster.post(pr, body)
+
+    pr.create_issue_comment.assert_called_once_with(body=body)
+
+
+def test_api_edit_comment_called_with_body() -> None:
+    """comment.edit is called with the exact final body string."""
+    existing = _make_mock_comment(f"{REVIEW_MARKER}\nOld", comment_id=10)
+    pr = _make_mock_pr(comments=[existing])
+    poster = SummaryPoster(MagicMock())
+    body = "Updated body content"
+
+    poster.post(pr, body)
+
+    existing.edit.assert_called_once_with(body=body)
+
+
+def test_api_get_issue_comments_called() -> None:
+    """pr.get_issue_comments() is called to scan for the existing marker."""
+    pr = _make_mock_pr(comments=[])
+    poster = SummaryPoster(MagicMock())
+
+    poster.post(pr, "Body")
+
+    pr.get_issue_comments.assert_called()
+
+
+def test_api_edit_with_state_body() -> None:
+    """When editing with state, comment.edit receives the body with state marker appended."""
+    existing = _make_mock_comment(f"{REVIEW_MARKER}\nOld", comment_id=10)
+    pr = _make_mock_pr(comments=[existing])
+    poster = SummaryPoster(MagicMock())
+    state = {"sha": "deadbeef"}
+
+    poster.post(pr, "Body", state=state)
+
+    call_args = existing.edit.call_args
+    edited_body: str = call_args.kwargs["body"]
+    assert STATE_MARKER_PREFIX in edited_body
+    assert '"sha":"deadbeef"' in edited_body
