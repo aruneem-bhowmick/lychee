@@ -425,22 +425,25 @@ class TestAcceptance:
     def _load_workflow(self) -> dict[str, Any]:
         """Load and return the parsed workflow YAML.
 
-        YAML parses the bare key ``on`` as boolean True, so trigger
-        configuration lives under ``wf[True]``.
+        YAML parses the bare key ``on`` as boolean True.  This helper
+        normalizes it back to the string ``"on"`` so callers can use
+        ordinary string indexing without tripping mypy's index checker.
         """
-        return yaml.safe_load(WORKFLOW_PATH.read_text(encoding="utf-8"))  # type: ignore[no-any-return]
+        raw: dict[Any, Any] = yaml.safe_load(WORKFLOW_PATH.read_text(encoding="utf-8"))
+        if True in raw:
+            raw["on"] = raw.pop(True)
+        return raw  # type: ignore[return-value]
 
     def test_accept_workflow_dispatches_on_opened(self) -> None:
         """Workflow triggers on pull_request 'opened' event type."""
         wf = self._load_workflow()
-        # YAML 'on' key is parsed as boolean True
-        types = wf[True]["pull_request"]["types"]
+        types = wf["on"]["pull_request"]["types"]
         assert "opened" in types
 
     def test_accept_workflow_dispatches_on_synchronize(self) -> None:
         """Workflow triggers on pull_request 'synchronize' event type."""
         wf = self._load_workflow()
-        types = wf[True]["pull_request"]["types"]
+        types = wf["on"]["pull_request"]["types"]
         assert "synchronize" in types
 
     def test_accept_permissions_minimal(self) -> None:
@@ -542,9 +545,11 @@ def test_workflow_file_valid_yaml() -> None:
 def test_workflow_uses_pull_request_not_target() -> None:
     """The workflow trigger is pull_request, not pull_request_target."""
     content = WORKFLOW_PATH.read_text(encoding="utf-8")
-    parsed = yaml.safe_load(content)
-    # YAML 'on' key is parsed as boolean True
-    triggers = parsed[True]
+    raw: dict[Any, Any] = yaml.safe_load(content)
+    # YAML parses bare 'on' as boolean True; normalize to string key
+    if True in raw:
+        raw["on"] = raw.pop(True)
+    triggers: dict[str, Any] = raw["on"]
     assert "pull_request" in triggers
     assert "pull_request_target" not in triggers
 
