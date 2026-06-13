@@ -9,8 +9,10 @@ from typing import Any
 
 from lychee.claude import ClaudeClient
 from lychee.config import LycheeConfig
-from lychee.github_client import GitHubClient
+from lychee.context import build_context
+from lychee.github_client import GitHubClient, PullRequestRef
 from lychee.models import ReviewResult
+from lychee.prompt import build_messages, build_system_prompt
 from lychee.render import render_comment
 
 _logger = logging.getLogger(__name__)
@@ -26,8 +28,40 @@ def run_review(
     github_client: GitHubClient,
     claude_client: ClaudeClient,
 ) -> ReviewResult:
-    """Orchestrate fetch → prompt → Claude → ReviewResult."""
-    raise NotImplementedError("run_review not implemented")
+    """Orchestrate context fetch, prompt build, and Claude call to produce a ReviewResult.
+
+    Steps:
+    1. Parse the PR reference string into a PullRequestRef.
+    2. Build the review context via build_context().
+    3. Build the system prompt and user messages via prompt builder.
+    4. Call claude_client.review() with messages and system prompt.
+    5. Return the validated ReviewResult.
+
+    Raises:
+    - ValueError if pr_ref is malformed.
+    - github.GithubException on GitHub API failures (from context fetcher).
+    - ClaudeReviewError on Claude API failures (from Claude client).
+    - pydantic.ValidationError if the ReviewResult is somehow malformed.
+
+    Logs a structured info record on completion: PR reference, model,
+    ripeness, finding count, usage.
+    """
+    parsed_ref = PullRequestRef.parse(pr_ref)
+    context = build_context(github_client, parsed_ref, config)
+    system = build_system_prompt(config, conventions=context.conventions)
+    messages = build_messages(context, config)
+    result = claude_client.review(messages, system=system)
+
+    _logger.info(
+        "Review complete: pr=%s model=%s ripeness=%s findings=%d usage=%s",
+        pr_ref,
+        result.model,
+        result.ripeness.value,
+        len(result.findings),
+        result.usage,
+    )
+
+    return result
 
 
 def run_review_dry(
