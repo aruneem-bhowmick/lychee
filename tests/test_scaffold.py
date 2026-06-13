@@ -364,8 +364,8 @@ def test_summary_poster_post_is_implemented() -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_review_command_exits_cleanly_when_unimplemented() -> None:
-    """Running 'lychee review' exits with a formatted error, no Python traceback."""
+def test_review_command_exits_cleanly_without_required_args() -> None:
+    """Running 'lychee review' without --dry-run or --pr exits with a formatted error."""
     from lychee.__main__ import cli
 
     runner = CliRunner()
@@ -375,4 +375,4 @@ def test_review_command_exits_cleanly_when_unimplemented() -> None:
     # Click converts ClickException to SystemExit — no unhandled exception escaped.
     assert result.exception is None or isinstance(result.exception, SystemExit)
     assert "Traceback" not in (result.output or "")
-    assert "not yet available" in result.output
+    assert "--dry-run" in result.output or "--pr" in result.output
