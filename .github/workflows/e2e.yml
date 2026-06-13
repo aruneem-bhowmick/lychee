@@ -1,0 +1,37 @@
+name: E2E — Canary
+
+on:
+  workflow_dispatch:
+    inputs:
+      canary_repo:
+        description: "Canary repo (owner/repo)"
+        required: true
+        default: "owner/lychee-canary"
+      pr_number:
+        description: "PR number to review (0 = find an open PR automatically)"
+        required: true
+        default: "0"
+
+permissions:
+  contents: read
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install lychee
+        run: pip install -e ".[dev]"
+
+      - name: Run e2e tests
+        env:
+          GITHUB_TOKEN: ${{ secrets.CANARY_GITHUB_TOKEN }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          CANARY_REPO: ${{ inputs.canary_repo }}
+          CANARY_PR: ${{ inputs.pr_number }}
+        run: pytest tests/test_e2e.py -m e2e -v --timeout=600
