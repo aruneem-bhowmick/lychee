@@ -11,8 +11,8 @@ permissions:
 jobs:
   review:
     runs-on: ubuntu-latest
-    # Skip if ANTHROPIC_API_KEY is not available (e.g., fork PRs)
-    if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
+    # Skip when the API key secret is unavailable (fork PRs, unconfigured repos)
+    if: ${{ github.event.pull_request.head.repo.full_name == github.repository && secrets.ANTHROPIC_API_KEY != '' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
