@@ -127,3 +127,153 @@ def test_state_marker_at_end() -> None:
     assert result.endswith(STATE_MARKER_SUFFIX)
     # And the original footer should appear before it
     assert result.index("*Footer*") < result.index(STATE_MARKER_PREFIX)
+
+
+# ---------------------------------------------------------------------------
+# Integration tests (mocked GitHub API)
+# ---------------------------------------------------------------------------
+
+
+def test_post_creates_new_comment() -> None:
+    """When no existing marker comment exists, create_issue_comment is called."""
+    pr = _make_mock_pr(comments=[])
+    poster = SummaryPoster(MagicMock())
+
+    poster.post(pr, "Review body")
+
+    pr.create_issue_comment.assert_called_once()
+    # edit should not have been called on any comment
+    for comment in pr.get_issue_comments():
+        comment.edit.assert_not_called()
+
+
+def test_post_updates_existing_comment() -> None:
+    """When a marker comment exists, edit is called instead of create."""
+    existing = _make_mock_comment(f"{REVIEW_MARKER}\nOld review", comment_id=42)
+    pr = _make_mock_pr(comments=[existing])
+    poster = SummaryPoster(MagicMock())
+
+    poster.post(pr, "New review body")
+
+    existing.edit.assert_called_once()
+    pr.create_issue_comment.assert_not_called()
+
+
+def test_post_returns_comment_id() -> None:
+    """post() returns the comment ID (new or existing)."""
+    pr = _make_mock_pr(comments=[])
+    poster = SummaryPoster(MagicMock())
+
+    comment_id = poster.post(pr, "Body")
+    assert comment_id == 999  # from _make_mock_pr default
+
+
+def test_post_returns_existing_comment_id() -> None:
+    """post() returns the existing comment's ID when editing."""
+    existing = _make_mock_comment(f"{REVIEW_MARKER}\nOld", comment_id=42)
+    pr = _make_mock_pr(comments=[existing])
+    poster = SummaryPoster(MagicMock())
+
+    comment_id = poster.post(pr, "Updated body")
+    assert comment_id == 42
+
+
+def test_post_with_state() -> None:
+    """When state is provided, the posted body contains the state marker."""
+    pr = _make_mock_pr(comments=[])
+    poster = SummaryPoster(MagicMock())
+
+    poster.post(pr, "Body", state={"last_reviewed_sha": "abc"})
+
+    call_args = pr.create_issue_comment.call_args
+    posted_body: str = call_args.kwargs["body"]
+    assert STATE_MARKER_PREFIX in posted_body
+    assert '"last_reviewed_sha":"abc"' in posted_body
+
+
+def test_post_without_state() -> None:
+    """When state is None, the posted body does not contain the state marker."""
+    pr = _make_mock_pr(comments=[])
+    poster = SummaryPoster(MagicMock())
+
+    poster.post(pr, "Body", state=None)
+
+    call_args = pr.create_issue_comment.call_args
+    posted_body: str = call_args.kwargs["body"]
+    assert "<!-- lychee:state" not in posted_body
+
+
+def test_find_existing_comment_found() -> None:
+    """_find_existing_comment returns the comment containing REVIEW_MARKER."""
+    marker_comment = _make_mock_comment(f"{REVIEW_MARKER}\nReview content", comment_id=7)
+    other_comment = _make_mock_comment("Just a regular comment", comment_id=8)
+    pr = _make_mock_pr(comments=[other_comment, marker_comment])
+    poster = SummaryPoster(MagicMock())
+
+    result = poster._find_existing_comment(pr)
+    assert result is marker_comment
+
+
+def test_find_existing_comment_not_found() -> None:
+    """_find_existing_comment returns None when no comment has the marker."""
+    other = _make_mock_comment("No marker here", comment_id=1)
+    pr = _make_mock_pr(comments=[other])
+    poster = SummaryPoster(MagicMock())
+
+    result = poster._find_existing_comment(pr)
+    assert result is None
+
+
+def test_find_existing_comment_deleted_between_runs() -> None:
+    """When comments list is empty (deleted), _find returns None and post creates new."""
+    pr = _make_mock_pr(comments=[])
+    poster = SummaryPoster(MagicMock())
+
+    result = poster._find_existing_comment(pr)
+    assert result is None
+
+    # Subsequent post should create a new comment
+    comment_id = poster.post(pr, "New review")
+    assert comment_id == 999
+    pr.create_issue_comment.assert_called_once()
+
+
+def test_post_github_error_raises() -> None:
+    """GithubException during create_issue_comment raises PosterError."""
+    from github import GithubException
+
+    pr = _make_mock_pr(comments=[])
+    pr.create_issue_comment.side_effect = GithubException(500, "Server Error", None)
+    poster = SummaryPoster(MagicMock())
+
+    with pytest.raises(PosterError, match="GitHub API error"):
+        poster.post(pr, "Body")
+
+
+def test_post_edit_github_error_raises() -> None:
+    """GithubException during comment.edit raises PosterError."""
+    from github import GithubException
+
+    existing = _make_mock_comment(f"{REVIEW_MARKER}\nOld", comment_id=10)
+    existing.edit.side_effect = GithubException(500, "Server Error", None)
+    pr = _make_mock_pr(comments=[existing])
+    poster = SummaryPoster(MagicMock())
+
+    with pytest.raises(PosterError, match="GitHub API error"):
+        poster.post(pr, "Updated")
+
+
+def test_multiple_marker_comments_warns(caplog: pytest.LogCaptureFixture) -> None:
+    """When multiple comments have the marker, a warning is logged and the first is returned."""
+    import logging
+
+    first = _make_mock_comment(f"{REVIEW_MARKER}\nFirst", comment_id=1)
+    second = _make_mock_comment(f"{REVIEW_MARKER}\nSecond", comment_id=2)
+    pr = _make_mock_pr(comments=[first, second])
+    poster = SummaryPoster(MagicMock())
+
+    with caplog.at_level(logging.WARNING, logger="lychee.poster"):
+        result = poster._find_existing_comment(pr)
+
+    assert result is first
+    assert "extra comment(s) with review marker" in caplog.text
