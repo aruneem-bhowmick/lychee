@@ -12,7 +12,6 @@ from __future__ import annotations
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-import pytest
 from click.testing import CliRunner
 
 from lychee.__main__ import cli
@@ -76,10 +75,12 @@ class TestCLILiveIntegration:
         mock_review.return_value = _mock_review_result()
         mock_render.return_value = "# Rendered comment for stdout"
 
-        runner = CliRunner(env={
-            "GITHUB_TOKEN": "ghp_test_token",
-            "ANTHROPIC_API_KEY": "sk-ant-test-key",
-        })
+        runner = CliRunner(
+            env={
+                "GITHUB_TOKEN": "ghp_test_token",
+                "ANTHROPIC_API_KEY": "sk-ant-test-key",
+            }
+        )
         result = runner.invoke(cli, ["review", "--pr", "owner/repo#1", "--no-post"])
 
         assert result.exit_code == 0
@@ -105,10 +106,12 @@ class TestCLILiveIntegration:
         mock_review.return_value = _mock_review_result()
         mock_render.return_value = "# Posted comment"
 
-        runner = CliRunner(env={
-            "GITHUB_TOKEN": "ghp_test_token",
-            "ANTHROPIC_API_KEY": "sk-ant-test-key",
-        })
+        runner = CliRunner(
+            env={
+                "GITHUB_TOKEN": "ghp_test_token",
+                "ANTHROPIC_API_KEY": "sk-ant-test-key",
+            }
+        )
         result = runner.invoke(cli, ["review", "--pr", "owner/repo#1"])
 
         assert result.exit_code == 0
@@ -117,9 +120,11 @@ class TestCLILiveIntegration:
 
     def test_cli_live_review_missing_github_token(self) -> None:
         """--pr without GITHUB_TOKEN exits non-zero with a usage error."""
-        runner = CliRunner(env={
-            "ANTHROPIC_API_KEY": "sk-ant-test-key",
-        })
+        runner = CliRunner(
+            env={
+                "ANTHROPIC_API_KEY": "sk-ant-test-key",
+            }
+        )
         result = runner.invoke(cli, ["review", "--pr", "owner/repo#1"])
 
         assert result.exit_code != 0
@@ -127,9 +132,11 @@ class TestCLILiveIntegration:
 
     def test_cli_live_review_missing_anthropic_key(self) -> None:
         """--pr without ANTHROPIC_API_KEY exits non-zero with a usage error."""
-        runner = CliRunner(env={
-            "GITHUB_TOKEN": "ghp_test_token",
-        })
+        runner = CliRunner(
+            env={
+                "GITHUB_TOKEN": "ghp_test_token",
+            }
+        )
         result = runner.invoke(cli, ["review", "--pr", "owner/repo#1"])
 
         assert result.exit_code != 0

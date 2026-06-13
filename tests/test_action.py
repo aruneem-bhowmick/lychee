@@ -31,7 +31,9 @@ WORKFLOW_PATH = Path(__file__).parent.parent / ".github" / "workflows" / "review
 FIXTURES_DIR = Path(__file__).parent / "fixtures"
 
 
-def _make_event(action: str = "opened", pr_number: int = 42, head_sha: str = "abc123") -> dict[str, Any]:
+def _make_event(
+    action: str = "opened", pr_number: int = 42, head_sha: str = "abc123"
+) -> dict[str, Any]:
     """Build a minimal pull_request event payload for testing."""
     return {
         "action": action,
@@ -144,7 +146,7 @@ class TestIsApplicableEvent:
         """_SUPPORTED_ACTIONS contains exactly the three expected actions."""
         from scripts.run_action import _SUPPORTED_ACTIONS
 
-        assert _SUPPORTED_ACTIONS == {"opened", "synchronize", "reopened"}
+        assert {"opened", "synchronize", "reopened"} == _SUPPORTED_ACTIONS
 
 
 # ---------------------------------------------------------------------------
