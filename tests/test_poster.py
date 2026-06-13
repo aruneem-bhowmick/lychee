@@ -20,7 +20,6 @@ from lychee.poster import (
 )
 from lychee.render import REVIEW_MARKER
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -51,7 +50,7 @@ def _make_mock_pr(comments: list[MagicMock] | None = None) -> MagicMock:
 
 def test_poster_imports() -> None:
     """SummaryPoster and PosterError import cleanly from lychee.poster."""
-    from lychee.poster import PosterError, SummaryPoster  # noqa: F811
+    from lychee.poster import PosterError, SummaryPoster
 
     assert callable(SummaryPoster)
     assert issubclass(PosterError, Exception)
@@ -318,9 +317,7 @@ def test_accept_no_duplicate() -> None:
     pr.create_issue_comment.assert_called_once()
 
     # Simulate the created comment now existing
-    created_comment = _make_mock_comment(
-        f"{REVIEW_MARKER}\nFirst review", comment_id=999
-    )
+    created_comment = _make_mock_comment(f"{REVIEW_MARKER}\nFirst review", comment_id=999)
     pr.get_issue_comments.return_value = [created_comment]
 
     # Second call: finds existing → edits, no new comment
