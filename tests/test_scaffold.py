@@ -352,13 +352,12 @@ def test_render_comment_returns_string() -> None:
     assert isinstance(output, str) and len(output) > 0
 
 
-def test_summary_poster_post_raises_not_implemented() -> None:
-    """SummaryPoster.post raises NotImplementedError rather than silently no-oping."""
+def test_summary_poster_post_is_implemented() -> None:
+    """SummaryPoster.post is callable (no longer a stub)."""
     from lychee.poster import SummaryPoster
 
     poster = SummaryPoster(github_client=object())
-    with pytest.raises(NotImplementedError, match=r"SummaryPoster\.post"):
-        poster.post("owner/repo#1", "body")
+    assert callable(poster.post)
 
 
 # ---------------------------------------------------------------------------
