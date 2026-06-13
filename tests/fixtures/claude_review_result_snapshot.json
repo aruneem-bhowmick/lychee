@@ -1,0 +1,11 @@
+{
+  "ripeness": "ripe",
+  "summary": "Looks good.",
+  "walkthrough": "## Summary\nAll changes are minimal.",
+  "findings": [],
+  "model": "claude-sonnet-4-6",
+  "usage": {
+    "input_tokens": 100,
+    "output_tokens": 50
+  }
+}
