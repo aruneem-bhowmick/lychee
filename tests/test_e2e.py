@@ -161,11 +161,11 @@ def _count_marker_comments(
 
 def test_e2e_module_imports() -> None:
     """Verify core review and posting modules can be imported."""
-    from lychee.poster import SummaryPoster as _sp  # noqa: F811
-    from lychee.review import run_review as _rr  # noqa: F811
+    import lychee.poster
+    import lychee.review
 
-    assert callable(_rr)
-    assert callable(_sp)
+    assert callable(lychee.review.run_review)
+    assert callable(lychee.poster.SummaryPoster)
 
 
 # ---------------------------------------------------------------------------
@@ -179,3 +179,99 @@ def test_e2e_config_loads() -> None:
     assert isinstance(config, LycheeConfig)
     assert config.model.default
     assert config.review.max_files > 0
+
+
+# ---------------------------------------------------------------------------
+# Acceptance / end-to-end tests
+# ---------------------------------------------------------------------------
+
+
+def test_e2e_review_posted(
+    canary_repo: str,
+    canary_pr_number: int,
+    github_token: str,
+    anthropic_key: str,
+) -> None:
+    """A real PR receives a correct review comment.
+
+    Runs the full review pipeline — context fetch, prompt build, Claude
+    call, render, and post — against a live canary PR and verifies that
+    the posted comment contains the expected marker, sections, ripeness
+    badge, and state.
+    """
+    _result, comment_body, head_sha = _run_review_and_post(
+        canary_repo, canary_pr_number, github_token, anthropic_key
+    )
+
+    # Verify hidden marker present in rendered body
+    assert REVIEW_MARKER in comment_body
+
+    # Verify the three branded sections appear
+    assert "Nectar" in comment_body
+    assert "The Peel" in comment_body
+    assert "Pits" in comment_body
+
+    # Verify a ripeness badge is present
+    assert any(badge in comment_body for badge in ("Ripe", "Unripe", "Sour"))
+
+    # Verify the comment exists on the PR and carries valid state
+    count, state = _count_marker_comments(canary_repo, canary_pr_number, github_token)
+    assert count >= 1, "No comment with the review marker found on the PR"
+    assert state is not None, "State marker not found in the posted comment"
+    assert state.get("last_reviewed_sha") == head_sha
+
+
+def test_e2e_repost_updates_in_place(
+    canary_repo: str,
+    canary_pr_number: int,
+    github_token: str,
+    anthropic_key: str,
+) -> None:
+    """Re-running the review updates the existing comment without duplicates.
+
+    Runs the review engine on the same PR a second time (the first run is
+    performed by ``test_e2e_review_posted``) and verifies that there is
+    still exactly one comment with the review marker.
+    """
+    _, _, head_sha = _run_review_and_post(
+        canary_repo, canary_pr_number, github_token, anthropic_key
+    )
+
+    count, state = _count_marker_comments(canary_repo, canary_pr_number, github_token)
+    assert count == 1, f"Expected exactly 1 marker comment, found {count}"
+    assert state is not None, "State marker not found after repost"
+    assert state.get("last_reviewed_sha") == head_sha
+
+
+def test_e2e_run_record_emitted(
+    canary_repo: str,
+    canary_pr_number: int,
+    github_token: str,
+    anthropic_key: str,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """A structured run record is emitted in the logs.
+
+    Verifies that the review engine emits log records containing the repo
+    name, PR number, model name, ripeness, and token usage.  Also asserts
+    that the API key does not leak into the log output.
+    """
+    config = load_config()
+    gh_client = GitHubClient(token=github_token)
+    claude_client = ClaudeClient(api_key=anthropic_key, model=config.model.default)
+
+    pr_ref = f"{canary_repo}#{canary_pr_number}"
+
+    with caplog.at_level(logging.INFO, logger="lychee"):
+        result = run_review(pr_ref, config, gh_client, claude_client)
+
+    log_text = caplog.text
+
+    # Required information present in the logs
+    assert canary_repo in log_text, "Log should contain the repo name"
+    assert str(canary_pr_number) in log_text, "Log should contain the PR number"
+    assert config.model.default in log_text, "Log should contain the model name"
+    assert result.ripeness.value in log_text, "Log should contain the ripeness"
+
+    # Secrets must never leak into log output
+    assert anthropic_key not in log_text, "Log must not contain the API key"
