@@ -5,7 +5,6 @@ import sys
 import tomllib
 from pathlib import Path
 
-import pytest
 from click.testing import CliRunner
 
 # ---------------------------------------------------------------------------
