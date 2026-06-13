@@ -3,6 +3,8 @@ name: Lychee PR Review
 on:
   pull_request:
     types: [opened, synchronize, reopened]
+    branches-ignore:
+      - "**/graphite-base/**"
 
 permissions:
   contents: read
