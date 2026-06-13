@@ -228,7 +228,7 @@ class TestReviewIntegration:
     def _make_client(self) -> ClaudeClient:
         """Create a ClaudeClient with a mocked Anthropic client."""
         client = ClaudeClient(api_key="sk-test", model="claude-sonnet-4-6")
-        client._client = MagicMock(spec=anthropic.Anthropic)
+        client._client = MagicMock()
         return client
 
     def test_review_success(self) -> None:
@@ -347,7 +347,7 @@ class TestAcceptance:
     def _make_client(self) -> ClaudeClient:
         """Create a ClaudeClient with a mocked Anthropic client."""
         client = ClaudeClient(api_key="sk-test", model="claude-sonnet-4-6")
-        client._client = MagicMock(spec=anthropic.Anthropic)
+        client._client = MagicMock()
         return client
 
     def test_accept_mocked_tool_response_parses(self) -> None:
@@ -414,7 +414,7 @@ class TestRegression:
     def _make_client(self) -> ClaudeClient:
         """Create a ClaudeClient with a mocked Anthropic client."""
         client = ClaudeClient(api_key="sk-test", model="claude-sonnet-4-6")
-        client._client = MagicMock(spec=anthropic.Anthropic)
+        client._client = MagicMock()
         return client
 
     def test_tool_schema_used_in_call(self) -> None:
@@ -457,7 +457,7 @@ class TestAPI:
     def _make_client(self) -> ClaudeClient:
         """Create a ClaudeClient with a mocked Anthropic client."""
         client = ClaudeClient(api_key="sk-test", model="claude-sonnet-4-6")
-        client._client = MagicMock(spec=anthropic.Anthropic)
+        client._client = MagicMock()
         return client
 
     def test_api_messages_create_params(self) -> None:
