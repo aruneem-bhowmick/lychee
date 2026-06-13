@@ -225,16 +225,17 @@ class TestInit:
 class TestReviewIntegration:
     """Integration tests for ClaudeClient.review() with mocked API."""
 
-    def _make_client(self) -> ClaudeClient:
+    def _make_client(self) -> tuple[ClaudeClient, MagicMock]:
         """Create a ClaudeClient with a mocked Anthropic client."""
         client = ClaudeClient(api_key="sk-test", model="claude-sonnet-4-6")
-        client._client = MagicMock()
-        return client
+        mock_api = MagicMock()
+        client._client = mock_api  # type: ignore[assignment]
+        return client, mock_api
 
     def test_review_success(self) -> None:
         """review() returns a valid ReviewResult on a well-formed response."""
-        client = self._make_client()
-        client._client.messages.create.return_value = _make_message()
+        client, mock_api = self._make_client()
+        mock_api.messages.create.return_value = _make_message()
 
         result = client.review(messages=[{"role": "user", "content": "Review this PR."}])
 
@@ -244,9 +245,9 @@ class TestReviewIntegration:
 
     def test_review_injects_model_and_usage(self) -> None:
         """review() injects model name and extracted usage into the ReviewResult."""
-        client = self._make_client()
+        client, mock_api = self._make_client()
         usage = _make_usage(input_tokens=500, output_tokens=200)
-        client._client.messages.create.return_value = _make_message(usage=usage)
+        mock_api.messages.create.return_value = _make_message(usage=usage)
 
         result = client.review(messages=[{"role": "user", "content": "Review."}])
 
@@ -256,35 +257,35 @@ class TestReviewIntegration:
 
     def test_review_passes_system_prompt(self) -> None:
         """review() passes the system parameter to messages.create when provided."""
-        client = self._make_client()
-        client._client.messages.create.return_value = _make_message()
+        client, mock_api = self._make_client()
+        mock_api.messages.create.return_value = _make_message()
 
         client.review(
             messages=[{"role": "user", "content": "Review."}],
             system="You are a code reviewer.",
         )
 
-        call_kwargs = client._client.messages.create.call_args
+        call_kwargs = mock_api.messages.create.call_args
         assert call_kwargs.kwargs["system"] == "You are a code reviewer."
 
     def test_review_omits_system_when_none(self) -> None:
         """review() does not pass system key when system is None."""
-        client = self._make_client()
-        client._client.messages.create.return_value = _make_message()
+        client, mock_api = self._make_client()
+        mock_api.messages.create.return_value = _make_message()
 
         client.review(messages=[{"role": "user", "content": "Review."}])
 
-        call_kwargs = client._client.messages.create.call_args
+        call_kwargs = mock_api.messages.create.call_args
         assert "system" not in call_kwargs.kwargs
 
     def test_review_forces_tool_choice(self) -> None:
         """review() forces tool_choice to submit_review."""
-        client = self._make_client()
-        client._client.messages.create.return_value = _make_message()
+        client, mock_api = self._make_client()
+        mock_api.messages.create.return_value = _make_message()
 
         client.review(messages=[{"role": "user", "content": "Review."}])
 
-        call_kwargs = client._client.messages.create.call_args
+        call_kwargs = mock_api.messages.create.call_args
         assert call_kwargs.kwargs["tool_choice"] == {
             "type": "tool",
             "name": "submit_review",
@@ -292,11 +293,11 @@ class TestReviewIntegration:
 
     def test_review_api_error_raises(self) -> None:
         """review() wraps anthropic.APIError into ClaudeReviewError."""
-        client = self._make_client()
+        client, mock_api = self._make_client()
         mock_response = MagicMock()
         mock_response.status_code = 500
         mock_response.headers = {}
-        client._client.messages.create.side_effect = anthropic.APIStatusError(
+        mock_api.messages.create.side_effect = anthropic.APIStatusError(
             message="Internal Server Error",
             response=mock_response,
             body=None,
@@ -307,8 +308,8 @@ class TestReviewIntegration:
 
     def test_review_connection_error_raises(self) -> None:
         """review() wraps anthropic.APIConnectionError into ClaudeReviewError."""
-        client = self._make_client()
-        client._client.messages.create.side_effect = anthropic.APIConnectionError(
+        client, mock_api = self._make_client()
+        mock_api.messages.create.side_effect = anthropic.APIConnectionError(
             request=MagicMock(),
         )
 
@@ -317,20 +318,20 @@ class TestReviewIntegration:
 
     def test_review_invalid_tool_input_raises(self) -> None:
         """review() wraps pydantic.ValidationError into ClaudeReviewError."""
-        client = self._make_client()
+        client, mock_api = self._make_client()
         # Tool input with invalid ripeness value
         bad_input = _make_tool_input(ripeness="invalid_value")
         message = _make_message(content=[_make_tool_use_block(bad_input)])
-        client._client.messages.create.return_value = message
+        mock_api.messages.create.return_value = message
 
         with pytest.raises(ClaudeReviewError, match="Invalid tool input"):
             client.review(messages=[{"role": "user", "content": "Review."}])
 
     def test_review_no_tool_block_raises(self) -> None:
         """review() raises ClaudeReviewError when response has no tool_use block."""
-        client = self._make_client()
+        client, mock_api = self._make_client()
         message = _make_message(content=[_make_text_block()])
-        client._client.messages.create.return_value = message
+        mock_api.messages.create.return_value = message
 
         with pytest.raises(ClaudeReviewError, match="No tool_use block found"):
             client.review(messages=[{"role": "user", "content": "Review."}])
@@ -344,11 +345,12 @@ class TestReviewIntegration:
 class TestAcceptance:
     """End-to-end-style acceptance tests with mocked API."""
 
-    def _make_client(self) -> ClaudeClient:
+    def _make_client(self) -> tuple[ClaudeClient, MagicMock]:
         """Create a ClaudeClient with a mocked Anthropic client."""
         client = ClaudeClient(api_key="sk-test", model="claude-sonnet-4-6")
-        client._client = MagicMock()
-        return client
+        mock_api = MagicMock()
+        client._client = mock_api  # type: ignore[assignment]
+        return client, mock_api
 
     def test_accept_mocked_tool_response_parses(self) -> None:
         """A realistic mocked tool response parses into a valid ReviewResult."""
@@ -363,11 +365,11 @@ class TestAcceptance:
                 }
             ],
         )
-        client = self._make_client()
+        client, mock_api = self._make_client()
         message = _make_message(
             content=[_make_text_block(), _make_tool_use_block(tool_input)],
         )
-        client._client.messages.create.return_value = message
+        mock_api.messages.create.return_value = message
 
         result = client.review(messages=[{"role": "user", "content": "Review."}])
 
@@ -378,23 +380,23 @@ class TestAcceptance:
 
     def test_accept_malformed_response_raises_typed_error(self) -> None:
         """A malformed tool response raises ClaudeReviewError, not a generic exception."""
-        client = self._make_client()
+        client, mock_api = self._make_client()
         bad_input = {"ripeness": "invalid", "summary": "", "walkthrough": "", "findings": []}
         message = _make_message(content=[_make_tool_use_block(bad_input)])
-        client._client.messages.create.return_value = message
+        mock_api.messages.create.return_value = message
 
         with pytest.raises(ClaudeReviewError):
             client.review(messages=[{"role": "user", "content": "Review."}])
 
     def test_accept_usage_captured(self) -> None:
         """Token usage from the API response is captured in the ReviewResult."""
-        client = self._make_client()
+        client, mock_api = self._make_client()
         usage = _make_usage(
             input_tokens=1200,
             output_tokens=300,
             cache_read_input_tokens=800,
         )
-        client._client.messages.create.return_value = _make_message(usage=usage)
+        mock_api.messages.create.return_value = _make_message(usage=usage)
 
         result = client.review(messages=[{"role": "user", "content": "Review."}])
 
@@ -411,20 +413,21 @@ class TestAcceptance:
 class TestRegression:
     """Regression tests to guard against unintended changes."""
 
-    def _make_client(self) -> ClaudeClient:
+    def _make_client(self) -> tuple[ClaudeClient, MagicMock]:
         """Create a ClaudeClient with a mocked Anthropic client."""
         client = ClaudeClient(api_key="sk-test", model="claude-sonnet-4-6")
-        client._client = MagicMock()
-        return client
+        mock_api = MagicMock()
+        client._client = mock_api  # type: ignore[assignment]
+        return client, mock_api
 
     def test_tool_schema_used_in_call(self) -> None:
         """review() passes the ReviewResult tool schema to the API call."""
-        client = self._make_client()
-        client._client.messages.create.return_value = _make_message()
+        client, mock_api = self._make_client()
+        mock_api.messages.create.return_value = _make_message()
 
         client.review(messages=[{"role": "user", "content": "Review."}])
 
-        call_kwargs = client._client.messages.create.call_args
+        call_kwargs = mock_api.messages.create.call_args
         tools = call_kwargs.kwargs["tools"]
         assert len(tools) == 1
         assert tools[0]["name"] == "submit_review"
@@ -432,8 +435,8 @@ class TestRegression:
 
     def test_review_result_fields_snapshot(self) -> None:
         """ReviewResult from a mocked review matches the pinned fixture snapshot."""
-        client = self._make_client()
-        client._client.messages.create.return_value = _make_message()
+        client, mock_api = self._make_client()
+        mock_api.messages.create.return_value = _make_message()
 
         result = client.review(messages=[{"role": "user", "content": "Review."}])
 
@@ -454,23 +457,24 @@ class TestRegression:
 class TestAPI:
     """Tests verifying the shape of API call parameters."""
 
-    def _make_client(self) -> ClaudeClient:
+    def _make_client(self) -> tuple[ClaudeClient, MagicMock]:
         """Create a ClaudeClient with a mocked Anthropic client."""
         client = ClaudeClient(api_key="sk-test", model="claude-sonnet-4-6")
-        client._client = MagicMock()
-        return client
+        mock_api = MagicMock()
+        client._client = mock_api  # type: ignore[assignment]
+        return client, mock_api
 
     def test_api_messages_create_params(self) -> None:
         """messages.create is called with expected parameters."""
-        client = self._make_client()
-        client._client.messages.create.return_value = _make_message()
+        client, mock_api = self._make_client()
+        mock_api.messages.create.return_value = _make_message()
 
         client.review(
             messages=[{"role": "user", "content": "Review."}],
             system="Be concise.",
         )
 
-        call_kwargs = client._client.messages.create.call_args.kwargs
+        call_kwargs = mock_api.messages.create.call_args.kwargs
         assert call_kwargs["model"] == "claude-sonnet-4-6"
         assert call_kwargs["max_tokens"] == 4096
         assert call_kwargs["messages"] == [{"role": "user", "content": "Review."}]
