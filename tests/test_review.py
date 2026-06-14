@@ -63,7 +63,9 @@ def test_run_review_success(
 ) -> None:
     """run_review returns the expected ReviewResult on a successful pipeline run."""
     mock_build_context.return_value = review_context_simple
-    mock_build_system_prompt_blocks.return_value = [{"type": "text", "text": "system prompt", "cache_control": {"type": "ephemeral"}}]
+    mock_build_system_prompt_blocks.return_value = [
+        {"type": "text", "text": "system prompt", "cache_control": {"type": "ephemeral"}}
+    ]
     mock_build_messages.return_value = [{"role": "user", "content": "msg"}]
 
     result = run_review("owner/repo#42", default_config, mock_github_client, mock_claude_client)
@@ -86,7 +88,9 @@ def test_run_review_calls_build_context(
 ) -> None:
     """build_context is called with the correct GitHubClient, parsed PullRequestRef, and config."""
     mock_build_context.return_value = review_context_simple
-    mock_build_system_prompt_blocks.return_value = [{"type": "text", "text": "system prompt", "cache_control": {"type": "ephemeral"}}]
+    mock_build_system_prompt_blocks.return_value = [
+        {"type": "text", "text": "system prompt", "cache_control": {"type": "ephemeral"}}
+    ]
     mock_build_messages.return_value = [{"role": "user", "content": "msg"}]
 
     run_review("owner/repo#42", default_config, mock_github_client, mock_claude_client)
@@ -112,7 +116,9 @@ def test_run_review_calls_build_system_prompt_blocks(
 ) -> None:
     """build_system_prompt_blocks is called with config and conventions from context."""
     mock_build_context.return_value = review_context_simple
-    mock_build_system_prompt_blocks.return_value = [{"type": "text", "text": "system prompt", "cache_control": {"type": "ephemeral"}}]
+    mock_build_system_prompt_blocks.return_value = [
+        {"type": "text", "text": "system prompt", "cache_control": {"type": "ephemeral"}}
+    ]
     mock_build_messages.return_value = [{"role": "user", "content": "msg"}]
 
     run_review("owner/repo#42", default_config, mock_github_client, mock_claude_client)
@@ -136,7 +142,9 @@ def test_run_review_calls_build_messages(
 ) -> None:
     """build_messages is called with the context and config."""
     mock_build_context.return_value = review_context_simple
-    mock_build_system_prompt_blocks.return_value = [{"type": "text", "text": "system prompt", "cache_control": {"type": "ephemeral"}}]
+    mock_build_system_prompt_blocks.return_value = [
+        {"type": "text", "text": "system prompt", "cache_control": {"type": "ephemeral"}}
+    ]
     mock_build_messages.return_value = [{"role": "user", "content": "msg"}]
 
     run_review("owner/repo#42", default_config, mock_github_client, mock_claude_client)
@@ -158,7 +166,9 @@ def test_run_review_calls_claude_review(
 ) -> None:
     """claude_client.review() is called with messages and system prompt."""
     mock_build_context.return_value = review_context_simple
-    mock_build_system_prompt_blocks.return_value = [{"type": "text", "text": "system prompt", "cache_control": {"type": "ephemeral"}}]
+    mock_build_system_prompt_blocks.return_value = [
+        {"type": "text", "text": "system prompt", "cache_control": {"type": "ephemeral"}}
+    ]
     messages = [{"role": "user", "content": "msg"}]
     mock_build_messages.return_value = messages
 
@@ -197,7 +207,9 @@ def test_run_review_passes_conventions(
         conventions="Use black for formatting. Max line length 100.",
     )
     mock_build_context.return_value = context_with_conventions
-    mock_build_system_prompt_blocks.return_value = [{"type": "text", "text": "system prompt", "cache_control": {"type": "ephemeral"}}]
+    mock_build_system_prompt_blocks.return_value = [
+        {"type": "text", "text": "system prompt", "cache_control": {"type": "ephemeral"}}
+    ]
     mock_build_messages.return_value = [{"role": "user", "content": "msg"}]
 
     run_review("owner/repo#42", default_config, mock_github_client, mock_claude_client)
@@ -223,7 +235,9 @@ def test_run_review_no_conventions(
     """When context has no conventions, build_system_prompt_blocks receives None."""
     assert review_context_simple.conventions is None
     mock_build_context.return_value = review_context_simple
-    mock_build_system_prompt_blocks.return_value = [{"type": "text", "text": "system prompt", "cache_control": {"type": "ephemeral"}}]
+    mock_build_system_prompt_blocks.return_value = [
+        {"type": "text", "text": "system prompt", "cache_control": {"type": "ephemeral"}}
+    ]
     mock_build_messages.return_value = [{"role": "user", "content": "msg"}]
 
     run_review("owner/repo#42", default_config, mock_github_client, mock_claude_client)
@@ -269,7 +283,9 @@ def test_run_review_claude_error_propagates(
 ) -> None:
     """ClaudeReviewError from claude_client.review() propagates without being caught."""
     mock_build_context.return_value = review_context_simple
-    mock_build_system_prompt_blocks.return_value = [{"type": "text", "text": "system prompt", "cache_control": {"type": "ephemeral"}}]
+    mock_build_system_prompt_blocks.return_value = [
+        {"type": "text", "text": "system prompt", "cache_control": {"type": "ephemeral"}}
+    ]
     mock_build_messages.return_value = [{"role": "user", "content": "msg"}]
     mock_claude_client.review.side_effect = ClaudeReviewError("API error")
 
@@ -297,7 +313,9 @@ def test_system_full_pipeline(
 ) -> None:
     """End-to-end pipeline with mocked GitHubClient and ClaudeClient."""
     mock_build_context.return_value = review_context_simple
-    mock_build_system_prompt_blocks.return_value = [{"type": "text", "text": "system prompt", "cache_control": {"type": "ephemeral"}}]
+    mock_build_system_prompt_blocks.return_value = [
+        {"type": "text", "text": "system prompt", "cache_control": {"type": "ephemeral"}}
+    ]
     mock_build_messages.return_value = [{"role": "user", "content": "msg"}]
     mock_claude_client.review.return_value = ripe_review_result
 
@@ -322,7 +340,9 @@ def test_system_model_from_config(
 ) -> None:
     """ReviewResult.model reflects the model used by ClaudeClient."""
     mock_build_context.return_value = review_context_simple
-    mock_build_system_prompt_blocks.return_value = [{"type": "text", "text": "system prompt", "cache_control": {"type": "ephemeral"}}]
+    mock_build_system_prompt_blocks.return_value = [
+        {"type": "text", "text": "system prompt", "cache_control": {"type": "ephemeral"}}
+    ]
     mock_build_messages.return_value = [{"role": "user", "content": "msg"}]
     mock_claude_client.review.return_value = ripe_review_result
 
@@ -357,7 +377,9 @@ def test_accept_end_to_end_mocked(
 ) -> None:
     """Acceptance: end-to-end pipeline yields a valid ReviewResult."""
     mock_build_context.return_value = review_context_simple
-    mock_build_system_prompt_blocks.return_value = [{"type": "text", "text": "system prompt", "cache_control": {"type": "ephemeral"}}]
+    mock_build_system_prompt_blocks.return_value = [
+        {"type": "text", "text": "system prompt", "cache_control": {"type": "ephemeral"}}
+    ]
     mock_build_messages.return_value = [{"role": "user", "content": "msg"}]
 
     result = run_review("owner/repo#42", default_config, mock_github_client, mock_claude_client)
@@ -383,7 +405,9 @@ def test_accept_model_chosen_per_config(
 ) -> None:
     """Acceptance: model in the result matches the configured model."""
     mock_build_context.return_value = review_context_simple
-    mock_build_system_prompt_blocks.return_value = [{"type": "text", "text": "system prompt", "cache_control": {"type": "ephemeral"}}]
+    mock_build_system_prompt_blocks.return_value = [
+        {"type": "text", "text": "system prompt", "cache_control": {"type": "ephemeral"}}
+    ]
     mock_build_messages.return_value = [{"role": "user", "content": "msg"}]
     mock_claude_client.review.return_value = ripe_review_result
 
@@ -432,7 +456,9 @@ def test_run_review_result_shape(
 ) -> None:
     """Returned ReviewResult has all required fields populated."""
     mock_build_context.return_value = review_context_simple
-    mock_build_system_prompt_blocks.return_value = [{"type": "text", "text": "system prompt", "cache_control": {"type": "ephemeral"}}]
+    mock_build_system_prompt_blocks.return_value = [
+        {"type": "text", "text": "system prompt", "cache_control": {"type": "ephemeral"}}
+    ]
     mock_build_messages.return_value = [{"role": "user", "content": "msg"}]
 
     result = run_review("owner/repo#42", default_config, mock_github_client, mock_claude_client)
@@ -445,3 +471,84 @@ def test_run_review_result_shape(
     assert hasattr(result, "usage")
     assert isinstance(result.findings, list)
     assert isinstance(result.usage, dict)
+
+
+# ---------------------------------------------------------------------------
+# Prompt caching tests
+# ---------------------------------------------------------------------------
+
+
+@patch("lychee.review.build_messages")
+@patch("lychee.review.build_system_prompt_blocks")
+@patch("lychee.review.build_context")
+def test_system_run_review_uses_cache_blocks(
+    mock_build_context: MagicMock,
+    mock_build_system_prompt_blocks: MagicMock,
+    mock_build_messages: MagicMock,
+    mock_github_client: MagicMock,
+    mock_claude_client: MagicMock,
+    review_context_simple: ReviewContext,
+    default_config: LycheeConfig,
+) -> None:
+    """run_review passes a list (not a string) to claude_client.review() as system."""
+    mock_build_context.return_value = review_context_simple
+    blocks = [{"type": "text", "text": "cached", "cache_control": {"type": "ephemeral"}}]
+    mock_build_system_prompt_blocks.return_value = blocks
+    mock_build_messages.return_value = [{"role": "user", "content": "msg"}]
+
+    run_review("owner/repo#42", default_config, mock_github_client, mock_claude_client)
+
+    call_args = mock_claude_client.review.call_args
+    system_arg = call_args.kwargs["system"]
+    assert isinstance(system_arg, list)
+    assert system_arg[0]["cache_control"] == {"type": "ephemeral"}
+
+
+@patch("lychee.review.build_messages")
+@patch("lychee.review.build_system_prompt_blocks")
+@patch("lychee.review.build_context")
+def test_run_review_calls_build_system_prompt_blocks_integration(
+    mock_build_context: MagicMock,
+    mock_build_system_prompt_blocks: MagicMock,
+    mock_build_messages: MagicMock,
+    mock_github_client: MagicMock,
+    mock_claude_client: MagicMock,
+    review_context_simple: ReviewContext,
+    default_config: LycheeConfig,
+) -> None:
+    """run_review calls build_system_prompt_blocks (not build_system_prompt)."""
+    mock_build_context.return_value = review_context_simple
+    mock_build_system_prompt_blocks.return_value = [
+        {"type": "text", "text": "prompt", "cache_control": {"type": "ephemeral"}}
+    ]
+    mock_build_messages.return_value = [{"role": "user", "content": "msg"}]
+
+    run_review("owner/repo#42", default_config, mock_github_client, mock_claude_client)
+
+    mock_build_system_prompt_blocks.assert_called_once()
+
+
+@patch("lychee.review.build_messages")
+@patch("lychee.review.build_system_prompt_blocks")
+@patch("lychee.review.build_context")
+def test_accept_cost_data_available(
+    mock_build_context: MagicMock,
+    mock_build_system_prompt_blocks: MagicMock,
+    mock_build_messages: MagicMock,
+    mock_github_client: MagicMock,
+    mock_claude_client: MagicMock,
+    review_context_simple: ReviewContext,
+    default_config: LycheeConfig,
+) -> None:
+    """ReviewResult from run_review includes usage data for cost tracking."""
+    mock_build_context.return_value = review_context_simple
+    mock_build_system_prompt_blocks.return_value = [
+        {"type": "text", "text": "prompt", "cache_control": {"type": "ephemeral"}}
+    ]
+    mock_build_messages.return_value = [{"role": "user", "content": "msg"}]
+
+    result = run_review("owner/repo#42", default_config, mock_github_client, mock_claude_client)
+
+    assert isinstance(result.usage, dict)
+    assert "input_tokens" in result.usage
+    assert "output_tokens" in result.usage

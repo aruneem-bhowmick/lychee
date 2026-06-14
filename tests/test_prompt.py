@@ -7,6 +7,7 @@ severity/ripeness definitions, and tool schema.
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import pytest
@@ -17,6 +18,7 @@ from lychee.models import ReviewResult
 from lychee.prompt import (
     build_messages,
     build_system_prompt,
+    build_system_prompt_blocks,
     build_user_message,
     get_tools,
 )
@@ -125,14 +127,22 @@ class TestSmoke:
         from lychee.prompt import (
             build_messages,
             build_system_prompt,
+            build_system_prompt_blocks,
             build_user_message,
             get_tools,
         )
 
         assert callable(build_messages)
         assert callable(build_system_prompt)
+        assert callable(build_system_prompt_blocks)
         assert callable(build_user_message)
         assert callable(get_tools)
+
+    def test_build_system_prompt_blocks_importable(self) -> None:
+        """build_system_prompt_blocks is importable and callable."""
+        from lychee.prompt import build_system_prompt_blocks
+
+        assert callable(build_system_prompt_blocks)
 
 
 # ---------------------------------------------------------------------------
@@ -219,6 +229,69 @@ class TestBuildSystemPrompt:
         """Conventions section is omitted when conventions is an empty string."""
         output = build_system_prompt(default_config, conventions="")
         assert "Project Conventions" not in output
+
+
+# ---------------------------------------------------------------------------
+# Unit tests — build_system_prompt_blocks
+# ---------------------------------------------------------------------------
+
+
+class TestBuildSystemPromptBlocks:
+    """Unit tests for the cacheable system prompt block builder."""
+
+    def test_returns_list(self, default_config: LycheeConfig) -> None:
+        """build_system_prompt_blocks returns a list."""
+        result = build_system_prompt_blocks(default_config)
+        assert isinstance(result, list)
+
+    def test_single_block(self, default_config: LycheeConfig) -> None:
+        """The result contains exactly one content block."""
+        result = build_system_prompt_blocks(default_config)
+        assert len(result) == 1
+
+    def test_block_structure(self, default_config: LycheeConfig) -> None:
+        """The block has type, text, and cache_control keys."""
+        block = build_system_prompt_blocks(default_config)[0]
+        assert block["type"] == "text"
+        assert isinstance(block["text"], str)
+        assert "cache_control" in block
+
+    def test_cache_control(self, default_config: LycheeConfig) -> None:
+        """cache_control is set to ephemeral."""
+        block = build_system_prompt_blocks(default_config)[0]
+        assert block["cache_control"] == {"type": "ephemeral"}
+
+    def test_text_matches_string(self, default_config: LycheeConfig) -> None:
+        """The block text matches the output of build_system_prompt."""
+        string_prompt = build_system_prompt(default_config)
+        block_prompt = build_system_prompt_blocks(default_config)[0]["text"]
+        assert block_prompt == string_prompt
+
+    def test_with_conventions(self, default_config: LycheeConfig) -> None:
+        """Conventions are included in block text when provided."""
+        conventions = "Use 4-space indentation."
+        result = build_system_prompt_blocks(default_config, conventions=conventions)
+        assert "Use 4-space indentation." in result[0]["text"]
+        assert "Project Conventions" in result[0]["text"]
+
+    def test_without_conventions(self, default_config: LycheeConfig) -> None:
+        """Conventions section is absent from block text when None."""
+        result = build_system_prompt_blocks(default_config, conventions=None)
+        assert "Project Conventions" not in result[0]["text"]
+
+    def test_exact_keys(self, default_config: LycheeConfig) -> None:
+        """Each block contains only the expected keys (type, text, cache_control)."""
+        block = build_system_prompt_blocks(default_config)[0]
+        assert set(block.keys()) == {"type", "text", "cache_control"}
+
+    def test_text_matches_with_conventions(self, default_config: LycheeConfig) -> None:
+        """Block text with conventions matches build_system_prompt with conventions."""
+        conventions = "Prefer f-strings over format()."
+        string_prompt = build_system_prompt(default_config, conventions=conventions)
+        block_prompt = build_system_prompt_blocks(default_config, conventions=conventions)[0][
+            "text"
+        ]
+        assert block_prompt == string_prompt
 
 
 # ---------------------------------------------------------------------------
@@ -351,6 +424,12 @@ class TestDeterminism:
         b = build_system_prompt(default_config)
         assert a == b
 
+    def test_deterministic_system_prompt_blocks(self, default_config: LycheeConfig) -> None:
+        """Calling build_system_prompt_blocks twice with the same inputs produces equal lists."""
+        a = build_system_prompt_blocks(default_config)
+        b = build_system_prompt_blocks(default_config)
+        assert a == b
+
     def test_deterministic_user_message(self, fixture_context: ReviewContext) -> None:
         """Calling build_user_message twice with the same context produces equal strings."""
         a = build_user_message(fixture_context)
@@ -397,6 +476,19 @@ class TestAcceptance:
         snapshot = (FIXTURES_DIR / "user_message_snapshot.txt").read_text(encoding="utf-8")
         assert output == snapshot
 
+    def test_repeated_blocks_calls_identical(self, default_config: LycheeConfig) -> None:
+        """Repeated calls to build_system_prompt_blocks return identical lists."""
+        first = build_system_prompt_blocks(default_config)
+        second = build_system_prompt_blocks(default_config)
+        assert first == second
+
+    def test_same_config_conventions_sharing(self, default_config: LycheeConfig) -> None:
+        """Same config and conventions produce identical blocks across calls."""
+        conventions = "Always use type hints."
+        a = build_system_prompt_blocks(default_config, conventions=conventions)
+        b = build_system_prompt_blocks(default_config, conventions=conventions)
+        assert a == b
+
 
 # ---------------------------------------------------------------------------
 # Regression tests — golden snapshots
@@ -423,6 +515,23 @@ class TestGoldenSnapshots:
             "User message changed. If intentional, regenerate "
             "tests/fixtures/user_message_snapshot.txt."
         )
+
+    def test_system_prompt_blocks_golden(self, default_config: LycheeConfig) -> None:
+        """build_system_prompt_blocks(default_config) matches the golden JSON snapshot."""
+        output = build_system_prompt_blocks(default_config)
+        snapshot = json.loads(
+            (FIXTURES_DIR / "system_prompt_blocks_snapshot.json").read_text(encoding="utf-8")
+        )
+        assert output == snapshot, (
+            "System prompt blocks changed. If intentional, regenerate "
+            "tests/fixtures/system_prompt_blocks_snapshot.json."
+        )
+
+    def test_string_snapshot_unchanged(self, default_config: LycheeConfig) -> None:
+        """build_system_prompt still matches its snapshot after blocks were added."""
+        output = build_system_prompt(default_config)
+        snapshot = (FIXTURES_DIR / "system_prompt_snapshot.txt").read_text(encoding="utf-8")
+        assert output == snapshot
 
 
 # ---------------------------------------------------------------------------
