@@ -368,3 +368,37 @@ def test_accept_handles_binary_deleted_renamed() -> None:
     assert ctx.changed_files[1]["status"] == "removed"
     # Renamed
     assert ctx.changed_files[2]["previous_filename"] == "old.py"
+
+
+def test_accept_ignored_paths_never_sent() -> None:
+    """Acceptance: ignore_globs configured, matching files excluded from context.
+
+    Verifies the existing wiring: ignore_globs from config is passed to
+    get_changed_files, which is responsible for filtering.
+    """
+    mock_client = MagicMock()
+    mock_pr = _build_mock_pr()
+    mock_client.get_pull_request.return_value = mock_pr
+    mock_client.get_diff.return_value = ""
+    # Simulate that get_changed_files already filtered out lock files
+    mock_client.get_changed_files.return_value = [
+        ChangedFile("src/app.py", "modified", 5, 2, "+code", "code"),
+    ]
+    mock_client.get_commit_messages.return_value = []
+    mock_client.get_conventions_file.return_value = None
+
+    config = LycheeConfig(
+        review={"ignore_globs": ["*.lock", "vendor/**"]},  # type: ignore[arg-type]
+    )
+    ref = PullRequestRef.parse("owner/repo#42")
+
+    ctx = build_context(mock_client, ref, config)
+
+    # Verify ignore_globs were passed to get_changed_files
+    _, kwargs = mock_client.get_changed_files.call_args
+    assert kwargs["ignore_globs"] == ["*.lock", "vendor/**"]
+
+    # Verify no lock or vendor files in the context
+    for f in ctx.changed_files:
+        assert not f["filename"].endswith(".lock")
+        assert not f["filename"].startswith("vendor/")
