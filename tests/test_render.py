@@ -68,9 +68,7 @@ def unripe_result_fixture() -> ReviewResult:
     """Unripe ReviewResult with one major finding that carries a suggestion."""
     return ReviewResult(
         ripeness=Ripeness.unripe,
-        summary=(
-            "This PR has a significant security issue" " that must be addressed before merging."
-        ),
+        summary=("This PR has a significant security issue that must be addressed before merging."),
         walkthrough="## Review\n\nThe authentication module needs improvement.",
         findings=[
             Finding(
@@ -92,7 +90,7 @@ def sour_result_fixture() -> ReviewResult:
     """Sour ReviewResult with critical and minor findings, no suggestions."""
     return ReviewResult(
         ripeness=Ripeness.sour,
-        summary=("This PR introduces critical security vulnerabilities" " and must not be merged."),
+        summary=("This PR introduces critical security vulnerabilities and must not be merged."),
         walkthrough="## Review\n\nThe database module has severe issues.",
         findings=[
             Finding(
@@ -412,6 +410,138 @@ def test_accept_valid_markdown(
     ]:
         output = render_comment(result)
         fence_count = output.count("```")
-        assert (
-            fence_count % 2 == 0
-        ), f"Odd backtick fence count {fence_count} for ripeness={result.ripeness}"
+        assert fence_count % 2 == 0, (
+            f"Odd backtick fence count {fence_count} for ripeness={result.ripeness}"
+        )
+
+
+# ---------------------------------------------------------------------------
+# Severity threshold filtering tests
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
+def multi_severity_result() -> ReviewResult:
+    """ReviewResult with findings at all four severity levels."""
+    return ReviewResult(
+        ripeness=Ripeness.sour,
+        summary="This PR has issues at multiple severity levels.",
+        walkthrough="## Review\n\nMultiple severity levels present.",
+        findings=[
+            Finding(
+                file="a.py",
+                line=1,
+                severity=Severity.critical,
+                category=Category.security,
+                message="Critical security issue.",
+            ),
+            Finding(
+                file="b.py",
+                line=10,
+                severity=Severity.major,
+                category=Category.correctness,
+                message="Major logic bug.",
+            ),
+            Finding(
+                file="c.py",
+                line=20,
+                severity=Severity.minor,
+                category=Category.style,
+                message="Minor style issue.",
+            ),
+            Finding(
+                file="d.py",
+                line=30,
+                severity=Severity.info,
+                category=Category.docs,
+                message="Informational note.",
+            ),
+        ],
+        model="claude-sonnet-4-6",
+        usage={"input_tokens": 1000, "output_tokens": 200},
+    )
+
+
+def test_severity_threshold_info(multi_severity_result: ReviewResult) -> None:
+    """Threshold 'info' keeps all findings."""
+    output = render_comment(multi_severity_result, severity_threshold="info")
+    assert "Critical security issue." in output
+    assert "Major logic bug." in output
+    assert "Minor style issue." in output
+    assert "Informational note." in output
+
+
+def test_severity_threshold_minor(multi_severity_result: ReviewResult) -> None:
+    """Threshold 'minor' removes info findings."""
+    output = render_comment(multi_severity_result, severity_threshold="minor")
+    assert "Critical security issue." in output
+    assert "Major logic bug." in output
+    assert "Minor style issue." in output
+    assert "Informational note." not in output
+
+
+def test_severity_threshold_major(multi_severity_result: ReviewResult) -> None:
+    """Threshold 'major' keeps only major and critical."""
+    output = render_comment(multi_severity_result, severity_threshold="major")
+    assert "Critical security issue." in output
+    assert "Major logic bug." in output
+    assert "Minor style issue." not in output
+    assert "Informational note." not in output
+
+
+def test_severity_threshold_critical(multi_severity_result: ReviewResult) -> None:
+    """Threshold 'critical' keeps only critical findings."""
+    output = render_comment(multi_severity_result, severity_threshold="critical")
+    assert "Critical security issue." in output
+    assert "Major logic bug." not in output
+    assert "Minor style issue." not in output
+    assert "Informational note." not in output
+
+
+def test_severity_threshold_empty_after_filter(multi_severity_result: ReviewResult) -> None:
+    """When all findings are below threshold, shows 'No pits found'."""
+    # Create a result with only info findings
+    result = ReviewResult(
+        ripeness=Ripeness.ripe,
+        summary="OK.",
+        walkthrough="No issues.",
+        findings=[
+            Finding(
+                file="x.py",
+                severity=Severity.info,
+                category=Category.docs,
+                message="Just a note.",
+            ),
+        ],
+        model="test-model",
+        usage={},
+    )
+    output = render_comment(result, severity_threshold="minor")
+    assert "No pits found" in output
+
+
+def test_render_comment_with_threshold(multi_severity_result: ReviewResult) -> None:
+    """Integration: full render with threshold produces valid markdown."""
+    output = render_comment(multi_severity_result, severity_threshold="major")
+    assert REVIEW_MARKER in output
+    assert "## 🍯 Nectar" in output
+    assert "## 🪨 Pits" in output
+    # Only critical and major headings should be present
+    assert "### Critical" in output
+    assert "### Major" in output
+    assert "### Minor" not in output
+    assert "### Info" not in output
+
+
+def test_accept_threshold_filters_pits(multi_severity_result: ReviewResult) -> None:
+    """Acceptance: severity_threshold='major' matches golden snapshot."""
+    output = render_comment(multi_severity_result, severity_threshold="major")
+    expected = (FIXTURES_DIR / "golden_ripe_threshold_major.md").read_text(encoding="utf-8")
+    assert output == expected
+
+
+def test_default_threshold_unchanged(ripe_result_fixture: ReviewResult) -> None:
+    """Sanity: default threshold 'info' matches existing golden ripe snapshot."""
+    output = render_comment(ripe_result_fixture, severity_threshold="info")
+    expected = (FIXTURES_DIR / "golden_ripe.md").read_text(encoding="utf-8")
+    assert output == expected
