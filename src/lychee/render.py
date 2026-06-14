@@ -13,6 +13,13 @@ _SEVERITY_ORDER: list[Severity] = [
     Severity.info,
 ]
 
+_SEVERITY_RANK: dict[str, int] = {
+    "info": 0,
+    "minor": 1,
+    "major": 2,
+    "critical": 3,
+}
+
 _RIPENESS_BADGE: dict[Ripeness, str] = {
     Ripeness.ripe: "🟢 **Ripe**",
     Ripeness.unripe: "🟡 **Unripe**",
@@ -23,12 +30,17 @@ _RIPENESS_BADGE: dict[Ripeness, str] = {
 def render_comment(
     result: ReviewResult,
     cost_line: str | None = None,
+    severity_threshold: str = "info",
 ) -> str:
     """Render a ReviewResult to the PR comment markdown string.
 
     Sections in order: Header → Nectar → The Peel → Pits → Footer.
     cost_line is inserted before the footer when provided; pass None to omit it entirely.
+    severity_threshold filters out findings below the given severity level.
     """
+    threshold_rank = _SEVERITY_RANK[severity_threshold]
+    filtered = [f for f in result.findings if _SEVERITY_RANK[f.severity.value] >= threshold_rank]
+
     parts: list[str] = [
         _render_header(result),
         "---",
@@ -36,7 +48,7 @@ def render_comment(
         "---",
         f"## 🌿 The Peel\n{result.walkthrough}",
         "---",
-        f"## 🪨 Pits\n{_render_pits(result.findings)}",
+        f"## 🪨 Pits\n{_render_pits(filtered)}",
         "---",
     ]
     if cost_line is not None:
@@ -48,9 +60,7 @@ def render_comment(
 def _render_header(result: ReviewResult) -> str:
     """Render the Header block: hidden marker, title, model name, and Ripeness badge."""
     badge = _RIPENESS_BADGE[result.ripeness]
-    return (
-        f"{REVIEW_MARKER}\n" f"🌴 Lychee peeled this PR\n\n" f"**Model:** {result.model} | {badge}"
-    )
+    return f"{REVIEW_MARKER}\n🌴 Lychee peeled this PR\n\n**Model:** {result.model} | {badge}"
 
 
 def _render_pits(findings: list[Finding]) -> str:
