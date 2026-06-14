@@ -50,11 +50,11 @@ def test_run_review_importable() -> None:
 
 
 @patch("lychee.review.build_messages")
-@patch("lychee.review.build_system_prompt")
+@patch("lychee.review.build_system_prompt_blocks")
 @patch("lychee.review.build_context")
 def test_run_review_success(
     mock_build_context: MagicMock,
-    mock_build_system_prompt: MagicMock,
+    mock_build_system_prompt_blocks: MagicMock,
     mock_build_messages: MagicMock,
     mock_github_client: MagicMock,
     mock_claude_client: MagicMock,
@@ -63,7 +63,7 @@ def test_run_review_success(
 ) -> None:
     """run_review returns the expected ReviewResult on a successful pipeline run."""
     mock_build_context.return_value = review_context_simple
-    mock_build_system_prompt.return_value = "system prompt"
+    mock_build_system_prompt_blocks.return_value = [{"type": "text", "text": "system prompt", "cache_control": {"type": "ephemeral"}}]
     mock_build_messages.return_value = [{"role": "user", "content": "msg"}]
 
     result = run_review("owner/repo#42", default_config, mock_github_client, mock_claude_client)
@@ -73,11 +73,11 @@ def test_run_review_success(
 
 
 @patch("lychee.review.build_messages")
-@patch("lychee.review.build_system_prompt")
+@patch("lychee.review.build_system_prompt_blocks")
 @patch("lychee.review.build_context")
 def test_run_review_calls_build_context(
     mock_build_context: MagicMock,
-    mock_build_system_prompt: MagicMock,
+    mock_build_system_prompt_blocks: MagicMock,
     mock_build_messages: MagicMock,
     mock_github_client: MagicMock,
     mock_claude_client: MagicMock,
@@ -86,7 +86,7 @@ def test_run_review_calls_build_context(
 ) -> None:
     """build_context is called with the correct GitHubClient, parsed PullRequestRef, and config."""
     mock_build_context.return_value = review_context_simple
-    mock_build_system_prompt.return_value = "system prompt"
+    mock_build_system_prompt_blocks.return_value = [{"type": "text", "text": "system prompt", "cache_control": {"type": "ephemeral"}}]
     mock_build_messages.return_value = [{"role": "user", "content": "msg"}]
 
     run_review("owner/repo#42", default_config, mock_github_client, mock_claude_client)
@@ -99,35 +99,35 @@ def test_run_review_calls_build_context(
 
 
 @patch("lychee.review.build_messages")
-@patch("lychee.review.build_system_prompt")
+@patch("lychee.review.build_system_prompt_blocks")
 @patch("lychee.review.build_context")
-def test_run_review_calls_build_system_prompt(
+def test_run_review_calls_build_system_prompt_blocks(
     mock_build_context: MagicMock,
-    mock_build_system_prompt: MagicMock,
+    mock_build_system_prompt_blocks: MagicMock,
     mock_build_messages: MagicMock,
     mock_github_client: MagicMock,
     mock_claude_client: MagicMock,
     review_context_simple: ReviewContext,
     default_config: LycheeConfig,
 ) -> None:
-    """build_system_prompt is called with config and conventions from context."""
+    """build_system_prompt_blocks is called with config and conventions from context."""
     mock_build_context.return_value = review_context_simple
-    mock_build_system_prompt.return_value = "system prompt"
+    mock_build_system_prompt_blocks.return_value = [{"type": "text", "text": "system prompt", "cache_control": {"type": "ephemeral"}}]
     mock_build_messages.return_value = [{"role": "user", "content": "msg"}]
 
     run_review("owner/repo#42", default_config, mock_github_client, mock_claude_client)
 
-    mock_build_system_prompt.assert_called_once_with(
+    mock_build_system_prompt_blocks.assert_called_once_with(
         default_config, conventions=review_context_simple.conventions
     )
 
 
 @patch("lychee.review.build_messages")
-@patch("lychee.review.build_system_prompt")
+@patch("lychee.review.build_system_prompt_blocks")
 @patch("lychee.review.build_context")
 def test_run_review_calls_build_messages(
     mock_build_context: MagicMock,
-    mock_build_system_prompt: MagicMock,
+    mock_build_system_prompt_blocks: MagicMock,
     mock_build_messages: MagicMock,
     mock_github_client: MagicMock,
     mock_claude_client: MagicMock,
@@ -136,7 +136,7 @@ def test_run_review_calls_build_messages(
 ) -> None:
     """build_messages is called with the context and config."""
     mock_build_context.return_value = review_context_simple
-    mock_build_system_prompt.return_value = "system prompt"
+    mock_build_system_prompt_blocks.return_value = [{"type": "text", "text": "system prompt", "cache_control": {"type": "ephemeral"}}]
     mock_build_messages.return_value = [{"role": "user", "content": "msg"}]
 
     run_review("owner/repo#42", default_config, mock_github_client, mock_claude_client)
@@ -145,11 +145,11 @@ def test_run_review_calls_build_messages(
 
 
 @patch("lychee.review.build_messages")
-@patch("lychee.review.build_system_prompt")
+@patch("lychee.review.build_system_prompt_blocks")
 @patch("lychee.review.build_context")
 def test_run_review_calls_claude_review(
     mock_build_context: MagicMock,
-    mock_build_system_prompt: MagicMock,
+    mock_build_system_prompt_blocks: MagicMock,
     mock_build_messages: MagicMock,
     mock_github_client: MagicMock,
     mock_claude_client: MagicMock,
@@ -158,27 +158,30 @@ def test_run_review_calls_claude_review(
 ) -> None:
     """claude_client.review() is called with messages and system prompt."""
     mock_build_context.return_value = review_context_simple
-    mock_build_system_prompt.return_value = "system prompt"
+    mock_build_system_prompt_blocks.return_value = [{"type": "text", "text": "system prompt", "cache_control": {"type": "ephemeral"}}]
     messages = [{"role": "user", "content": "msg"}]
     mock_build_messages.return_value = messages
 
     run_review("owner/repo#42", default_config, mock_github_client, mock_claude_client)
 
-    mock_claude_client.review.assert_called_once_with(messages, system="system prompt")
+    mock_claude_client.review.assert_called_once_with(
+        messages,
+        system=[{"type": "text", "text": "system prompt", "cache_control": {"type": "ephemeral"}}],
+    )
 
 
 @patch("lychee.review.build_messages")
-@patch("lychee.review.build_system_prompt")
+@patch("lychee.review.build_system_prompt_blocks")
 @patch("lychee.review.build_context")
 def test_run_review_passes_conventions(
     mock_build_context: MagicMock,
-    mock_build_system_prompt: MagicMock,
+    mock_build_system_prompt_blocks: MagicMock,
     mock_build_messages: MagicMock,
     mock_github_client: MagicMock,
     mock_claude_client: MagicMock,
     default_config: LycheeConfig,
 ) -> None:
-    """When context has conventions, build_system_prompt receives them."""
+    """When context has conventions, build_system_prompt_blocks receives them."""
     context_with_conventions = ReviewContext(
         pr_number=42,
         pr_title="Add utility functions",
@@ -194,38 +197,38 @@ def test_run_review_passes_conventions(
         conventions="Use black for formatting. Max line length 100.",
     )
     mock_build_context.return_value = context_with_conventions
-    mock_build_system_prompt.return_value = "system prompt"
+    mock_build_system_prompt_blocks.return_value = [{"type": "text", "text": "system prompt", "cache_control": {"type": "ephemeral"}}]
     mock_build_messages.return_value = [{"role": "user", "content": "msg"}]
 
     run_review("owner/repo#42", default_config, mock_github_client, mock_claude_client)
 
-    mock_build_system_prompt.assert_called_once_with(
+    mock_build_system_prompt_blocks.assert_called_once_with(
         default_config,
         conventions="Use black for formatting. Max line length 100.",
     )
 
 
 @patch("lychee.review.build_messages")
-@patch("lychee.review.build_system_prompt")
+@patch("lychee.review.build_system_prompt_blocks")
 @patch("lychee.review.build_context")
 def test_run_review_no_conventions(
     mock_build_context: MagicMock,
-    mock_build_system_prompt: MagicMock,
+    mock_build_system_prompt_blocks: MagicMock,
     mock_build_messages: MagicMock,
     mock_github_client: MagicMock,
     mock_claude_client: MagicMock,
     review_context_simple: ReviewContext,
     default_config: LycheeConfig,
 ) -> None:
-    """When context has no conventions, build_system_prompt receives None."""
+    """When context has no conventions, build_system_prompt_blocks receives None."""
     assert review_context_simple.conventions is None
     mock_build_context.return_value = review_context_simple
-    mock_build_system_prompt.return_value = "system prompt"
+    mock_build_system_prompt_blocks.return_value = [{"type": "text", "text": "system prompt", "cache_control": {"type": "ephemeral"}}]
     mock_build_messages.return_value = [{"role": "user", "content": "msg"}]
 
     run_review("owner/repo#42", default_config, mock_github_client, mock_claude_client)
 
-    mock_build_system_prompt.assert_called_once_with(default_config, conventions=None)
+    mock_build_system_prompt_blocks.assert_called_once_with(default_config, conventions=None)
 
 
 def test_run_review_invalid_ref_raises(
@@ -253,11 +256,11 @@ def test_run_review_github_error_propagates(
 
 
 @patch("lychee.review.build_messages")
-@patch("lychee.review.build_system_prompt")
+@patch("lychee.review.build_system_prompt_blocks")
 @patch("lychee.review.build_context")
 def test_run_review_claude_error_propagates(
     mock_build_context: MagicMock,
-    mock_build_system_prompt: MagicMock,
+    mock_build_system_prompt_blocks: MagicMock,
     mock_build_messages: MagicMock,
     mock_github_client: MagicMock,
     mock_claude_client: MagicMock,
@@ -266,7 +269,7 @@ def test_run_review_claude_error_propagates(
 ) -> None:
     """ClaudeReviewError from claude_client.review() propagates without being caught."""
     mock_build_context.return_value = review_context_simple
-    mock_build_system_prompt.return_value = "system prompt"
+    mock_build_system_prompt_blocks.return_value = [{"type": "text", "text": "system prompt", "cache_control": {"type": "ephemeral"}}]
     mock_build_messages.return_value = [{"role": "user", "content": "msg"}]
     mock_claude_client.review.side_effect = ClaudeReviewError("API error")
 
@@ -280,11 +283,11 @@ def test_run_review_claude_error_propagates(
 
 
 @patch("lychee.review.build_messages")
-@patch("lychee.review.build_system_prompt")
+@patch("lychee.review.build_system_prompt_blocks")
 @patch("lychee.review.build_context")
 def test_system_full_pipeline(
     mock_build_context: MagicMock,
-    mock_build_system_prompt: MagicMock,
+    mock_build_system_prompt_blocks: MagicMock,
     mock_build_messages: MagicMock,
     mock_github_client: MagicMock,
     mock_claude_client: MagicMock,
@@ -294,7 +297,7 @@ def test_system_full_pipeline(
 ) -> None:
     """End-to-end pipeline with mocked GitHubClient and ClaudeClient."""
     mock_build_context.return_value = review_context_simple
-    mock_build_system_prompt.return_value = "system prompt"
+    mock_build_system_prompt_blocks.return_value = [{"type": "text", "text": "system prompt", "cache_control": {"type": "ephemeral"}}]
     mock_build_messages.return_value = [{"role": "user", "content": "msg"}]
     mock_claude_client.review.return_value = ripe_review_result
 
@@ -305,11 +308,11 @@ def test_system_full_pipeline(
 
 
 @patch("lychee.review.build_messages")
-@patch("lychee.review.build_system_prompt")
+@patch("lychee.review.build_system_prompt_blocks")
 @patch("lychee.review.build_context")
 def test_system_model_from_config(
     mock_build_context: MagicMock,
-    mock_build_system_prompt: MagicMock,
+    mock_build_system_prompt_blocks: MagicMock,
     mock_build_messages: MagicMock,
     mock_github_client: MagicMock,
     mock_claude_client: MagicMock,
@@ -319,7 +322,7 @@ def test_system_model_from_config(
 ) -> None:
     """ReviewResult.model reflects the model used by ClaudeClient."""
     mock_build_context.return_value = review_context_simple
-    mock_build_system_prompt.return_value = "system prompt"
+    mock_build_system_prompt_blocks.return_value = [{"type": "text", "text": "system prompt", "cache_control": {"type": "ephemeral"}}]
     mock_build_messages.return_value = [{"role": "user", "content": "msg"}]
     mock_claude_client.review.return_value = ripe_review_result
 
@@ -341,11 +344,11 @@ def test_system_dry_run_still_works(default_config: LycheeConfig) -> None:
 
 
 @patch("lychee.review.build_messages")
-@patch("lychee.review.build_system_prompt")
+@patch("lychee.review.build_system_prompt_blocks")
 @patch("lychee.review.build_context")
 def test_accept_end_to_end_mocked(
     mock_build_context: MagicMock,
-    mock_build_system_prompt: MagicMock,
+    mock_build_system_prompt_blocks: MagicMock,
     mock_build_messages: MagicMock,
     mock_github_client: MagicMock,
     mock_claude_client: MagicMock,
@@ -354,7 +357,7 @@ def test_accept_end_to_end_mocked(
 ) -> None:
     """Acceptance: end-to-end pipeline yields a valid ReviewResult."""
     mock_build_context.return_value = review_context_simple
-    mock_build_system_prompt.return_value = "system prompt"
+    mock_build_system_prompt_blocks.return_value = [{"type": "text", "text": "system prompt", "cache_control": {"type": "ephemeral"}}]
     mock_build_messages.return_value = [{"role": "user", "content": "msg"}]
 
     result = run_review("owner/repo#42", default_config, mock_github_client, mock_claude_client)
@@ -366,11 +369,11 @@ def test_accept_end_to_end_mocked(
 
 
 @patch("lychee.review.build_messages")
-@patch("lychee.review.build_system_prompt")
+@patch("lychee.review.build_system_prompt_blocks")
 @patch("lychee.review.build_context")
 def test_accept_model_chosen_per_config(
     mock_build_context: MagicMock,
-    mock_build_system_prompt: MagicMock,
+    mock_build_system_prompt_blocks: MagicMock,
     mock_build_messages: MagicMock,
     mock_github_client: MagicMock,
     mock_claude_client: MagicMock,
@@ -380,7 +383,7 @@ def test_accept_model_chosen_per_config(
 ) -> None:
     """Acceptance: model in the result matches the configured model."""
     mock_build_context.return_value = review_context_simple
-    mock_build_system_prompt.return_value = "system prompt"
+    mock_build_system_prompt_blocks.return_value = [{"type": "text", "text": "system prompt", "cache_control": {"type": "ephemeral"}}]
     mock_build_messages.return_value = [{"role": "user", "content": "msg"}]
     mock_claude_client.review.return_value = ripe_review_result
 
@@ -416,11 +419,11 @@ def test_dry_run_output_unchanged(default_config: LycheeConfig) -> None:
 
 
 @patch("lychee.review.build_messages")
-@patch("lychee.review.build_system_prompt")
+@patch("lychee.review.build_system_prompt_blocks")
 @patch("lychee.review.build_context")
 def test_run_review_result_shape(
     mock_build_context: MagicMock,
-    mock_build_system_prompt: MagicMock,
+    mock_build_system_prompt_blocks: MagicMock,
     mock_build_messages: MagicMock,
     mock_github_client: MagicMock,
     mock_claude_client: MagicMock,
@@ -429,7 +432,7 @@ def test_run_review_result_shape(
 ) -> None:
     """Returned ReviewResult has all required fields populated."""
     mock_build_context.return_value = review_context_simple
-    mock_build_system_prompt.return_value = "system prompt"
+    mock_build_system_prompt_blocks.return_value = [{"type": "text", "text": "system prompt", "cache_control": {"type": "ephemeral"}}]
     mock_build_messages.return_value = [{"role": "user", "content": "msg"}]
 
     result = run_review("owner/repo#42", default_config, mock_github_client, mock_claude_client)
