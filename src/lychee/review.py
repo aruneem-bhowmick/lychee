@@ -12,7 +12,7 @@ from lychee.config import LycheeConfig
 from lychee.context import build_context
 from lychee.github_client import GitHubClient, PullRequestRef
 from lychee.models import ReviewResult
-from lychee.prompt import build_messages, build_system_prompt
+from lychee.prompt import build_messages, build_system_prompt_blocks
 from lychee.render import render_comment
 
 _logger = logging.getLogger(__name__)
@@ -48,7 +48,7 @@ def run_review(
     """
     parsed_ref = PullRequestRef.parse(pr_ref)
     context = build_context(github_client, parsed_ref, config)
-    system = build_system_prompt(config, conventions=context.conventions)
+    system = build_system_prompt_blocks(config, conventions=context.conventions)
     messages = build_messages(context, config)
     result = claude_client.review(messages, system=system)
 

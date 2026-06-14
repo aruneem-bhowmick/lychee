@@ -61,8 +61,15 @@ class ClaudeClient:
             usage["cache_read_input_tokens"] = cache_read
         return usage
 
-    def review(self, messages: list[dict[str, Any]], system: str | None = None) -> ReviewResult:
+    def review(
+        self,
+        messages: list[dict[str, Any]],
+        system: str | list[dict[str, Any]] | None = None,
+    ) -> ReviewResult:
         """Send messages to Claude and return a parsed ReviewResult.
+
+        ``system`` accepts a plain string, a list of content blocks (for
+        prompt caching), or ``None``.
 
         Raises ClaudeReviewError on API errors, connection failures,
         missing tool blocks, or invalid tool input.
@@ -79,6 +86,11 @@ class ClaudeClient:
         }
         if system is not None:
             create_kwargs["system"] = system
+
+        if isinstance(system, list):
+            logger.debug("Using system prompt cache blocks (%d block(s))", len(system))
+        elif isinstance(system, str):
+            logger.debug("Using plain string system prompt (%d chars)", len(system))
 
         logger.info("Calling Claude API (model=%s)", self._model)
         try:
