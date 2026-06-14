@@ -9,7 +9,7 @@ from typing import Any
 
 from lychee.claude import ClaudeClient
 from lychee.config import LycheeConfig
-from lychee.context import build_context
+from lychee.context import ReviewContext, build_context
 from lychee.github_client import GitHubClient, PullRequestRef
 from lychee.models import ReviewResult
 from lychee.prompt import build_messages, build_system_prompt_blocks
@@ -20,6 +20,25 @@ _logger = logging.getLogger(__name__)
 # Resolved relative to this file: src/lychee/review.py → src/lychee → src → project root
 _PROJECT_ROOT: Path = Path(__file__).parent.parent.parent
 _BUNDLED_RESULT_PATH: Path = _PROJECT_ROOT / "tests" / "fixtures" / "review_result_ripe.json"
+
+_LARGE_PR_THRESHOLD: int = 100_000
+
+
+def _compute_context_size(context: ReviewContext) -> int:
+    """Compute the total context size in characters from diff and file contents."""
+    total = len(context.diff)
+    for f in context.changed_files:
+        content: str | None = f.get("content_at_head")
+        if content is not None:
+            total += len(content)
+    return total
+
+
+def select_model(config: LycheeConfig, context_size: int) -> str:
+    """Pick the model based on context size: large_pr if above threshold, else default."""
+    if context_size > _LARGE_PR_THRESHOLD:
+        return config.model.large_pr
+    return config.model.default
 
 
 def run_review(
@@ -50,7 +69,17 @@ def run_review(
     context = build_context(github_client, parsed_ref, config)
     system = build_system_prompt_blocks(config, conventions=context.conventions)
     messages = build_messages(context, config)
-    result = claude_client.review(messages, system=system)
+
+    context_size = _compute_context_size(context)
+    model_override = select_model(config, context_size)
+    _logger.info(
+        "Model selection: context_size=%d threshold=%d selected=%s",
+        context_size,
+        _LARGE_PR_THRESHOLD,
+        model_override,
+    )
+
+    result = claude_client.review(messages, system=system, model_override=model_override)
 
     _logger.info(
         "Review complete: pr=%s model=%s ripeness=%s findings=%d usage=%s",
