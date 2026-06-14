@@ -601,3 +601,57 @@ class TestPromptCaching:
             )
 
         assert any("plain string" in r.message for r in caplog.records)
+
+
+# ---------------------------------------------------------------------------
+# Model override tests
+# ---------------------------------------------------------------------------
+
+
+class TestModelOverride:
+    """Tests for the model_override parameter in ClaudeClient.review()."""
+
+    def _make_client(self) -> tuple[ClaudeClient, MagicMock]:
+        """Create a ClaudeClient with a mocked Anthropic client."""
+        client = ClaudeClient(api_key="sk-test", model="claude-sonnet-4-6")
+        mock_api = MagicMock()
+        client._client = mock_api  # type: ignore[assignment]
+        return client, mock_api
+
+    def test_review_model_override(self) -> None:
+        """model_override overrides self._model for the API call."""
+        client, mock_api = self._make_client()
+        mock_api.messages.create.return_value = _make_message()
+
+        client.review(
+            messages=[{"role": "user", "content": "Review."}],
+            model_override="claude-opus-4-8",
+        )
+
+        call_kwargs = mock_api.messages.create.call_args.kwargs
+        assert call_kwargs["model"] == "claude-opus-4-8"
+
+    def test_review_model_override_none(self) -> None:
+        """model_override=None uses self._model."""
+        client, mock_api = self._make_client()
+        mock_api.messages.create.return_value = _make_message()
+
+        client.review(
+            messages=[{"role": "user", "content": "Review."}],
+            model_override=None,
+        )
+
+        call_kwargs = mock_api.messages.create.call_args.kwargs
+        assert call_kwargs["model"] == "claude-sonnet-4-6"
+
+    def test_review_model_override_in_result(self) -> None:
+        """Overridden model appears in ReviewResult.model."""
+        client, mock_api = self._make_client()
+        mock_api.messages.create.return_value = _make_message()
+
+        result = client.review(
+            messages=[{"role": "user", "content": "Review."}],
+            model_override="claude-opus-4-8",
+        )
+
+        assert result.model == "claude-opus-4-8"

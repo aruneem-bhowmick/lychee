@@ -20,7 +20,13 @@ from lychee.context import ReviewContext
 from lychee.github_client import PullRequestRef
 from lychee.models import ReviewResult
 from lychee.render import REVIEW_MARKER
-from lychee.review import run_review, run_review_dry
+from lychee.review import (
+    _LARGE_PR_THRESHOLD,
+    _compute_context_size,
+    run_review,
+    run_review_dry,
+    select_model,
+)
 
 FIXTURES_DIR = Path(__file__).parent / "fixtures"
 PR_SIMPLE_FIXTURE = FIXTURES_DIR / "pr_simple.json"
@@ -177,6 +183,7 @@ def test_run_review_calls_claude_review(
     mock_claude_client.review.assert_called_once_with(
         messages,
         system=[{"type": "text", "text": "system prompt", "cache_control": {"type": "ephemeral"}}],
+        model_override="claude-sonnet-4-6",
     )
 
 
@@ -552,3 +559,163 @@ def test_accept_cost_data_available(
     assert isinstance(result.usage, dict)
     assert "input_tokens" in result.usage
     assert "output_tokens" in result.usage
+
+
+# ---------------------------------------------------------------------------
+# Model tiering tests
+# ---------------------------------------------------------------------------
+
+
+class TestModelTiering:
+    """Tests for select_model() and context-size-based model selection."""
+
+    def test_select_model_default(self, default_config: LycheeConfig) -> None:
+        """Context below threshold returns config.model.default."""
+        result = select_model(default_config, context_size=1000)
+        assert result == default_config.model.default
+
+    def test_select_model_large_pr(self, default_config: LycheeConfig) -> None:
+        """Context above threshold returns config.model.large_pr."""
+        result = select_model(default_config, context_size=_LARGE_PR_THRESHOLD + 1)
+        assert result == default_config.model.large_pr
+
+    def test_select_model_at_boundary(self, default_config: LycheeConfig) -> None:
+        """Context exactly at threshold returns default (exclusive boundary)."""
+        result = select_model(default_config, context_size=_LARGE_PR_THRESHOLD)
+        assert result == default_config.model.default
+
+    def test_compute_context_size_simple(self, review_context_simple: ReviewContext) -> None:
+        """_compute_context_size sums diff and content_at_head."""
+        size = _compute_context_size(review_context_simple)
+        expected = len(review_context_simple.diff)
+        for f in review_context_simple.changed_files:
+            if f.get("content_at_head") is not None:
+                expected += len(f["content_at_head"])
+        assert size == expected
+
+    @patch("lychee.review.build_messages")
+    @patch("lychee.review.build_system_prompt_blocks")
+    @patch("lychee.review.build_context")
+    def test_run_review_model_tiering_large(
+        self,
+        mock_build_context: MagicMock,
+        mock_build_system_prompt_blocks: MagicMock,
+        mock_build_messages: MagicMock,
+        mock_github_client: MagicMock,
+        mock_claude_client: MagicMock,
+        default_config: LycheeConfig,
+    ) -> None:
+        """Integration: large context triggers large_pr model override."""
+        # Create a context with a very large diff
+        large_context = ReviewContext(
+            pr_number=42,
+            pr_title="Big PR",
+            pr_body="Large changes.",
+            pr_author="dev",
+            base_ref="main",
+            head_ref="feat/big",
+            head_sha="abc123",
+            repo_full_name="owner/repo",
+            diff="x" * (_LARGE_PR_THRESHOLD + 1),
+            changed_files=[],
+            commit_messages=["big change"],
+            conventions=None,
+        )
+        mock_build_context.return_value = large_context
+        mock_build_system_prompt_blocks.return_value = [
+            {"type": "text", "text": "prompt", "cache_control": {"type": "ephemeral"}}
+        ]
+        mock_build_messages.return_value = [{"role": "user", "content": "msg"}]
+
+        run_review("owner/repo#42", default_config, mock_github_client, mock_claude_client)
+
+        call_kwargs = mock_claude_client.review.call_args.kwargs
+        assert call_kwargs["model_override"] == default_config.model.large_pr
+
+    @patch("lychee.review.build_messages")
+    @patch("lychee.review.build_system_prompt_blocks")
+    @patch("lychee.review.build_context")
+    def test_run_review_default_model(
+        self,
+        mock_build_context: MagicMock,
+        mock_build_system_prompt_blocks: MagicMock,
+        mock_build_messages: MagicMock,
+        mock_github_client: MagicMock,
+        mock_claude_client: MagicMock,
+        review_context_simple: ReviewContext,
+        default_config: LycheeConfig,
+    ) -> None:
+        """Integration: small context uses default model override."""
+        mock_build_context.return_value = review_context_simple
+        mock_build_system_prompt_blocks.return_value = [
+            {"type": "text", "text": "prompt", "cache_control": {"type": "ephemeral"}}
+        ]
+        mock_build_messages.return_value = [{"role": "user", "content": "msg"}]
+
+        run_review("owner/repo#42", default_config, mock_github_client, mock_claude_client)
+
+        call_kwargs = mock_claude_client.review.call_args.kwargs
+        assert call_kwargs["model_override"] == default_config.model.default
+
+    @patch("lychee.review.build_messages")
+    @patch("lychee.review.build_system_prompt_blocks")
+    @patch("lychee.review.build_context")
+    def test_accept_tiering_selects_models(
+        self,
+        mock_build_context: MagicMock,
+        mock_build_system_prompt_blocks: MagicMock,
+        mock_build_messages: MagicMock,
+        mock_github_client: MagicMock,
+        mock_claude_client: MagicMock,
+        default_config: LycheeConfig,
+    ) -> None:
+        """Acceptance: both model paths (default and large_pr) are verified."""
+        mock_build_system_prompt_blocks.return_value = [
+            {"type": "text", "text": "prompt", "cache_control": {"type": "ephemeral"}}
+        ]
+        mock_build_messages.return_value = [{"role": "user", "content": "msg"}]
+
+        # Small context → default model
+        small_context = ReviewContext(
+            pr_number=1,
+            pr_title="Small",
+            pr_body=None,
+            pr_author="dev",
+            base_ref="main",
+            head_ref="fix",
+            head_sha="000",
+            repo_full_name="owner/repo",
+            diff="small diff",
+            changed_files=[],
+            commit_messages=[],
+            conventions=None,
+        )
+        mock_build_context.return_value = small_context
+        run_review("owner/repo#1", default_config, mock_github_client, mock_claude_client)
+        assert mock_claude_client.review.call_args.kwargs["model_override"] == "claude-sonnet-4-6"
+
+        mock_claude_client.reset_mock()
+
+        # Large context → large_pr model
+        large_context = ReviewContext(
+            pr_number=2,
+            pr_title="Large",
+            pr_body=None,
+            pr_author="dev",
+            base_ref="main",
+            head_ref="feat",
+            head_sha="111",
+            repo_full_name="owner/repo",
+            diff="x" * (_LARGE_PR_THRESHOLD + 1),
+            changed_files=[],
+            commit_messages=[],
+            conventions=None,
+        )
+        mock_build_context.return_value = large_context
+        run_review("owner/repo#2", default_config, mock_github_client, mock_claude_client)
+        assert mock_claude_client.review.call_args.kwargs["model_override"] == "claude-opus-4-8"
+
+    def test_default_config_behavior_unchanged(self, default_config: LycheeConfig) -> None:
+        """Sanity: default config with small context selects the default model."""
+        model = select_model(default_config, context_size=500)
+        assert model == "claude-sonnet-4-6"
