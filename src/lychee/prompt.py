@@ -109,6 +109,30 @@ def build_system_prompt(
     return _SECTION_SEP.join(sections)
 
 
+def build_system_prompt_blocks(
+    config: LycheeConfig,
+    conventions: str | None = None,
+) -> list[dict[str, Any]]:
+    """Build the system prompt as a list of cacheable content blocks.
+
+    Wraps the output of ``build_system_prompt()`` in an Anthropic content
+    block with ``cache_control`` set to ``{"type": "ephemeral"}``.  This
+    allows the SDK to serve cached reads on repeated or concurrent reviews,
+    reducing input-token costs on cache hits.
+
+    The returned structure is accepted directly by the ``system`` parameter
+    of the Anthropic Messages API.
+    """
+    text = build_system_prompt(config, conventions=conventions)
+    return [
+        {
+            "type": "text",
+            "text": text,
+            "cache_control": {"type": "ephemeral"},
+        }
+    ]
+
+
 def build_user_message(context: ReviewContext) -> str:
     """Build the user message containing the PR context for review.
 
