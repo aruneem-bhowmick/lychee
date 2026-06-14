@@ -82,7 +82,9 @@ def review(dry_run: bool, fixture: Path | None, pr: str | None, post: bool) -> N
     result = run_review(pr, config, github_client, claude_client)
 
     cost_line: str | None = None  # Cost footer computation deferred
-    comment_body = render_comment(result, cost_line=cost_line)
+    comment_body = render_comment(
+        result, cost_line=cost_line, severity_threshold=config.review.severity_threshold
+    )
 
     if post:
         poster = SummaryPoster(github_client)
