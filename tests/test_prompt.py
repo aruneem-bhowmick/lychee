@@ -553,3 +553,93 @@ class TestPromptSurface:
         output = build_user_message(fixture_context)
         snapshot = (FIXTURES_DIR / "user_message_snapshot.txt").read_text(encoding="utf-8")
         assert output == snapshot
+
+
+# ---------------------------------------------------------------------------
+# Tone and language tests
+# ---------------------------------------------------------------------------
+
+
+class TestToneAndLanguage:
+    """Tests for tone and language config-driven prompt sections."""
+
+    def test_build_system_prompt_tone_balanced(self) -> None:
+        """Default tone (balanced) produces no '## Tone' section."""
+        config = LycheeConfig()
+        output = build_system_prompt(config)
+        assert "## Tone" not in output
+
+    def test_build_system_prompt_tone_concise(self) -> None:
+        """Concise tone appends the concise instruction."""
+        config = LycheeConfig(review={"tone": "concise"})  # type: ignore[arg-type]
+        output = build_system_prompt(config)
+        assert "## Tone" in output
+        assert "Be concise" in output
+        assert "Keep the Nectar under 3 sentences" in output
+
+    def test_build_system_prompt_tone_detailed(self) -> None:
+        """Detailed tone appends the detailed instruction."""
+        config = LycheeConfig(review={"tone": "detailed"})  # type: ignore[arg-type]
+        output = build_system_prompt(config)
+        assert "## Tone" in output
+        assert "Be thorough and detailed" in output
+        assert "Walk through each file" in output
+
+    def test_build_system_prompt_language_en(self) -> None:
+        """Default language (en) produces no '## Language' section."""
+        config = LycheeConfig()
+        output = build_system_prompt(config)
+        assert "## Language" not in output
+
+    def test_build_system_prompt_language_non_en(self) -> None:
+        """Non-English language appends the language instruction."""
+        config = LycheeConfig(review={"language": "ja"})  # type: ignore[arg-type]
+        output = build_system_prompt(config)
+        assert "## Language" in output
+        assert "in ja" in output
+
+    def test_build_system_prompt_tone_and_language(self) -> None:
+        """Both tone and language can be set together."""
+        config = LycheeConfig(review={"tone": "concise", "language": "fr"})  # type: ignore[arg-type]
+        output = build_system_prompt(config)
+        assert "## Tone" in output
+        assert "Be concise" in output
+        assert "## Language" in output
+        assert "in fr" in output
+
+    def test_build_system_prompt_blocks_includes_tone(self) -> None:
+        """build_system_prompt_blocks reflects tone in the block text."""
+        config = LycheeConfig(review={"tone": "detailed"})  # type: ignore[arg-type]
+        blocks = build_system_prompt_blocks(config)
+        assert "## Tone" in blocks[0]["text"]
+        assert "Be thorough and detailed" in blocks[0]["text"]
+
+    def test_accept_tone_reflected(self) -> None:
+        """Acceptance: concise config produces concise instruction in prompt."""
+        config = LycheeConfig(review={"tone": "concise"})  # type: ignore[arg-type]
+        output = build_system_prompt(config)
+        assert "Omit the walkthrough if the PR is straightforward" in output
+
+    def test_accept_language_reflected(self) -> None:
+        """Acceptance: language='ja' produces language instruction."""
+        config = LycheeConfig(review={"language": "ja"})  # type: ignore[arg-type]
+        output = build_system_prompt(config)
+        assert "Write your entire review" in output
+        assert "in ja" in output
+
+    def test_system_prompt_with_tone_snapshot(self) -> None:
+        """Regression: prompt with tone='concise' matches snapshot."""
+        config = LycheeConfig(review={"tone": "concise"})  # type: ignore[arg-type]
+        output = build_system_prompt(config)
+        snapshot = (FIXTURES_DIR / "system_prompt_concise_snapshot.txt").read_text(encoding="utf-8")
+        assert output == snapshot, (
+            "System prompt with tone=concise changed. If intentional, "
+            "regenerate tests/fixtures/system_prompt_concise_snapshot.txt."
+        )
+
+    def test_default_config_prompt_unchanged(self) -> None:
+        """Sanity: default config output is identical to baseline snapshot."""
+        config = LycheeConfig()
+        output = build_system_prompt(config)
+        snapshot = (FIXTURES_DIR / "system_prompt_snapshot.txt").read_text(encoding="utf-8")
+        assert output == snapshot
