@@ -65,20 +65,25 @@ class ClaudeClient:
         self,
         messages: list[dict[str, Any]],
         system: str | list[dict[str, Any]] | None = None,
+        model_override: str | None = None,
     ) -> ReviewResult:
         """Send messages to Claude and return a parsed ReviewResult.
 
         ``system`` accepts a plain string, a list of content blocks (for
         prompt caching), or ``None``.
 
+        ``model_override``, when provided, overrides ``self._model`` for this
+        API call and is injected into the returned ReviewResult.
+
         Raises ClaudeReviewError on API errors, connection failures,
         missing tool blocks, or invalid tool input.
         """
+        effective_model = model_override if model_override is not None else self._model
         tools = [ReviewResult.to_tool_schema()]
         tool_choice: dict[str, str] = {"type": "tool", "name": "submit_review"}
 
         create_kwargs: dict[str, Any] = {
-            "model": self._model,
+            "model": effective_model,
             "max_tokens": 4096,
             "messages": messages,
             "tools": tools,
@@ -92,7 +97,7 @@ class ClaudeClient:
         elif isinstance(system, str):
             logger.debug("Using plain string system prompt (%d chars)", len(system))
 
-        logger.info("Calling Claude API (model=%s)", self._model)
+        logger.info("Calling Claude API (model=%s)", effective_model)
         try:
             response = self._client.messages.create(**create_kwargs)
         except anthropic.APIConnectionError as exc:
@@ -107,15 +112,16 @@ class ClaudeClient:
 
         try:
             result = ReviewResult.from_tool_input(
-                {**tool_input, "model": self._model, "usage": usage}
+                {**tool_input, "model": effective_model, "usage": usage}
             )
         except pydantic.ValidationError as exc:
             logger.warning("Invalid tool input from Claude: %s", exc)
             raise ClaudeReviewError(f"Invalid tool input: {exc}") from exc
 
         logger.info(
-            "Review complete (ripeness=%s, findings=%d)",
+            "Review complete (ripeness=%s, findings=%d, model=%s)",
             result.ripeness,
             len(result.findings),
+            effective_model,
         )
         return result
