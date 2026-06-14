@@ -70,6 +70,21 @@ where possible. If the PR is clean, say so — an empty findings list with ripen
 is valid."""
 
 
+_TONE_INSTRUCTIONS: dict[str, str] = {
+    "balanced": "",
+    "concise": (
+        "Be concise. Keep the Nectar under 3 sentences. "
+        "Keep each finding message under 2 sentences. "
+        "Omit the walkthrough if the PR is straightforward."
+    ),
+    "detailed": (
+        "Be thorough and detailed. Provide extensive context in the Nectar. "
+        "Walk through each file's changes comprehensively. "
+        "Explain the reasoning behind each finding."
+    ),
+}
+
+
 def _conventions_section(conventions: str) -> str:
     """Format the optional project conventions section."""
     return (
@@ -105,6 +120,15 @@ def build_system_prompt(
 
     if conventions:
         sections.append(_conventions_section(conventions))
+
+    if config.review.tone != "balanced":
+        sections.append(f"## Tone\n\n{_TONE_INSTRUCTIONS[config.review.tone]}")
+
+    if config.review.language != "en":
+        sections.append(
+            f"## Language\n\nWrite your entire review "
+            f"(summary, walkthrough, and finding messages) in {config.review.language}."
+        )
 
     return _SECTION_SEP.join(sections)
 
