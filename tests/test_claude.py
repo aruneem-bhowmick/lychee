@@ -491,3 +491,113 @@ class TestAPI:
         props = schema["input_schema"]["properties"]
         for field in ("ripeness", "summary", "walkthrough", "findings"):
             assert field in props, f"Missing field '{field}' in tool schema"
+
+    def test_api_system_param_accepts_blocks(self) -> None:
+        """review() passes a list of content blocks as the system parameter."""
+        client, mock_api = self._make_client()
+        mock_api.messages.create.return_value = _make_message()
+
+        blocks = [
+            {"type": "text", "text": "You are a reviewer.", "cache_control": {"type": "ephemeral"}}
+        ]
+        client.review(
+            messages=[{"role": "user", "content": "Review."}],
+            system=blocks,
+        )
+
+        call_kwargs = mock_api.messages.create.call_args.kwargs
+        assert call_kwargs["system"] == blocks
+
+
+# ---------------------------------------------------------------------------
+# Prompt caching tests
+# ---------------------------------------------------------------------------
+
+
+class TestPromptCaching:
+    """Tests for prompt caching support in ClaudeClient.review()."""
+
+    def _make_client(self) -> tuple[ClaudeClient, MagicMock]:
+        """Create a ClaudeClient with a mocked Anthropic client."""
+        client = ClaudeClient(api_key="sk-test", model="claude-sonnet-4-6")
+        mock_api = MagicMock()
+        client._client = mock_api  # type: ignore[assignment]
+        return client, mock_api
+
+    def test_review_passes_cache_blocks(self) -> None:
+        """review() forwards cache blocks to messages.create as system."""
+        client, mock_api = self._make_client()
+        mock_api.messages.create.return_value = _make_message()
+
+        blocks = [{"type": "text", "text": "prompt", "cache_control": {"type": "ephemeral"}}]
+        client.review(
+            messages=[{"role": "user", "content": "Review."}],
+            system=blocks,
+        )
+
+        call_kwargs = mock_api.messages.create.call_args.kwargs
+        assert call_kwargs["system"] is blocks
+
+    def test_review_plain_string_still_works(self) -> None:
+        """review() still works when system is a plain string."""
+        client, mock_api = self._make_client()
+        mock_api.messages.create.return_value = _make_message()
+
+        client.review(
+            messages=[{"role": "user", "content": "Review."}],
+            system="You are a code reviewer.",
+        )
+
+        call_kwargs = mock_api.messages.create.call_args.kwargs
+        assert call_kwargs["system"] == "You are a code reviewer."
+
+    def test_accept_cache_usage_extracted(self) -> None:
+        """Cache usage fields are extracted when present in the response."""
+        client, mock_api = self._make_client()
+        usage = _make_usage(
+            input_tokens=300,
+            output_tokens=100,
+            cache_creation_input_tokens=200,
+            cache_read_input_tokens=150,
+        )
+        mock_api.messages.create.return_value = _make_message(usage=usage)
+
+        blocks = [{"type": "text", "text": "prompt", "cache_control": {"type": "ephemeral"}}]
+        result = client.review(
+            messages=[{"role": "user", "content": "Review."}],
+            system=blocks,
+        )
+
+        assert result.usage["cache_creation_input_tokens"] == 200
+        assert result.usage["cache_read_input_tokens"] == 150
+
+    def test_logs_cache_blocks_debug(self, caplog: pytest.LogCaptureFixture) -> None:
+        """Debug log message is emitted when using cache blocks."""
+        client, mock_api = self._make_client()
+        mock_api.messages.create.return_value = _make_message()
+
+        blocks = [{"type": "text", "text": "prompt", "cache_control": {"type": "ephemeral"}}]
+        import logging
+
+        with caplog.at_level(logging.DEBUG, logger="lychee.claude"):
+            client.review(
+                messages=[{"role": "user", "content": "Review."}],
+                system=blocks,
+            )
+
+        assert any("cache blocks" in r.message for r in caplog.records)
+
+    def test_logs_plain_string_debug(self, caplog: pytest.LogCaptureFixture) -> None:
+        """Debug log message is emitted when using a plain string system prompt."""
+        client, mock_api = self._make_client()
+        mock_api.messages.create.return_value = _make_message()
+
+        import logging
+
+        with caplog.at_level(logging.DEBUG, logger="lychee.claude"):
+            client.review(
+                messages=[{"role": "user", "content": "Review."}],
+                system="You are a reviewer.",
+            )
+
+        assert any("plain string" in r.message for r in caplog.records)
