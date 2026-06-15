@@ -209,6 +209,95 @@ def build_user_message(context: ReviewContext) -> str:
     return "\n\n".join(sections)
 
 
+def build_map_user_message(
+    context: ReviewContext,
+    file_group: list[dict[str, Any]],
+    group_index: int,
+    total_groups: int,
+) -> str:
+    """Build a user message scoped to a single file group for the map phase.
+
+    Creates a shallow copy of *context* with ``changed_files`` and ``diff``
+    narrowed to only the files in *file_group*, prepends a group header, then
+    delegates to ``build_user_message()``.  The original context is not mutated.
+    """
+    from lychee.review import _filter_diff_for_files
+
+    filenames = {f["filename"] for f in file_group}
+    filtered_diff = _filter_diff_for_files(context.diff, filenames)
+
+    scoped_context = context.model_copy(
+        update={"changed_files": file_group, "diff": filtered_diff}
+    )
+
+    header = (
+        f"## Review Group {group_index + 1} of {total_groups}\n\n"
+        f"This is a partial review of a large PR. "
+        f"You are reviewing files {group_index * len(file_group) + 1}"
+        f"–{group_index * len(file_group) + len(file_group)} "
+        f"of {sum(1 for _ in range(total_groups)) * len(file_group)} total files "
+        f"(approximate).\n"
+        f"Focus your review on only the files shown below."
+    )
+
+    return header + "\n\n" + build_user_message(scoped_context)
+
+
+def build_reduce_user_message(
+    context: ReviewContext,
+    partial_results: list[dict[str, Any]],
+) -> str:
+    """Build a user message for the reduce phase that merges partial map results.
+
+    Includes PR metadata, all partial summaries/walkthroughs/findings, and
+    merge instructions directing the model to produce a single coherent
+    ReviewResult.
+    """
+    pr_body = context.pr_body if context.pr_body is not None else ""
+
+    sections: list[str] = []
+
+    # PR metadata (condensed)
+    sections.append(
+        f"## Pull Request: {context.pr_title}\n\n"
+        f"Author: {context.pr_author}\n"
+        f"Base: {context.base_ref} ← Head: {context.head_ref}\n\n"
+        f"{pr_body}"
+    )
+
+    # Merge instructions
+    sections.append(
+        "## Merge Instructions\n\n"
+        "You are performing the **reduce** step of a map-reduce review.\n"
+        "Below are the partial review results from reviewing this PR in groups.\n"
+        "Your job is to merge them into a single, coherent review:\n\n"
+        "1. **Ripeness**: Choose the most conservative verdict across all partials "
+        "(sour > unripe > ripe).\n"
+        "2. **Summary**: Write a unified summary covering the entire PR.\n"
+        "3. **Walkthrough**: Combine all file walkthroughs into one ordered walkthrough.\n"
+        "4. **Findings**: Include all findings from all partials. De-duplicate exact "
+        "duplicates but keep all distinct findings.\n"
+    )
+
+    # Partial results
+    for i, partial in enumerate(partial_results, 1):
+        sections.append(
+            f"## Partial Review {i} of {len(partial_results)}\n\n"
+            f"### Summary\n{partial['summary']}\n\n"
+            f"### Walkthrough\n{partial['walkthrough']}\n\n"
+            f"### Ripeness\n{partial['ripeness']}\n\n"
+            f"### Findings\n"
+            + "\n".join(
+                f"- **{f['severity']}** ({f['category']}) `{f['file']}`"
+                + (f":{f['line']}" if f.get("line") else "")
+                + f": {f['message']}"
+                for f in partial.get("findings", [])
+            )
+        )
+
+    return "\n\n".join(sections)
+
+
 def build_messages(
     context: ReviewContext,
     config: LycheeConfig,
