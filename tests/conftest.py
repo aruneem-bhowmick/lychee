@@ -167,6 +167,73 @@ def review_context_simple() -> ReviewContext:
 
 
 @pytest.fixture()
+def review_context_large() -> ReviewContext:
+    """A large ReviewContext with 62 programmatically-generated files for map-reduce tests."""
+    changed_files: list[dict[str, Any]] = []
+    diff_lines: list[str] = []
+    for i in range(1, 63):
+        filename = f"src/module_{i:02d}.py"
+        content = f"# module {i}\ndef func_{i}(): pass\n"
+        changed_files.append(
+            {
+                "filename": filename,
+                "status": "modified" if i % 2 == 0 else "added",
+                "additions": 5,
+                "deletions": 2 if i % 2 == 0 else 0,
+                "patch": f"@@ -1,3 +1,5 @@\n+# module {i}",
+                "content_at_head": content,
+                "previous_filename": None,
+            }
+        )
+        diff_lines.append(
+            f"diff --git a/{filename} b/{filename}\n"
+            f"--- a/{filename}\n"
+            f"+++ b/{filename}\n"
+            f"@@ -1,3 +1,5 @@\n"
+            f"+# module {i}\n"
+            f"+def func_{i}(): pass\n"
+        )
+    return ReviewContext(
+        pr_number=999,
+        pr_title="Large refactor: migrate to v2 API",
+        pr_body="This PR migrates all modules to the v2 API surface.",
+        pr_author="dev-lead",
+        base_ref="main",
+        head_ref="feat/v2-migration",
+        head_sha="aaa111bbb222",
+        repo_full_name="owner/repo",
+        diff="".join(diff_lines),
+        changed_files=changed_files,
+        commit_messages=["Migrate to v2 API", "Fix lint", "Add missing tests"],
+        conventions=None,
+    )
+
+
+@pytest.fixture()
+def map_reduce_partial_results() -> list[ReviewResult]:
+    """List of 3 ReviewResults simulating map-phase output."""
+    return [
+        ReviewResult(
+            ripeness=Ripeness.ripe,
+            summary=f"Partial review {i}: changes look good.",
+            walkthrough=f"## Group {i}\n\nFiles reviewed in group {i}.",
+            findings=[
+                Finding(
+                    file=f"src/module_{i * 10 + 1:02d}.py",
+                    line=5,
+                    severity=Severity.minor,
+                    category=Category.style,
+                    message=f"Consider renaming func_{i * 10 + 1} for clarity.",
+                )
+            ],
+            model="claude-sonnet-4-6",
+            usage={"input_tokens": 1000 * i, "output_tokens": 200 * i},
+        )
+        for i in range(1, 4)
+    ]
+
+
+@pytest.fixture()
 def review_context_minimal() -> ReviewContext:
     """A minimal ReviewContext with empty changed files and no conventions."""
     return ReviewContext(
