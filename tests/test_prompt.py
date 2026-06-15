@@ -15,8 +15,11 @@ import pytest
 from lychee.config import LycheeConfig
 from lychee.context import ReviewContext
 from lychee.models import ReviewResult
+from lychee.models import Category, Finding, Ripeness, Severity
 from lychee.prompt import (
+    build_map_user_message,
     build_messages,
+    build_reduce_user_message,
     build_system_prompt,
     build_system_prompt_blocks,
     build_user_message,
@@ -643,3 +646,175 @@ class TestToneAndLanguage:
         output = build_system_prompt(config)
         snapshot = (FIXTURES_DIR / "system_prompt_snapshot.txt").read_text(encoding="utf-8")
         assert output == snapshot
+
+
+# ---------------------------------------------------------------------------
+# Map-reduce prompt builder tests
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture()
+def large_context() -> ReviewContext:
+    """A ReviewContext with 20 files for map-phase testing."""
+    changed_files = []
+    diff_lines = []
+    for i in range(1, 21):
+        filename = f"src/mod_{i:02d}.py"
+        changed_files.append(
+            {
+                "filename": filename,
+                "status": "modified",
+                "additions": 3,
+                "deletions": 1,
+                "patch": f"@@ -1 +1,3 @@\n+# mod {i}",
+                "content_at_head": f"# mod {i}\ndef fn_{i}(): pass\n",
+                "previous_filename": None,
+            }
+        )
+        diff_lines.append(
+            f"diff --git a/{filename} b/{filename}\n"
+            f"--- a/{filename}\n"
+            f"+++ b/{filename}\n"
+            f"@@ -1 +1,3 @@\n"
+            f"+# mod {i}\n"
+        )
+    return ReviewContext(
+        pr_number=100,
+        pr_title="Large change",
+        pr_body="A large PR body.",
+        pr_author="author",
+        base_ref="main",
+        head_ref="feat/large",
+        head_sha="abc123",
+        repo_full_name="owner/repo",
+        diff="".join(diff_lines),
+        changed_files=changed_files,
+        commit_messages=["First commit", "Second commit"],
+        conventions=None,
+    )
+
+
+class TestBuildMapUserMessage:
+    """Tests for the map-phase user message builder."""
+
+    def test_group_header(self, large_context: ReviewContext) -> None:
+        """The message includes a group header with group index and total."""
+        group = large_context.changed_files[:5]
+        output = build_map_user_message(large_context, group, 0, 4)
+        assert "Review Group 1 of 4" in output
+
+    def test_pr_metadata(self, large_context: ReviewContext) -> None:
+        """The message includes PR title and author."""
+        group = large_context.changed_files[:5]
+        output = build_map_user_message(large_context, group, 0, 2)
+        assert large_context.pr_title in output
+        assert large_context.pr_author in output
+
+    def test_only_group_files(self, large_context: ReviewContext) -> None:
+        """Only files from the group appear in the changed files section."""
+        group = large_context.changed_files[:3]
+        output = build_map_user_message(large_context, group, 0, 4)
+        assert "### src/mod_01.py" in output
+        assert "### src/mod_02.py" in output
+        assert "### src/mod_03.py" in output
+        assert "### src/mod_04.py" not in output
+
+    def test_filtered_diff(self, large_context: ReviewContext) -> None:
+        """Only diff sections for group files appear in the message."""
+        group = large_context.changed_files[:2]
+        output = build_map_user_message(large_context, group, 0, 4)
+        assert "src/mod_01.py" in output
+        assert "src/mod_02.py" in output
+        # Diff for mod_03 should not be present
+        assert "diff --git a/src/mod_03.py" not in output
+
+    def test_deterministic(self, large_context: ReviewContext) -> None:
+        """Calling twice with the same inputs produces identical output."""
+        group = large_context.changed_files[:5]
+        a = build_map_user_message(large_context, group, 0, 4)
+        b = build_map_user_message(large_context, group, 0, 4)
+        assert a == b
+
+    def test_commit_messages(self, large_context: ReviewContext) -> None:
+        """Commit messages from the context appear in the map message."""
+        group = large_context.changed_files[:3]
+        output = build_map_user_message(large_context, group, 0, 2)
+        assert "First commit" in output
+        assert "Second commit" in output
+
+
+class TestBuildReduceUserMessage:
+    """Tests for the reduce-phase user message builder."""
+
+    @pytest.fixture()
+    def partial_dicts(self) -> list[dict]:
+        """Partial results as dicts for reduce-phase testing."""
+        return [
+            {
+                "ripeness": "ripe",
+                "summary": f"Summary for group {i}.",
+                "walkthrough": f"## Walk {i}\n\nDetails for group {i}.",
+                "findings": [
+                    {
+                        "file": f"src/mod_{i:02d}.py",
+                        "line": 10 * i,
+                        "severity": "minor",
+                        "category": "style",
+                        "message": f"Finding {i} message.",
+                    }
+                ],
+                "model": "claude-sonnet-4-6",
+                "usage": {"input_tokens": 100 * i, "output_tokens": 50 * i},
+            }
+            for i in range(1, 4)
+        ]
+
+    def test_all_summaries(
+        self, large_context: ReviewContext, partial_dicts: list[dict]
+    ) -> None:
+        """All partial summaries are included in the reduce message."""
+        output = build_reduce_user_message(large_context, partial_dicts)
+        for p in partial_dicts:
+            assert p["summary"] in output
+
+    def test_all_findings(
+        self, large_context: ReviewContext, partial_dicts: list[dict]
+    ) -> None:
+        """All findings from all partials are included."""
+        output = build_reduce_user_message(large_context, partial_dicts)
+        for p in partial_dicts:
+            for f in p["findings"]:
+                assert f["message"] in output
+
+    def test_pr_metadata(
+        self, large_context: ReviewContext, partial_dicts: list[dict]
+    ) -> None:
+        """PR title and author appear in the reduce message."""
+        output = build_reduce_user_message(large_context, partial_dicts)
+        assert large_context.pr_title in output
+        assert large_context.pr_author in output
+
+    def test_merge_instructions(
+        self, large_context: ReviewContext, partial_dicts: list[dict]
+    ) -> None:
+        """Merge instructions are present in the reduce message."""
+        output = build_reduce_user_message(large_context, partial_dicts)
+        assert "Merge Instructions" in output
+        assert "reduce" in output.lower()
+
+    def test_deterministic(
+        self, large_context: ReviewContext, partial_dicts: list[dict]
+    ) -> None:
+        """Calling twice with the same inputs produces identical output."""
+        a = build_reduce_user_message(large_context, partial_dicts)
+        b = build_reduce_user_message(large_context, partial_dicts)
+        assert a == b
+
+    def test_multiple_partials(
+        self, large_context: ReviewContext, partial_dicts: list[dict]
+    ) -> None:
+        """All partial review sections are numbered correctly."""
+        output = build_reduce_user_message(large_context, partial_dicts)
+        assert "Partial Review 1 of 3" in output
+        assert "Partial Review 2 of 3" in output
+        assert "Partial Review 3 of 3" in output
