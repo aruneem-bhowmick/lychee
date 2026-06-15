@@ -23,6 +23,9 @@ _BUNDLED_RESULT_PATH: Path = _PROJECT_ROOT / "tests" / "fixtures" / "review_resu
 
 _LARGE_PR_THRESHOLD: int = 100_000
 
+_MAP_GROUP_SIZE: int = 10
+_MAP_REDUCE_FILE_THRESHOLD: int = 50
+
 
 def _compute_context_size(context: ReviewContext) -> int:
     """Compute the total context size in characters from diff and file contents."""
@@ -39,6 +42,74 @@ def select_model(config: LycheeConfig, context_size: int) -> str:
     if context_size > _LARGE_PR_THRESHOLD:
         return config.model.large_pr
     return config.model.default
+
+
+def _should_map_reduce(context: ReviewContext, config: LycheeConfig) -> bool:
+    """Return True when the PR has more files than the configured threshold.
+
+    Uses ``config.review.max_files`` (default 50) as an exclusive threshold:
+    map-reduce is triggered only when ``len(context.changed_files) > max_files``.
+    """
+    return len(context.changed_files) > config.review.max_files
+
+
+def _partition_files(
+    changed_files: list[dict[str, Any]],
+    group_size: int,
+) -> list[list[dict[str, Any]]]:
+    """Split *changed_files* into chunks of at most *group_size*, preserving order."""
+    return [
+        changed_files[i : i + group_size]
+        for i in range(0, len(changed_files), group_size)
+    ]
+
+
+def _filter_diff_for_files(diff: str, filenames: set[str]) -> str:
+    """Return only the sections of a unified diff that match *filenames*.
+
+    Splits the diff on ``diff --git`` headers and keeps sections whose
+    ``a/`` or ``b/`` path is in *filenames*.  Returns an empty string when
+    no sections match or either input is empty.
+    """
+    if not diff or not filenames:
+        return ""
+
+    sections: list[str] = []
+    current: list[str] = []
+    for line in diff.splitlines(keepends=True):
+        if line.startswith("diff --git "):
+            if current:
+                sections.append("".join(current))
+            current = [line]
+        else:
+            current.append(line)
+    if current:
+        sections.append("".join(current))
+
+    kept: list[str] = []
+    for section in sections:
+        header = section.split("\n", 1)[0]
+        # header looks like: diff --git a/path b/path
+        parts = header.split()
+        if len(parts) >= 4:
+            a_path = parts[2].removeprefix("a/")
+            b_path = parts[3].removeprefix("b/")
+            if a_path in filenames or b_path in filenames:
+                kept.append(section)
+    return "".join(kept)
+
+
+def _aggregate_usage(
+    partial_results: list[ReviewResult],
+    reduce_result: ReviewResult,
+) -> dict[str, Any]:
+    """Sum all integer-valued usage fields across map partials and the reduce result."""
+    totals: dict[str, int] = {}
+    for result in [*partial_results, reduce_result]:
+        for key, value in result.usage.items():
+            if isinstance(value, int):
+                totals[key] = totals.get(key, 0) + value
+    return totals
 
 
 def run_review(
