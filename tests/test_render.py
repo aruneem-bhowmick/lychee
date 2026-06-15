@@ -410,9 +410,9 @@ def test_accept_valid_markdown(
     ]:
         output = render_comment(result)
         fence_count = output.count("```")
-        assert fence_count % 2 == 0, (
-            f"Odd backtick fence count {fence_count} for ripeness={result.ripeness}"
-        )
+        assert (
+            fence_count % 2 == 0
+        ), f"Odd backtick fence count {fence_count} for ripeness={result.ripeness}"
 
 
 # ---------------------------------------------------------------------------
