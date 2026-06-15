@@ -12,7 +12,12 @@ from lychee.config import LycheeConfig
 from lychee.context import ReviewContext, build_context
 from lychee.github_client import GitHubClient, PullRequestRef
 from lychee.models import ReviewResult
-from lychee.prompt import build_messages, build_system_prompt_blocks
+from lychee.prompt import (
+    build_map_user_message,
+    build_messages,
+    build_reduce_user_message,
+    build_system_prompt_blocks,
+)
 from lychee.render import render_comment
 
 _logger = logging.getLogger(__name__)
@@ -112,6 +117,75 @@ def _aggregate_usage(
     return totals
 
 
+def _run_map_phase(
+    context: ReviewContext,
+    groups: list[list[dict[str, Any]]],
+    config: LycheeConfig,
+    claude_client: ClaudeClient,
+    system: list[dict[str, Any]],
+    model_override: str,
+) -> list[ReviewResult]:
+    """Execute the map phase: review each file group sequentially.
+
+    Returns a list of partial ReviewResults.  If every group fails, raises
+    ``ClaudeReviewError``.  Partial failures are logged and skipped.
+    """
+    from lychee.claude import ClaudeReviewError
+
+    partial_results: list[ReviewResult] = []
+    errors: list[Exception] = []
+
+    for i, group in enumerate(groups):
+        _logger.info("Map phase: reviewing group %d/%d (%d files)", i + 1, len(groups), len(group))
+        user_msg = build_map_user_message(context, group, i, len(groups))
+        messages = [{"role": "user", "content": user_msg}]
+        try:
+            result = claude_client.review(messages, system=system, model_override=model_override)
+            partial_results.append(result)
+        except Exception as exc:
+            _logger.warning("Map phase group %d/%d failed: %s", i + 1, len(groups), exc)
+            errors.append(exc)
+
+    if not partial_results:
+        raise ClaudeReviewError(
+            f"Map phase failed: all {len(groups)} groups failed. "
+            f"First error: {errors[0] if errors else 'unknown'}"
+        )
+
+    if errors:
+        _logger.warning(
+            "Map phase: %d/%d groups failed, continuing with %d partial results",
+            len(errors),
+            len(groups),
+            len(partial_results),
+        )
+
+    return partial_results
+
+
+def _run_reduce_phase(
+    context: ReviewContext,
+    partial_results: list[ReviewResult],
+    config: LycheeConfig,
+    claude_client: ClaudeClient,
+    system: list[dict[str, Any]],
+    model_override: str,
+) -> ReviewResult:
+    """Execute the reduce phase: merge partial results into a single ReviewResult.
+
+    Builds a reduce prompt from the partial results, calls Claude, and
+    replaces the usage dict with aggregated totals from all phases.
+    """
+    partial_dicts = [r.model_dump() for r in partial_results]
+    user_msg = build_reduce_user_message(context, partial_dicts)
+    messages = [{"role": "user", "content": user_msg}]
+
+    reduce_result = claude_client.review(messages, system=system, model_override=model_override)
+    aggregated_usage = _aggregate_usage(partial_results, reduce_result)
+
+    return reduce_result.model_copy(update={"usage": aggregated_usage})
+
+
 def run_review(
     pr_ref: str,
     config: LycheeConfig,
@@ -120,12 +194,10 @@ def run_review(
 ) -> ReviewResult:
     """Orchestrate context fetch, prompt build, and Claude call to produce a ReviewResult.
 
-    Steps:
-    1. Parse the PR reference string into a PullRequestRef.
-    2. Build the review context via build_context().
-    3. Build the system prompt and user messages via prompt builder.
-    4. Call claude_client.review() with messages and system prompt.
-    5. Return the validated ReviewResult.
+    For large PRs (more files than ``config.review.max_files``), uses a
+    map-reduce strategy: files are partitioned into groups, each reviewed
+    individually, then partial results are merged into a single ReviewResult.
+    Small PRs continue to use the existing single-pass path unchanged.
 
     Raises:
     - ValueError if pr_ref is malformed.
@@ -139,7 +211,6 @@ def run_review(
     parsed_ref = PullRequestRef.parse(pr_ref)
     context = build_context(github_client, parsed_ref, config)
     system = build_system_prompt_blocks(config, conventions=context.conventions)
-    messages = build_messages(context, config)
 
     context_size = _compute_context_size(context)
     model_override = select_model(config, context_size)
@@ -150,7 +221,23 @@ def run_review(
         model_override,
     )
 
-    result = claude_client.review(messages, system=system, model_override=model_override)
+    if _should_map_reduce(context, config):
+        groups = _partition_files(context.changed_files, _MAP_GROUP_SIZE)
+        _logger.info(
+            "Map-reduce mode: %d files → %d groups of ≤%d",
+            len(context.changed_files),
+            len(groups),
+            _MAP_GROUP_SIZE,
+        )
+        partial_results = _run_map_phase(
+            context, groups, config, claude_client, system, model_override
+        )
+        result = _run_reduce_phase(
+            context, partial_results, config, claude_client, system, model_override
+        )
+    else:
+        messages = build_messages(context, config)
+        result = claude_client.review(messages, system=system, model_override=model_override)
 
     _logger.info(
         "Review complete: pr=%s model=%s ripeness=%s findings=%d usage=%s",
