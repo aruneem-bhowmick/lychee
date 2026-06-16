@@ -63,10 +63,7 @@ def _partition_files(
     group_size: int,
 ) -> list[list[dict[str, Any]]]:
     """Split *changed_files* into chunks of at most *group_size*, preserving order."""
-    return [
-        changed_files[i : i + group_size]
-        for i in range(0, len(changed_files), group_size)
-    ]
+    return [changed_files[i : i + group_size] for i in range(0, len(changed_files), group_size)]
 
 
 def _filter_diff_for_files(diff: str, filenames: set[str]) -> str:

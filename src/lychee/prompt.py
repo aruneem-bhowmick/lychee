@@ -226,15 +226,13 @@ def build_map_user_message(
     filenames = {f["filename"] for f in file_group}
     filtered_diff = _filter_diff_for_files(context.diff, filenames)
 
-    scoped_context = context.model_copy(
-        update={"changed_files": file_group, "diff": filtered_diff}
-    )
+    scoped_context = context.model_copy(update={"changed_files": file_group, "diff": filtered_diff})
 
     header = (
         f"## Review Group {group_index + 1} of {total_groups}\n\n"
         f"This is a partial review of a large PR. "
         f"You are reviewing files {group_index * len(file_group) + 1}"
-        f"–{group_index * len(file_group) + len(file_group)} "
+        f"-{group_index * len(file_group) + len(file_group)} "
         f"of {sum(1 for _ in range(total_groups)) * len(file_group)} total files "
         f"(approximate).\n"
         f"Focus your review on only the files shown below."
