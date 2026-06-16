@@ -1037,9 +1037,7 @@ class TestMapReduceIntegration:
         """Small PR still uses single-pass path (1 claude call)."""
         mock_build_context.return_value = review_context_simple
 
-        result = run_review(
-            "owner/repo#42", default_config, mock_github_client, mock_claude_client
-        )
+        result = run_review("owner/repo#42", default_config, mock_github_client, mock_claude_client)
 
         assert isinstance(result, ReviewResult)
         # Single-pass: exactly 1 call to claude_client.review
@@ -1060,7 +1058,9 @@ class TestMapReduceIntegration:
         run_review("owner/repo#999", default_config, mock_github_client, mock_claude_client)
 
         # 62 files / 10 per group = 7 groups → 7 map + 1 reduce = 8 calls
-        expected_groups = (len(review_context_large.changed_files) + _MAP_GROUP_SIZE - 1) // _MAP_GROUP_SIZE
+        expected_groups = (
+            len(review_context_large.changed_files) + _MAP_GROUP_SIZE - 1
+        ) // _MAP_GROUP_SIZE
         assert mock_claude_client.review.call_count == expected_groups + 1
 
     @patch("lychee.review.build_context")
@@ -1075,6 +1075,7 @@ class TestMapReduceIntegration:
         mock_build_context.return_value = review_context_large
 
         call_count = [0]
+
         def make_result(*args: Any, **kwargs: Any) -> ReviewResult:
             call_count[0] += 1
             return ReviewResult(
@@ -1150,6 +1151,7 @@ class TestMapReduceErrorHandling:
         claude_mock = MagicMock()
 
         call_idx = [0]
+
         def side_effect(*args: Any, **kwargs: Any) -> ReviewResult:
             call_idx[0] += 1
             # Fail every other map call
@@ -1181,7 +1183,9 @@ class TestMapReduceErrorHandling:
         mock_build_context.return_value = review_context_large
         claude_mock = MagicMock()
 
-        num_groups = (len(review_context_large.changed_files) + _MAP_GROUP_SIZE - 1) // _MAP_GROUP_SIZE
+        num_groups = (
+            len(review_context_large.changed_files) + _MAP_GROUP_SIZE - 1
+        ) // _MAP_GROUP_SIZE
         call_idx = [0]
 
         def side_effect(*args: Any, **kwargs: Any) -> ReviewResult:
@@ -1244,9 +1248,7 @@ class TestMapReduceAcceptance:
         """A small PR bypasses map-reduce and uses single-pass."""
         mock_build_context.return_value = review_context_simple
 
-        result = run_review(
-            "owner/repo#42", default_config, mock_github_client, mock_claude_client
-        )
+        result = run_review("owner/repo#42", default_config, mock_github_client, mock_claude_client)
 
         assert isinstance(result, ReviewResult)
         assert mock_claude_client.review.call_count == 1
@@ -1286,9 +1288,7 @@ class TestMapReduceRegression:
         ]
         mock_build_messages.return_value = [{"role": "user", "content": "msg"}]
 
-        result = run_review(
-            "owner/repo#42", default_config, mock_github_client, mock_claude_client
-        )
+        result = run_review("owner/repo#42", default_config, mock_github_client, mock_claude_client)
 
         assert hasattr(result, "ripeness")
         assert hasattr(result, "summary")
