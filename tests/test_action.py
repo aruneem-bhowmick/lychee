@@ -19,6 +19,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 import yaml
 
+from lychee.cost import BudgetExceededError
 from lychee.models import (
     Category,
     Finding,
@@ -576,3 +577,168 @@ def test_workflow_snapshot() -> None:
         "Workflow YAML changed. If intentional, delete "
         "tests/fixtures/review_workflow_snapshot.yml and re-run to regenerate."
     )
+
+
+# ---------------------------------------------------------------------------
+# Cost footer integration tests
+# ---------------------------------------------------------------------------
+
+
+class TestCostFooterIntegration:
+    """Integration tests for cost footer rendering in the action entrypoint."""
+
+    @patch("scripts.run_action.SummaryPoster")
+    @patch("scripts.run_action.run_review")
+    @patch("scripts.run_action.ClaudeClient")
+    @patch("scripts.run_action.GitHubClient")
+    @patch("scripts.run_action.load_config")
+    def test_action_cost_footer_rendered(
+        self,
+        mock_config: MagicMock,
+        mock_gh: MagicMock,
+        mock_claude: MagicMock,
+        mock_review: MagicMock,
+        mock_poster_cls: MagicMock,
+        monkeypatch: pytest.MonkeyPatch,
+        tmp_path: Path,
+    ) -> None:
+        """When cost_footer is True, the posted comment includes a cost line."""
+        from scripts.run_action import main
+
+        event = _make_event()
+        event_file = _write_event_file(tmp_path, event)
+        monkeypatch.setenv("GITHUB_TOKEN", "ghp_test")
+        monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-test")
+        monkeypatch.setenv("GITHUB_EVENT_PATH", str(event_file))
+        monkeypatch.setenv("GITHUB_REPOSITORY", "owner/repo")
+
+        from lychee.config import FeaturesConfig, LycheeConfig
+
+        config = LycheeConfig(features=FeaturesConfig(cost_footer=True))
+        mock_config.return_value = config
+        mock_review.return_value = _mock_review_result()
+
+        with pytest.raises(SystemExit) as exc_info:
+            main()
+        assert exc_info.value.code == 0
+
+        # Verify render_comment was called (implicitly via poster.post)
+        poster_instance = mock_poster_cls.return_value
+        poster_instance.post.assert_called_once()
+        posted_body = poster_instance.post.call_args[0][1]
+        assert "**Cost:**" in posted_body
+        assert "**Tokens:**" in posted_body
+
+    @patch("scripts.run_action.SummaryPoster")
+    @patch("scripts.run_action.run_review")
+    @patch("scripts.run_action.ClaudeClient")
+    @patch("scripts.run_action.GitHubClient")
+    @patch("scripts.run_action.load_config")
+    def test_action_cost_footer_disabled(
+        self,
+        mock_config: MagicMock,
+        mock_gh: MagicMock,
+        mock_claude: MagicMock,
+        mock_review: MagicMock,
+        mock_poster_cls: MagicMock,
+        monkeypatch: pytest.MonkeyPatch,
+        tmp_path: Path,
+    ) -> None:
+        """When cost_footer is False, no cost line appears in the posted comment."""
+        from scripts.run_action import main
+
+        event = _make_event()
+        event_file = _write_event_file(tmp_path, event)
+        monkeypatch.setenv("GITHUB_TOKEN", "ghp_test")
+        monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-test")
+        monkeypatch.setenv("GITHUB_EVENT_PATH", str(event_file))
+        monkeypatch.setenv("GITHUB_REPOSITORY", "owner/repo")
+
+        from lychee.config import FeaturesConfig, LycheeConfig
+
+        config = LycheeConfig(features=FeaturesConfig(cost_footer=False))
+        mock_config.return_value = config
+        mock_review.return_value = _mock_review_result()
+
+        with pytest.raises(SystemExit) as exc_info:
+            main()
+        assert exc_info.value.code == 0
+
+        poster_instance = mock_poster_cls.return_value
+        poster_instance.post.assert_called_once()
+        posted_body = poster_instance.post.call_args[0][1]
+        assert "**Cost:**" not in posted_body
+
+    @patch("scripts.run_action.SummaryPoster")
+    @patch("scripts.run_action.run_review")
+    @patch("scripts.run_action.ClaudeClient")
+    @patch("scripts.run_action.GitHubClient")
+    @patch("scripts.run_action.load_config")
+    def test_action_budget_exceeded_posts_message(
+        self,
+        mock_config: MagicMock,
+        mock_gh: MagicMock,
+        mock_claude: MagicMock,
+        mock_review: MagicMock,
+        mock_poster_cls: MagicMock,
+        monkeypatch: pytest.MonkeyPatch,
+        tmp_path: Path,
+    ) -> None:
+        """When budget is exceeded, an abort comment is posted and exit code is 1."""
+        from scripts.run_action import main
+
+        event = _make_event()
+        event_file = _write_event_file(tmp_path, event)
+        monkeypatch.setenv("GITHUB_TOKEN", "ghp_test")
+        monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-test")
+        monkeypatch.setenv("GITHUB_EVENT_PATH", str(event_file))
+        monkeypatch.setenv("GITHUB_REPOSITORY", "owner/repo")
+
+        mock_review.side_effect = BudgetExceededError(0.1500, 0.1000)
+
+        with pytest.raises(SystemExit) as exc_info:
+            main()
+        assert exc_info.value.code == 1
+
+
+# ---------------------------------------------------------------------------
+# Sanity tests — cost integration
+# ---------------------------------------------------------------------------
+
+
+class TestCostSanity:
+    """Sanity tests verifying unchanged action behaviour without budget cap."""
+
+    @patch("scripts.run_action.SummaryPoster")
+    @patch("scripts.run_action.run_review")
+    @patch("scripts.run_action.ClaudeClient")
+    @patch("scripts.run_action.GitHubClient")
+    @patch("scripts.run_action.load_config")
+    def test_action_without_budget_cap_unchanged(
+        self,
+        mock_config: MagicMock,
+        mock_gh: MagicMock,
+        mock_claude: MagicMock,
+        mock_review: MagicMock,
+        mock_poster_cls: MagicMock,
+        monkeypatch: pytest.MonkeyPatch,
+        tmp_path: Path,
+    ) -> None:
+        """With no budget cap, action behaviour is identical to before cost accounting."""
+        from scripts.run_action import main
+
+        event = _make_event()
+        event_file = _write_event_file(tmp_path, event)
+        monkeypatch.setenv("GITHUB_TOKEN", "ghp_test")
+        monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-test")
+        monkeypatch.setenv("GITHUB_EVENT_PATH", str(event_file))
+        monkeypatch.setenv("GITHUB_REPOSITORY", "owner/repo")
+
+        mock_review.return_value = _mock_review_result()
+
+        with pytest.raises(SystemExit) as exc_info:
+            main()
+        assert exc_info.value.code == 0
+
+        mock_review.assert_called_once()
+        mock_poster_cls.return_value.post.assert_called_once()

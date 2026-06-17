@@ -545,3 +545,26 @@ def test_default_threshold_unchanged(ripe_result_fixture: ReviewResult) -> None:
     output = render_comment(ripe_result_fixture, severity_threshold="info")
     expected = (FIXTURES_DIR / "golden_ripe.md").read_text(encoding="utf-8")
     assert output == expected
+
+
+# ---------------------------------------------------------------------------
+# UI golden snapshot tests — cost footer
+# ---------------------------------------------------------------------------
+
+
+def test_ui_comment_with_cost_footer(ripe_result_fixture: ReviewResult) -> None:
+    """Golden snapshot of a rendered comment with cost footer enabled."""
+    from lychee.cost import compute_cost, format_cost_line
+
+    cost_usd = compute_cost(ripe_result_fixture.usage, ripe_result_fixture.model)
+    cost_line = format_cost_line(cost_usd, ripe_result_fixture.usage)
+    output = render_comment(ripe_result_fixture, cost_line=cost_line)
+    expected = (FIXTURES_DIR / "golden_ripe_cost_footer.md").read_text(encoding="utf-8")
+    assert output == expected
+
+
+def test_ui_comment_without_cost_footer(ripe_result_fixture: ReviewResult) -> None:
+    """Golden snapshot without cost footer (cost_line=None)."""
+    output = render_comment(ripe_result_fixture, cost_line=None)
+    expected = (FIXTURES_DIR / "golden_ripe.md").read_text(encoding="utf-8")
+    assert output == expected

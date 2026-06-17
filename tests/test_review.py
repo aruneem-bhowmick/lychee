@@ -18,6 +18,7 @@ from github import GithubException
 from lychee.claude import ClaudeReviewError
 from lychee.config import LycheeConfig
 from lychee.context import ReviewContext
+from lychee.cost import BudgetExceededError
 from lychee.github_client import PullRequestRef
 from lychee.models import ReviewResult, Ripeness
 from lychee.render import REVIEW_MARKER
@@ -1297,3 +1298,137 @@ class TestMapReduceRegression:
         assert hasattr(result, "usage")
         assert isinstance(result.findings, list)
         assert isinstance(result.usage, dict)
+
+
+# ---------------------------------------------------------------------------
+# Budget cap tests
+# ---------------------------------------------------------------------------
+
+
+class TestBudgetCapSinglePass:
+    """Tests for budget checking in single-pass reviews."""
+
+    @patch("lychee.review.build_messages")
+    @patch("lychee.review.build_system_prompt_blocks")
+    @patch("lychee.review.build_context")
+    def test_run_review_budget_check_single_pass(
+        self,
+        mock_build_context: MagicMock,
+        mock_build_system_prompt_blocks: MagicMock,
+        mock_build_messages: MagicMock,
+        mock_github_client: MagicMock,
+        review_context_simple: ReviewContext,
+    ) -> None:
+        """A single-pass review that exceeds budget raises BudgetExceededError."""
+        mock_build_context.return_value = review_context_simple
+        mock_build_system_prompt_blocks.return_value = [
+            {"type": "text", "text": "prompt", "cache_control": {"type": "ephemeral"}}
+        ]
+        mock_build_messages.return_value = [{"role": "user", "content": "msg"}]
+
+        # 10k input + 5k output on Sonnet = ~$0.105
+        claude_mock = MagicMock()
+        claude_mock.review.return_value = ReviewResult(
+            ripeness=Ripeness.ripe,
+            summary="Review done.",
+            walkthrough="## Walk",
+            findings=[],
+            model="claude-sonnet-4-6",
+            usage={"input_tokens": 10_000, "output_tokens": 5_000},
+        )
+
+        # Set budget cap very low so it will be exceeded
+        config = LycheeConfig(review={"budget_cap_usd": 0.001})  # type: ignore[arg-type]
+
+        with pytest.raises(BudgetExceededError):
+            run_review("owner/repo#42", config, mock_github_client, claude_mock)
+
+    @patch("lychee.review.build_messages")
+    @patch("lychee.review.build_system_prompt_blocks")
+    @patch("lychee.review.build_context")
+    def test_run_review_budget_check_within(
+        self,
+        mock_build_context: MagicMock,
+        mock_build_system_prompt_blocks: MagicMock,
+        mock_build_messages: MagicMock,
+        mock_github_client: MagicMock,
+        review_context_simple: ReviewContext,
+    ) -> None:
+        """A single-pass review within budget completes normally."""
+        mock_build_context.return_value = review_context_simple
+        mock_build_system_prompt_blocks.return_value = [
+            {"type": "text", "text": "prompt", "cache_control": {"type": "ephemeral"}}
+        ]
+        mock_build_messages.return_value = [{"role": "user", "content": "msg"}]
+
+        claude_mock = MagicMock()
+        claude_mock.review.return_value = ReviewResult(
+            ripeness=Ripeness.ripe,
+            summary="Review done.",
+            walkthrough="## Walk",
+            findings=[],
+            model="claude-sonnet-4-6",
+            usage={"input_tokens": 1000, "output_tokens": 500},
+        )
+
+        # Cost ~$0.0105, budget cap $10 — well within
+        config = LycheeConfig(review={"budget_cap_usd": 10.0})  # type: ignore[arg-type]
+
+        result = run_review("owner/repo#42", config, mock_github_client, claude_mock)
+        assert isinstance(result, ReviewResult)
+
+    @patch("lychee.review.build_messages")
+    @patch("lychee.review.build_system_prompt_blocks")
+    @patch("lychee.review.build_context")
+    def test_run_review_no_budget_cap_unchanged(
+        self,
+        mock_build_context: MagicMock,
+        mock_build_system_prompt_blocks: MagicMock,
+        mock_build_messages: MagicMock,
+        mock_github_client: MagicMock,
+        mock_claude_client: MagicMock,
+        review_context_simple: ReviewContext,
+    ) -> None:
+        """With no budget cap (default), review behaviour is unchanged."""
+        mock_build_context.return_value = review_context_simple
+        mock_build_system_prompt_blocks.return_value = [
+            {"type": "text", "text": "prompt", "cache_control": {"type": "ephemeral"}}
+        ]
+        mock_build_messages.return_value = [{"role": "user", "content": "msg"}]
+
+        config = LycheeConfig()  # budget_cap_usd is None by default
+
+        result = run_review(
+            "owner/repo#42", config, mock_github_client, mock_claude_client
+        )
+        assert isinstance(result, ReviewResult)
+
+
+class TestBudgetCapMapReduce:
+    """Tests for budget checking in map-reduce reviews."""
+
+    @patch("lychee.review.build_context")
+    def test_map_reduce_budget_exceeded_mid_review(
+        self,
+        mock_build_context: MagicMock,
+        review_context_large: ReviewContext,
+        mock_github_client: MagicMock,
+    ) -> None:
+        """Budget exceeded during map phase raises BudgetExceededError."""
+        mock_build_context.return_value = review_context_large
+
+        claude_mock = MagicMock()
+        claude_mock.review.return_value = ReviewResult(
+            ripeness=Ripeness.ripe,
+            summary="Partial.",
+            walkthrough="## Walk",
+            findings=[],
+            model="claude-sonnet-4-6",
+            usage={"input_tokens": 50_000, "output_tokens": 10_000},
+        )
+
+        # Each call costs ~$0.30. With 7+ map groups, total will far exceed $0.01
+        config = LycheeConfig(review={"budget_cap_usd": 0.01})  # type: ignore[arg-type]
+
+        with pytest.raises(BudgetExceededError):
+            run_review("owner/repo#999", config, mock_github_client, claude_mock)
