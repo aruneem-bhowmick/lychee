@@ -9,6 +9,7 @@ import anthropic
 import pydantic
 
 from lychee.models import ReviewResult
+from lychee.rate_limiter import RetryConfig, TokenBucketLimiter, retry_with_backoff
 
 logger = logging.getLogger(__name__)
 
@@ -20,10 +21,18 @@ class ClaudeReviewError(Exception):
 class ClaudeClient:
     """Wraps the Anthropic SDK for tool-use reviews."""
 
-    def __init__(self, api_key: str, model: str) -> None:
-        """Initialise the client with an API key and model identifier."""
+    def __init__(
+        self,
+        api_key: str,
+        model: str,
+        rate_limiter: TokenBucketLimiter | None = None,
+        retry_config: RetryConfig | None = None,
+    ) -> None:
+        """Initialise the client with an API key, model, and optional resilience settings."""
         self._model = model
         self._client = anthropic.Anthropic(api_key=api_key)
+        self._rate_limiter = rate_limiter
+        self._retry_config = retry_config
 
     @staticmethod
     def _extract_tool_use(response: anthropic.types.Message) -> dict[str, Any]:
@@ -97,9 +106,25 @@ class ClaudeClient:
         elif isinstance(system, str):
             logger.debug("Using plain string system prompt (%d chars)", len(system))
 
+        if self._rate_limiter is not None:
+            self._rate_limiter.acquire()
+
         logger.info("Calling Claude API (model=%s)", effective_model)
         try:
-            response = self._client.messages.create(**create_kwargs)
+            if self._retry_config is not None:
+                retryable: tuple[type[Exception], ...] = (
+                    anthropic.RateLimitError,
+                    anthropic.InternalServerError,
+                    anthropic.APIConnectionError,
+                )
+                create_with_retry = retry_with_backoff(
+                    self._client.messages.create,
+                    self._retry_config,
+                    retryable,
+                )
+                response = create_with_retry(**create_kwargs)
+            else:
+                response = self._client.messages.create(**create_kwargs)
         except anthropic.APIConnectionError as exc:
             logger.warning("Claude API connection error: %s", exc)
             raise ClaudeReviewError(f"API connection error: {exc}") from exc
