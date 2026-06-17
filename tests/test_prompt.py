@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -746,7 +747,7 @@ class TestBuildReduceUserMessage:
     """Tests for the reduce-phase user message builder."""
 
     @pytest.fixture()
-    def partial_dicts(self) -> list[dict]:
+    def partial_dicts(self) -> list[dict[str, Any]]:
         """Partial results as dicts for reduce-phase testing."""
         return [
             {
@@ -768,41 +769,49 @@ class TestBuildReduceUserMessage:
             for i in range(1, 4)
         ]
 
-    def test_all_summaries(self, large_context: ReviewContext, partial_dicts: list[dict]) -> None:
+    def test_all_summaries(
+        self, large_context: ReviewContext, partial_dicts: list[dict[str, Any]]
+    ) -> None:
         """All partial summaries are included in the reduce message."""
         output = build_reduce_user_message(large_context, partial_dicts)
         for p in partial_dicts:
             assert p["summary"] in output
 
-    def test_all_findings(self, large_context: ReviewContext, partial_dicts: list[dict]) -> None:
+    def test_all_findings(
+        self, large_context: ReviewContext, partial_dicts: list[dict[str, Any]]
+    ) -> None:
         """All findings from all partials are included."""
         output = build_reduce_user_message(large_context, partial_dicts)
         for p in partial_dicts:
             for f in p["findings"]:
                 assert f["message"] in output
 
-    def test_pr_metadata(self, large_context: ReviewContext, partial_dicts: list[dict]) -> None:
+    def test_pr_metadata(
+        self, large_context: ReviewContext, partial_dicts: list[dict[str, Any]]
+    ) -> None:
         """PR title and author appear in the reduce message."""
         output = build_reduce_user_message(large_context, partial_dicts)
         assert large_context.pr_title in output
         assert large_context.pr_author in output
 
     def test_merge_instructions(
-        self, large_context: ReviewContext, partial_dicts: list[dict]
+        self, large_context: ReviewContext, partial_dicts: list[dict[str, Any]]
     ) -> None:
         """Merge instructions are present in the reduce message."""
         output = build_reduce_user_message(large_context, partial_dicts)
         assert "Merge Instructions" in output
         assert "reduce" in output.lower()
 
-    def test_deterministic(self, large_context: ReviewContext, partial_dicts: list[dict]) -> None:
+    def test_deterministic(
+        self, large_context: ReviewContext, partial_dicts: list[dict[str, Any]]
+    ) -> None:
         """Calling twice with the same inputs produces identical output."""
         a = build_reduce_user_message(large_context, partial_dicts)
         b = build_reduce_user_message(large_context, partial_dicts)
         assert a == b
 
     def test_multiple_partials(
-        self, large_context: ReviewContext, partial_dicts: list[dict]
+        self, large_context: ReviewContext, partial_dicts: list[dict[str, Any]]
     ) -> None:
         """All partial review sections are numbered correctly."""
         output = build_reduce_user_message(large_context, partial_dicts)
