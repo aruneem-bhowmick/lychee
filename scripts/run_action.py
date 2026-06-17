@@ -11,6 +11,7 @@ from typing import Any
 
 from lychee.claude import ClaudeClient
 from lychee.config import load_config
+from lychee.cost import BudgetExceededError, compute_cost, format_cost_line
 from lychee.github_client import GitHubClient, PullRequestRef
 from lychee.poster import SummaryPoster
 from lychee.render import render_comment
@@ -84,7 +85,12 @@ def main() -> None:
 
         result = run_review(pr_ref, config, github_client, claude_client)
 
-        cost_line: str | None = None  # Cost footer computation deferred
+        cost_usd = compute_cost(result.usage, result.model)
+        cost_line: str | None = None
+        if config.features.cost_footer:
+            cost_line = format_cost_line(cost_usd, result.usage)
+        _logger.info("Review cost: $%.4f", cost_usd)
+
         comment_body = render_comment(result, cost_line=cost_line)
 
         poster = SummaryPoster(github_client)
@@ -95,6 +101,22 @@ def main() -> None:
         _logger.info("Review posted for %s", pr_ref)
         sys.exit(0)
 
+    except BudgetExceededError as exc:
+        _logger.error(
+            "Review aborted: budget cap exceeded ($%.4f/$%.4f)",
+            exc.spent_usd,
+            exc.cap_usd,
+        )
+        try:
+            abort_poster = SummaryPoster(github_client)
+            abort_pr = github_client.get_pull_request(PullRequestRef.parse(pr_ref))
+            abort_poster.post(
+                abort_pr,
+                f"Review aborted: budget cap exceeded (${exc.spent_usd:.4f}/${exc.cap_usd:.4f}).",
+            )
+        except Exception:
+            _logger.warning("Failed to post budget-exceeded comment")
+        sys.exit(1)
     except SystemExit:
         raise
     except Exception as exc:
