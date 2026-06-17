@@ -76,6 +76,7 @@ class FeaturesConfig(pydantic.BaseModel):
     inline_comments: bool = False
     cost_footer: bool = True
     commands: bool = False
+    triage_pass: bool = False
 
 
 class LycheeConfig(pydantic.BaseModel):
