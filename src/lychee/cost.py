@@ -21,9 +21,7 @@ class BudgetExceededError(Exception):
     def __init__(self, spent_usd: float, cap_usd: float) -> None:
         self.spent_usd = spent_usd
         self.cap_usd = cap_usd
-        super().__init__(
-            f"Budget exceeded: ${spent_usd:.4f} spent, cap is ${cap_usd:.4f}"
-        )
+        super().__init__(f"Budget exceeded: ${spent_usd:.4f} spent, cap is ${cap_usd:.4f}")
 
 
 # Model pricing: (input_cost_per_1m, output_cost_per_1m, cached_input_cost_per_1m)
