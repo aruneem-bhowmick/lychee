@@ -3,7 +3,8 @@
   "features": {
     "commands": false,
     "cost_footer": true,
-    "inline_comments": false
+    "inline_comments": false,
+    "triage_pass": false
   },
   "model": {
     "default": "claude-sonnet-4-6",

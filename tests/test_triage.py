@@ -9,32 +9,22 @@ Framework: pytest, unittest.mock.
 from __future__ import annotations
 
 import logging
-from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
 
-from lychee.config import FeaturesConfig, LycheeConfig, ModelConfig
+from lychee.config import FeaturesConfig, LycheeConfig
 from lychee.context import ReviewContext
-from lychee.models import (
-    Category,
-    Finding,
-    ReviewResult,
-    Ripeness,
-    Severity,
-)
+from lychee.models import Category, Finding, ReviewResult, Ripeness, Severity
 from lychee.triage import (
+    _TRIAGE_SYSTEM_PROMPT,
     TriageResult,
     TriageVerdict,
-    _MAX_BODY_CHARS,
-    _MAX_DIFF_CHARS,
-    _TRIAGE_SYSTEM_PROMPT,
     build_triage_prompt,
     build_triage_tool_schema,
     run_triage,
     run_trivial_review,
 )
-
 
 # ---------------------------------------------------------------------------
 # Fixtures
@@ -123,9 +113,7 @@ def substantive_context() -> ReviewContext:
     )
 
 
-def _make_classify_response(
-    verdict: str, reason: str
-) -> MagicMock:
+def _make_classify_response(verdict: str, reason: str) -> MagicMock:
     """Build a mock Anthropic Message response with a classify_pr tool call."""
     tool_block = MagicMock()
     tool_block.type = "tool_use"
@@ -156,7 +144,7 @@ class TestSmoke:
 
     def test_triage_module_imports(self) -> None:
         """Triage public API is importable from lychee.triage."""
-        from lychee.triage import TriageVerdict, TriageResult, run_triage
+        from lychee.triage import TriageResult, TriageVerdict, run_triage
 
         assert TriageVerdict is not None
         assert TriageResult is not None
@@ -198,9 +186,7 @@ class TestTriageResultUnit:
 class TestBuildTriagePromptUnit:
     """Unit tests for build_triage_prompt()."""
 
-    def test_build_triage_prompt_structure(
-        self, trivial_context: ReviewContext
-    ) -> None:
+    def test_build_triage_prompt_structure(self, trivial_context: ReviewContext) -> None:
         """build_triage_prompt returns (str, list) with expected content."""
         system, messages = build_triage_prompt(trivial_context)
 
@@ -211,9 +197,7 @@ class TestBuildTriagePromptUnit:
         assert "classify" in system.lower()
         assert trivial_context.pr_title in messages[0]["content"]
 
-    def test_build_triage_prompt_truncates_diff(
-        self, trivial_context: ReviewContext
-    ) -> None:
+    def test_build_triage_prompt_truncates_diff(self, trivial_context: ReviewContext) -> None:
         """Diff longer than 2000 chars is truncated in the triage message."""
         long_diff = "x" * 3000
         ctx = trivial_context.model_copy(update={"diff": long_diff})
@@ -226,9 +210,7 @@ class TestBuildTriagePromptUnit:
         # The raw diff content should not exceed _MAX_DIFF_CHARS + overhead
         assert long_diff not in content
 
-    def test_build_triage_prompt_truncates_body(
-        self, trivial_context: ReviewContext
-    ) -> None:
+    def test_build_triage_prompt_truncates_body(self, trivial_context: ReviewContext) -> None:
         """PR body longer than 500 chars is truncated in the triage message."""
         long_body = "y" * 1000
         ctx = trivial_context.model_copy(update={"pr_body": long_body})
@@ -301,7 +283,7 @@ class TestBuildTriagePromptUnit:
             conventions=None,
         )
 
-        system, messages = build_triage_prompt(ctx)
+        _, messages = build_triage_prompt(ctx)
         content = messages[0]["content"]
 
         # Should not contain "PR Body:" since body is None
@@ -523,9 +505,7 @@ class TestRunReviewWithTriageIntegration:
         )
         mock_build_context.return_value = ctx
 
-        mock_run_triage.return_value = TriageResult(
-            TriageVerdict.trivial, "Typo fix only"
-        )
+        mock_run_triage.return_value = TriageResult(TriageVerdict.trivial, "Typo fix only")
         trivial_result = ReviewResult(
             ripeness=Ripeness.ripe,
             summary="Clean typo fix.",
@@ -582,9 +562,7 @@ class TestRunReviewWithTriageIntegration:
         ]
         mock_build_messages.return_value = [{"role": "user", "content": "msg"}]
 
-        mock_run_triage.return_value = TriageResult(
-            TriageVerdict.substantive, "New feature"
-        )
+        mock_run_triage.return_value = TriageResult(TriageVerdict.substantive, "New feature")
 
         full_result = ReviewResult(
             ripeness=Ripeness.unripe,
@@ -795,7 +773,7 @@ class TestRegression:
 
     def test_triage_prompt_snapshot(self, trivial_context: ReviewContext) -> None:
         """Snapshot of the triage system prompt for a fixed context."""
-        system, messages = build_triage_prompt(trivial_context)
+        system, _messages = build_triage_prompt(trivial_context)
 
         # The system prompt should match the expected constant
         assert system == _TRIAGE_SYSTEM_PROMPT
