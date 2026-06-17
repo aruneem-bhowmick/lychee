@@ -15,7 +15,6 @@ import pytest
 from lychee.config import LycheeConfig
 from lychee.context import ReviewContext
 from lychee.models import ReviewResult
-from lychee.models import Category, Finding, Ripeness, Severity
 from lychee.prompt import (
     build_map_user_message,
     build_messages,

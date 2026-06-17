@@ -19,12 +19,11 @@ from lychee.claude import ClaudeReviewError
 from lychee.config import LycheeConfig
 from lychee.context import ReviewContext
 from lychee.github_client import PullRequestRef
-from lychee.models import Category, Finding, ReviewResult, Ripeness, Severity
+from lychee.models import ReviewResult, Ripeness
 from lychee.render import REVIEW_MARKER
 from lychee.review import (
     _LARGE_PR_THRESHOLD,
     _MAP_GROUP_SIZE,
-    _MAP_REDUCE_FILE_THRESHOLD,
     _aggregate_usage,
     _compute_context_size,
     _filter_diff_for_files,
