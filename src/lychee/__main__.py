@@ -10,6 +10,7 @@ import click
 
 from lychee.claude import ClaudeClient
 from lychee.config import load_config
+from lychee.cost import compute_cost, format_cost_line
 from lychee.github_client import GitHubClient, PullRequestRef
 from lychee.poster import SummaryPoster
 from lychee.render import render_comment
@@ -81,7 +82,10 @@ def review(dry_run: bool, fixture: Path | None, pr: str | None, post: bool) -> N
 
     result = run_review(pr, config, github_client, claude_client)
 
-    cost_line: str | None = None  # Cost footer computation deferred
+    cost_usd = compute_cost(result.usage, result.model)
+    cost_line: str | None = None
+    if config.features.cost_footer:
+        cost_line = format_cost_line(cost_usd, result.usage)
     comment_body = render_comment(
         result, cost_line=cost_line, severity_threshold=config.review.severity_threshold
     )
