@@ -24,7 +24,6 @@ from lychee.cost import (
     format_cost_line,
 )
 
-
 # ---------------------------------------------------------------------------
 # Smoke tests
 # ---------------------------------------------------------------------------
@@ -184,10 +183,7 @@ class TestFormatCostLine:
             "cache_read_input_tokens": 4000,
         }
         line = format_cost_line(0.0089, usage)
-        assert (
-            line
-            == "**Cost:** $0.0089 | **Tokens:** 5,432 input, 1,234 output, 4,000 cached"
-        )
+        assert line == "**Cost:** $0.0089 | **Tokens:** 5,432 input, 1,234 output, 4,000 cached"
 
     def test_format_cost_line_no_cache(self) -> None:
         """Cached segment is omitted when cache_read_input_tokens is 0."""
@@ -325,9 +321,9 @@ def test_model_pricing_values_structure() -> None:
 def test_cached_rate_cheaper_than_input() -> None:
     """Cached input rate is cheaper than regular input rate for all models."""
     for model, (input_rate, _, cached_rate) in MODEL_PRICING.items():
-        assert cached_rate < input_rate, (
-            f"{model}: cached rate {cached_rate} should be < input rate {input_rate}"
-        )
+        assert (
+            cached_rate < input_rate
+        ), f"{model}: cached rate {cached_rate} should be < input rate {input_rate}"
 
 
 # ---------------------------------------------------------------------------
