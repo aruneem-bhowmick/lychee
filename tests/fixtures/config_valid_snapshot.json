@@ -3,7 +3,8 @@
   "features": {
     "commands": true,
     "cost_footer": false,
-    "inline_comments": true
+    "inline_comments": true,
+    "triage_pass": false
   },
   "model": {
     "default": "claude-opus-4-8",

@@ -12,10 +12,7 @@ import logging
 from enum import StrEnum
 from typing import Any
 
-import anthropic
-import pydantic
-
-from lychee.claude import ClaudeClient, ClaudeReviewError
+from lychee.claude import ClaudeClient
 from lychee.config import LycheeConfig
 from lychee.context import ReviewContext
 from lychee.models import ReviewResult
@@ -134,14 +131,15 @@ def run_triage(
         tool = build_triage_tool_schema()
         triage_model = config.model.triage
 
-        response = claude_client._client.messages.create(
-            model=triage_model,
-            max_tokens=256,
-            system=system_prompt,
-            messages=messages,
-            tools=[tool],
-            tool_choice={"type": "tool", "name": "classify_pr"},
-        )
+        create_kwargs: dict[str, Any] = {
+            "model": triage_model,
+            "max_tokens": 256,
+            "system": system_prompt,
+            "messages": messages,
+            "tools": [tool],
+            "tool_choice": {"type": "tool", "name": "classify_pr"},
+        }
+        response = claude_client._client.messages.create(**create_kwargs)
 
         # Extract the tool-use block
         tool_input: dict[str, Any] | None = None
@@ -151,7 +149,9 @@ def run_triage(
                 break
 
         if tool_input is None:
-            _logger.warning("Triage: no classify_pr tool call in response, defaulting to substantive")
+            _logger.warning(
+                "Triage: no classify_pr tool call in response, defaulting to substantive"
+            )
             return TriageResult(TriageVerdict.substantive, "No classification returned by model")
 
         verdict = TriageVerdict(tool_input["verdict"])
