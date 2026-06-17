@@ -10,6 +10,7 @@ from typing import Any
 from lychee.claude import ClaudeClient
 from lychee.config import LycheeConfig
 from lychee.context import ReviewContext, build_context
+from lychee.cost import check_budget, compute_cost
 from lychee.github_client import GitHubClient, PullRequestRef
 from lychee.models import ReviewResult
 from lychee.prompt import (
@@ -126,11 +127,16 @@ def _run_map_phase(
 
     Returns a list of partial ReviewResults.  If every group fails, raises
     ``ClaudeReviewError``.  Partial failures are logged and skipped.
+
+    After each successful map call the cumulative cost is checked against
+    ``config.review.budget_cap_usd``.  If the budget is exceeded mid-review,
+    ``BudgetExceededError`` is raised immediately with the partial cost.
     """
     from lychee.claude import ClaudeReviewError
 
     partial_results: list[ReviewResult] = []
     errors: list[Exception] = []
+    cumulative_cost = 0.0
 
     for i, group in enumerate(groups):
         _logger.info("Map phase: reviewing group %d/%d (%d files)", i + 1, len(groups), len(group))
@@ -139,7 +145,14 @@ def _run_map_phase(
         try:
             result = claude_client.review(messages, system=system, model_override=model_override)
             partial_results.append(result)
+            cumulative_cost += compute_cost(result.usage, result.model)
+            check_budget(cumulative_cost, config.review.budget_cap_usd)
         except Exception as exc:
+            # Let BudgetExceededError propagate immediately
+            from lychee.cost import BudgetExceededError
+
+            if isinstance(exc, BudgetExceededError):
+                raise
             _logger.warning("Map phase group %d/%d failed: %s", i + 1, len(groups), exc)
             errors.append(exc)
 
@@ -172,6 +185,7 @@ def _run_reduce_phase(
 
     Builds a reduce prompt from the partial results, calls Claude, and
     replaces the usage dict with aggregated totals from all phases.
+    After merging, checks the total cost against the budget cap.
     """
     partial_dicts = [r.model_dump() for r in partial_results]
     user_msg = build_reduce_user_message(context, partial_dicts)
@@ -180,7 +194,11 @@ def _run_reduce_phase(
     reduce_result = claude_client.review(messages, system=system, model_override=model_override)
     aggregated_usage = _aggregate_usage(partial_results, reduce_result)
 
-    return reduce_result.model_copy(update={"usage": aggregated_usage})
+    final = reduce_result.model_copy(update={"usage": aggregated_usage})
+    total_cost = compute_cost(aggregated_usage, final.model)
+    check_budget(total_cost, config.review.budget_cap_usd)
+
+    return final
 
 
 def run_review(
@@ -200,6 +218,7 @@ def run_review(
     - ValueError if pr_ref is malformed.
     - github.GithubException on GitHub API failures (from context fetcher).
     - ClaudeReviewError on Claude API failures (from Claude client).
+    - BudgetExceededError if the review cost exceeds ``config.review.budget_cap_usd``.
     - pydantic.ValidationError if the ReviewResult is somehow malformed.
 
     Logs a structured info record on completion: PR reference, model,
@@ -229,12 +248,16 @@ def run_review(
         partial_results = _run_map_phase(
             context, groups, config, claude_client, system, model_override
         )
+        # Budget checking for map-reduce is done inside _run_map_phase
+        # and _run_reduce_phase; no extra check needed here.
         result = _run_reduce_phase(
             context, partial_results, config, claude_client, system, model_override
         )
     else:
         messages = build_messages(context, config)
         result = claude_client.review(messages, system=system, model_override=model_override)
+        cost = compute_cost(result.usage, result.model)
+        check_budget(cost, config.review.budget_cap_usd)
 
     _logger.info(
         "Review complete: pr=%s model=%s ripeness=%s findings=%d usage=%s",
