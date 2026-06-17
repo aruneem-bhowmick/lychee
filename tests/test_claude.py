@@ -18,6 +18,7 @@ import pytest
 
 from lychee.claude import ClaudeClient, ClaudeReviewError
 from lychee.models import ReviewResult
+from lychee.rate_limiter import RetryConfig, TokenBucketLimiter
 
 FIXTURES_DIR = Path(__file__).parent / "fixtures"
 
@@ -655,3 +656,342 @@ class TestModelOverride:
         )
 
         assert result.model == "claude-opus-4-8"
+
+
+# ---------------------------------------------------------------------------
+# Rate limiter integration tests (mocked API)
+# ---------------------------------------------------------------------------
+
+
+class TestRateLimiterIntegration:
+    """Integration tests for ClaudeClient with rate limiter and retry config."""
+
+    def _make_client_with_limiter(
+        self,
+        rate_limiter: TokenBucketLimiter | None = None,
+        retry_config: RetryConfig | None = None,
+    ) -> tuple[ClaudeClient, MagicMock]:
+        """Create a ClaudeClient with optional rate limiter/retry and a mocked API."""
+        client = ClaudeClient(
+            api_key="sk-test",
+            model="claude-sonnet-4-6",
+            rate_limiter=rate_limiter,
+            retry_config=retry_config,
+        )
+        mock_api = MagicMock()
+        client._client = mock_api  # type: ignore[assignment]
+        return client, mock_api
+
+    @patch("lychee.rate_limiter.time.sleep")
+    @patch("lychee.rate_limiter.time.monotonic", return_value=0.0)
+    def test_claude_review_with_rate_limiter(
+        self, mock_monotonic: MagicMock, mock_sleep: MagicMock
+    ) -> None:
+        """acquire() is called before messages.create() when a rate limiter is set."""
+        limiter = TokenBucketLimiter(capacity=5, refill_rate=1.0)
+        client, mock_api = self._make_client_with_limiter(rate_limiter=limiter)
+        mock_api.messages.create.return_value = _make_message()
+
+        call_order: list[str] = []
+        original_acquire = limiter.acquire
+
+        def track_acquire(timeout: float = 30.0) -> None:
+            call_order.append("acquire")
+            original_acquire(timeout)
+
+        limiter.acquire = track_acquire  # type: ignore[assignment]
+
+        original_create = mock_api.messages.create
+
+        def track_create(**kwargs: Any) -> Any:
+            call_order.append("create")
+            return original_create(**kwargs)
+
+        mock_api.messages.create = track_create
+
+        client.review(messages=[{"role": "user", "content": "Review."}])
+
+        assert call_order == ["acquire", "create"]
+
+    @patch("lychee.rate_limiter.time.sleep")
+    def test_claude_review_retry_on_rate_limit(self, mock_sleep: MagicMock) -> None:
+        """messages.create raises RateLimitError once then succeeds; retry occurs."""
+        retry_config = RetryConfig(max_retries=3, base_delay=1.0, jitter=False)
+        client, mock_api = self._make_client_with_limiter(retry_config=retry_config)
+
+        mock_response = MagicMock()
+        mock_response.status_code = 429
+        mock_response.headers = {}
+        rate_err = anthropic.RateLimitError(
+            message="Rate limited", response=mock_response, body=None
+        )
+        mock_api.messages.create.side_effect = [rate_err, _make_message()]
+
+        result = client.review(messages=[{"role": "user", "content": "Review."}])
+
+        assert result.ripeness.value == "ripe"
+        assert mock_api.messages.create.call_count == 2
+
+    @patch("lychee.rate_limiter.time.sleep")
+    def test_claude_review_retry_on_server_error(self, mock_sleep: MagicMock) -> None:
+        """messages.create raises InternalServerError once then succeeds."""
+        retry_config = RetryConfig(max_retries=3, base_delay=1.0, jitter=False)
+        client, mock_api = self._make_client_with_limiter(retry_config=retry_config)
+
+        mock_response = MagicMock()
+        mock_response.status_code = 500
+        mock_response.headers = {}
+        server_err = anthropic.InternalServerError(
+            message="Internal Server Error", response=mock_response, body=None
+        )
+        mock_api.messages.create.side_effect = [server_err, _make_message()]
+
+        result = client.review(messages=[{"role": "user", "content": "Review."}])
+
+        assert result.ripeness.value == "ripe"
+        assert mock_api.messages.create.call_count == 2
+
+    @patch("lychee.rate_limiter.time.sleep")
+    def test_claude_review_no_retry_on_auth_error(self, mock_sleep: MagicMock) -> None:
+        """AuthenticationError is not retried; raises ClaudeReviewError immediately."""
+        retry_config = RetryConfig(max_retries=3, base_delay=1.0, jitter=False)
+        client, mock_api = self._make_client_with_limiter(retry_config=retry_config)
+
+        mock_response = MagicMock()
+        mock_response.status_code = 401
+        mock_response.headers = {}
+        auth_err = anthropic.AuthenticationError(
+            message="Invalid API key", response=mock_response, body=None
+        )
+        mock_api.messages.create.side_effect = auth_err
+
+        with pytest.raises(ClaudeReviewError, match="API error"):
+            client.review(messages=[{"role": "user", "content": "Review."}])
+
+        # No retries: only 1 call
+        mock_api.messages.create.assert_called_once()
+
+    @patch("lychee.rate_limiter.time.sleep")
+    def test_claude_review_retry_exhausted(self, mock_sleep: MagicMock) -> None:
+        """All retries exhausted; raises ClaudeReviewError."""
+        retry_config = RetryConfig(max_retries=2, base_delay=1.0, jitter=False)
+        client, mock_api = self._make_client_with_limiter(retry_config=retry_config)
+
+        mock_response = MagicMock()
+        mock_response.status_code = 429
+        mock_response.headers = {}
+        rate_err = anthropic.RateLimitError(
+            message="Rate limited", response=mock_response, body=None
+        )
+        mock_api.messages.create.side_effect = rate_err
+
+        with pytest.raises(ClaudeReviewError, match="API error"):
+            client.review(messages=[{"role": "user", "content": "Review."}])
+
+        # 1 initial + 2 retries = 3 calls
+        assert mock_api.messages.create.call_count == 3
+
+
+# ---------------------------------------------------------------------------
+# Rate limiter acceptance tests
+# ---------------------------------------------------------------------------
+
+
+class TestRateLimiterAcceptance:
+    """Acceptance tests for rate limiting and retry behavior."""
+
+    def _make_client_with_limiter(
+        self,
+        rate_limiter: TokenBucketLimiter | None = None,
+        retry_config: RetryConfig | None = None,
+    ) -> tuple[ClaudeClient, MagicMock]:
+        """Create a ClaudeClient with optional rate limiter/retry and a mocked API."""
+        client = ClaudeClient(
+            api_key="sk-test",
+            model="claude-sonnet-4-6",
+            rate_limiter=rate_limiter,
+            retry_config=retry_config,
+        )
+        mock_api = MagicMock()
+        client._client = mock_api  # type: ignore[assignment]
+        return client, mock_api
+
+    @patch("lychee.rate_limiter.time.sleep")
+    @patch("lychee.rate_limiter.time.monotonic", return_value=0.0)
+    def test_accept_bursts_within_tier(
+        self, mock_monotonic: MagicMock, mock_sleep: MagicMock
+    ) -> None:
+        """A burst of 5 calls with a tier1 limiter all succeed without exhaustion."""
+        from lychee.rate_limiter import default_rate_limiter
+
+        limiter = default_rate_limiter("tier1")  # capacity=5
+        client, mock_api = self._make_client_with_limiter(rate_limiter=limiter)
+        mock_api.messages.create.return_value = _make_message()
+
+        for _ in range(5):
+            result = client.review(messages=[{"role": "user", "content": "Review."}])
+            assert result.ripeness.value == "ripe"
+
+        # All 5 calls succeeded without RateLimitExhaustedError
+        assert mock_api.messages.create.call_count == 5
+
+    @patch("lychee.rate_limiter.time.sleep")
+    def test_accept_transient_errors_retried(self, mock_sleep: MagicMock) -> None:
+        """Transient API errors are retried and the review completes successfully."""
+        retry_config = RetryConfig(max_retries=3, base_delay=0.1, jitter=False)
+        client, mock_api = self._make_client_with_limiter(retry_config=retry_config)
+
+        mock_response = MagicMock()
+        mock_response.status_code = 500
+        mock_response.headers = {}
+        server_err = anthropic.InternalServerError(
+            message="Internal Server Error", response=mock_response, body=None
+        )
+        # Fail twice, then succeed
+        mock_api.messages.create.side_effect = [server_err, server_err, _make_message()]
+
+        result = client.review(messages=[{"role": "user", "content": "Review."}])
+
+        assert result.ripeness.value == "ripe"
+        assert result.summary == "Looks good."
+
+    @patch("lychee.rate_limiter.time.sleep")
+    def test_accept_no_data_loss_on_retry(self, mock_sleep: MagicMock) -> None:
+        """After retries, the returned ReviewResult is identical to the successful response."""
+        retry_config = RetryConfig(max_retries=3, base_delay=0.1, jitter=False)
+        client, mock_api = self._make_client_with_limiter(retry_config=retry_config)
+
+        expected_tool_input = _make_tool_input(
+            summary="Detailed review after retry.",
+            findings=[
+                {
+                    "file": "src/app.py",
+                    "line": 42,
+                    "severity": "major",
+                    "category": "correctness",
+                    "message": "Off-by-one error in loop.",
+                }
+            ],
+        )
+        expected_message = _make_message(
+            content=[_make_tool_use_block(expected_tool_input)],
+            usage=_make_usage(input_tokens=800, output_tokens=400),
+        )
+
+        mock_response = MagicMock()
+        mock_response.status_code = 429
+        mock_response.headers = {}
+        rate_err = anthropic.RateLimitError(
+            message="Rate limited", response=mock_response, body=None
+        )
+        mock_api.messages.create.side_effect = [rate_err, expected_message]
+
+        result = client.review(messages=[{"role": "user", "content": "Review."}])
+
+        assert result.summary == "Detailed review after retry."
+        assert len(result.findings) == 1
+        assert result.findings[0].file == "src/app.py"
+        assert result.findings[0].line == 42
+        assert result.usage["input_tokens"] == 800
+        assert result.usage["output_tokens"] == 400
+
+
+# ---------------------------------------------------------------------------
+# Sanity: backward compatibility without limiter
+# ---------------------------------------------------------------------------
+
+
+class TestSanityRateLimiter:
+    """Sanity tests verifying backward compatibility."""
+
+    def test_claude_client_without_limiter_unchanged(self) -> None:
+        """ClaudeClient without rate limiter/retry config behaves identically."""
+        client = ClaudeClient(api_key="sk-test", model="claude-sonnet-4-6")
+        mock_api = MagicMock()
+        client._client = mock_api  # type: ignore[assignment]
+        mock_api.messages.create.return_value = _make_message()
+
+        result = client.review(messages=[{"role": "user", "content": "Review."}])
+
+        assert result.ripeness.value == "ripe"
+        assert result.summary == "Looks good."
+        mock_api.messages.create.assert_called_once()
+
+
+# ---------------------------------------------------------------------------
+# API: retryable / non-retryable error classification
+# ---------------------------------------------------------------------------
+
+
+class TestAPIErrorClassification:
+    """Tests verifying correct classification of API errors as retryable or not."""
+
+    @patch("lychee.rate_limiter.time.sleep")
+    def test_api_rate_limit_error_shape(self, mock_sleep: MagicMock) -> None:
+        """RateLimitError (HTTP 429) is classified as retryable."""
+        retry_config = RetryConfig(max_retries=1, base_delay=0.1, jitter=False)
+        client = ClaudeClient(
+            api_key="sk-test", model="claude-sonnet-4-6", retry_config=retry_config
+        )
+        mock_api = MagicMock()
+        client._client = mock_api  # type: ignore[assignment]
+
+        mock_response = MagicMock()
+        mock_response.status_code = 429
+        mock_response.headers = {}
+        rate_err = anthropic.RateLimitError(
+            message="Rate limited", response=mock_response, body=None
+        )
+        mock_api.messages.create.side_effect = [rate_err, _make_message()]
+
+        result = client.review(messages=[{"role": "user", "content": "Review."}])
+
+        assert result.ripeness.value == "ripe"
+        assert mock_api.messages.create.call_count == 2  # Retried once
+
+    @patch("lychee.rate_limiter.time.sleep")
+    def test_api_internal_server_error_shape(self, mock_sleep: MagicMock) -> None:
+        """InternalServerError (HTTP 500/529) is classified as retryable."""
+        retry_config = RetryConfig(max_retries=1, base_delay=0.1, jitter=False)
+        client = ClaudeClient(
+            api_key="sk-test", model="claude-sonnet-4-6", retry_config=retry_config
+        )
+        mock_api = MagicMock()
+        client._client = mock_api  # type: ignore[assignment]
+
+        mock_response = MagicMock()
+        mock_response.status_code = 500
+        mock_response.headers = {}
+        server_err = anthropic.InternalServerError(
+            message="Internal error", response=mock_response, body=None
+        )
+        mock_api.messages.create.side_effect = [server_err, _make_message()]
+
+        result = client.review(messages=[{"role": "user", "content": "Review."}])
+
+        assert result.ripeness.value == "ripe"
+        assert mock_api.messages.create.call_count == 2  # Retried once
+
+    @patch("lychee.rate_limiter.time.sleep")
+    def test_api_auth_error_not_retryable(self, mock_sleep: MagicMock) -> None:
+        """AuthenticationError (HTTP 401) is not retried."""
+        retry_config = RetryConfig(max_retries=3, base_delay=0.1, jitter=False)
+        client = ClaudeClient(
+            api_key="sk-test", model="claude-sonnet-4-6", retry_config=retry_config
+        )
+        mock_api = MagicMock()
+        client._client = mock_api  # type: ignore[assignment]
+
+        mock_response = MagicMock()
+        mock_response.status_code = 401
+        mock_response.headers = {}
+        auth_err = anthropic.AuthenticationError(
+            message="Invalid API key", response=mock_response, body=None
+        )
+        mock_api.messages.create.side_effect = auth_err
+
+        with pytest.raises(ClaudeReviewError, match="API error"):
+            client.review(messages=[{"role": "user", "content": "Review."}])
+
+        # No retries
+        mock_api.messages.create.assert_called_once()
