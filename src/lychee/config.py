@@ -49,6 +49,7 @@ class ReviewConfig(pydantic.BaseModel):
     severity_threshold: Literal["info", "minor", "major", "critical"] = "info"
     tone: Literal["balanced", "concise", "detailed"] = "balanced"
     language: str = "en"
+    budget_cap_usd: float | None = None
 
     @pydantic.field_validator("language")
     @classmethod
@@ -56,6 +57,14 @@ class ReviewConfig(pydantic.BaseModel):
         """Reject empty-string language values; any non-empty string is accepted."""
         if not v:
             raise ValueError("language must be a non-empty string")
+        return v
+
+    @pydantic.field_validator("budget_cap_usd")
+    @classmethod
+    def budget_cap_must_be_positive(cls, v: float | None) -> float | None:
+        """Reject non-positive budget cap values; None means no cap."""
+        if v is not None and v <= 0:
+            raise ValueError("budget_cap_usd must be > 0 when provided")
         return v
 
 

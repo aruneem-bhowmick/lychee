@@ -11,6 +11,7 @@
     "triage": "claude-haiku-4-5-20251001"
   },
   "review": {
+    "budget_cap_usd": null,
     "ignore_globs": [],
     "language": "en",
     "max_file_bytes": 102400,
