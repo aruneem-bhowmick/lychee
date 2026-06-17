@@ -11,6 +11,7 @@
     "triage": "claude-sonnet-4-6"
   },
   "review": {
+    "budget_cap_usd": null,
     "ignore_globs": [
       "*.lock",
       "dist/**"
