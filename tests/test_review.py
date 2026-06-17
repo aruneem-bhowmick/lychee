@@ -1398,9 +1398,7 @@ class TestBudgetCapSinglePass:
 
         config = LycheeConfig()  # budget_cap_usd is None by default
 
-        result = run_review(
-            "owner/repo#42", config, mock_github_client, mock_claude_client
-        )
+        result = run_review("owner/repo#42", config, mock_github_client, mock_claude_client)
         assert isinstance(result, ReviewResult)
 
 
