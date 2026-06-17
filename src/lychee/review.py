@@ -209,6 +209,11 @@ def run_review(
 ) -> ReviewResult:
     """Orchestrate context fetch, prompt build, and Claude call to produce a ReviewResult.
 
+    When ``config.features.triage_pass`` is enabled, a lightweight Haiku
+    pre-pass classifies the PR first.  Trivially-classified PRs (typo fixes,
+    dependency bumps, etc.) are reviewed entirely by Haiku on the cheap path;
+    substantive PRs proceed to the normal pipeline with model tiering.
+
     For large PRs (more files than ``config.review.max_files``), uses a
     map-reduce strategy: files are partitioned into groups, each reviewed
     individually, then partial results are merged into a single ReviewResult.
@@ -226,6 +231,36 @@ def run_review(
     """
     parsed_ref = PullRequestRef.parse(pr_ref)
     context = build_context(github_client, parsed_ref, config)
+
+    # Optional triage pre-pass: classify the PR before the full review
+    if config.features.triage_pass:
+        from lychee.triage import run_triage, run_trivial_review
+
+        triage_result = run_triage(context, claude_client, config)
+        if triage_result.is_trivial:
+            _logger.info(
+                "Triage routed to cheap path: verdict=%s reason=%s",
+                triage_result.verdict.value,
+                triage_result.reason,
+            )
+            result = run_trivial_review(context, claude_client, config)
+            cost = compute_cost(result.usage, result.model)
+            check_budget(cost, config.review.budget_cap_usd)
+            _logger.info(
+                "Review complete: pr=%s model=%s ripeness=%s findings=%d usage=%s",
+                pr_ref,
+                result.model,
+                result.ripeness.value,
+                len(result.findings),
+                result.usage,
+            )
+            return result
+        _logger.info(
+            "Triage routed to full review: verdict=%s reason=%s",
+            triage_result.verdict.value,
+            triage_result.reason,
+        )
+
     system = build_system_prompt_blocks(config, conventions=context.conventions)
 
     context_size = _compute_context_size(context)
