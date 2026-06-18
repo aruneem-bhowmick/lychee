@@ -1,0 +1,11 @@
+diff --git a/src/app.py b/src/app.py
+index aaa1111..bbb2222 100644
+--- a/src/app.py
++++ b/src/app.py
+@@ -1,5 +1,6 @@
+ """Main application module."""
+
+ import os
++import sys
+
+ def main():
