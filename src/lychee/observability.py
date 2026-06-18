@@ -68,7 +68,7 @@ class CorrelationFilter(logging.Filter):
 
     def filter(self, record: logging.LogRecord) -> bool:
         """Add correlation_id attribute to the record and always return True."""
-        record.correlation_id = get_correlation_id()  # type: ignore[attr-defined]
+        record.correlation_id = get_correlation_id()
         return True
 
 
