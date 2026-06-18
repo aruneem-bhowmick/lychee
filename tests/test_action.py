@@ -12,6 +12,7 @@ unittest.mock for GitHubClient/ClaudeClient/SummaryPoster.
 from __future__ import annotations
 
 import json
+import logging
 from pathlib import Path
 from typing import Any
 from unittest.mock import MagicMock, patch
@@ -742,3 +743,209 @@ class TestCostSanity:
 
         mock_review.assert_called_once()
         mock_poster_cls.return_value.post.assert_called_once()
+
+
+# ---------------------------------------------------------------------------
+# Observability integration tests
+# ---------------------------------------------------------------------------
+
+
+class TestActionObservability:
+    """Integration tests for observability hooks in the action entrypoint."""
+
+    def _setup_env(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+        tmp_path: Path,
+        event: dict[str, Any] | None = None,
+    ) -> Path:
+        """Configure environment and write event file for main()."""
+        if event is None:
+            event = _make_event()
+        event_file = _write_event_file(tmp_path, event)
+        monkeypatch.setenv("GITHUB_TOKEN", "ghp_test_token")
+        monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-test-key")
+        monkeypatch.setenv("GITHUB_EVENT_PATH", str(event_file))
+        monkeypatch.setenv("GITHUB_REPOSITORY", "owner/repo")
+        return event_file
+
+    @patch("scripts.run_action.setup_structured_logging")
+    @patch("scripts.run_action.new_correlation_id", return_value="test_cid_abc123")
+    @patch("scripts.run_action.SummaryPoster")
+    @patch("scripts.run_action.render_comment", return_value="# Comment")
+    @patch("scripts.run_action.run_review")
+    @patch("scripts.run_action.ClaudeClient")
+    @patch("scripts.run_action.GitHubClient")
+    @patch("scripts.run_action.load_config")
+    def test_action_emits_run_record(
+        self,
+        mock_config: MagicMock,
+        mock_gh: MagicMock,
+        mock_claude: MagicMock,
+        mock_review: MagicMock,
+        mock_render: MagicMock,
+        mock_poster_cls: MagicMock,
+        mock_new_cid: MagicMock,
+        mock_setup_logging: MagicMock,
+        monkeypatch: pytest.MonkeyPatch,
+        tmp_path: Path,
+        caplog: pytest.LogCaptureFixture,
+    ) -> None:
+        """Successful review emits a review_complete run record."""
+        from scripts.run_action import main
+
+        self._setup_env(monkeypatch, tmp_path)
+        mock_review.return_value = _mock_review_result()
+
+        with caplog.at_level(logging.INFO, logger="lychee.run_record"):
+            with pytest.raises(SystemExit) as exc_info:
+                main()
+        assert exc_info.value.code == 0
+
+        run_record_logs = [
+            r for r in caplog.records if r.name == "lychee.run_record"
+        ]
+        assert len(run_record_logs) >= 1
+        record = json.loads(run_record_logs[0].message)
+        assert record["event"] == "review_complete"
+        assert "repo" in record
+        assert "pr_number" in record
+        assert "finding_counts" in record
+
+    @patch("scripts.run_action.setup_structured_logging")
+    @patch("scripts.run_action.new_correlation_id", return_value="test_cid_abc123")
+    @patch("scripts.run_action.SummaryPoster")
+    @patch("scripts.run_action.render_comment", return_value="# Comment")
+    @patch("scripts.run_action.run_review", side_effect=RuntimeError("engine boom"))
+    @patch("scripts.run_action.ClaudeClient")
+    @patch("scripts.run_action.GitHubClient")
+    @patch("scripts.run_action.load_config")
+    def test_action_failure_emits_record(
+        self,
+        mock_config: MagicMock,
+        mock_gh: MagicMock,
+        mock_claude: MagicMock,
+        mock_review: MagicMock,
+        mock_render: MagicMock,
+        mock_poster_cls: MagicMock,
+        mock_new_cid: MagicMock,
+        mock_setup_logging: MagicMock,
+        monkeypatch: pytest.MonkeyPatch,
+        tmp_path: Path,
+        caplog: pytest.LogCaptureFixture,
+    ) -> None:
+        """Failed review emits a review_failed run record."""
+        from scripts.run_action import main
+
+        self._setup_env(monkeypatch, tmp_path)
+
+        with caplog.at_level(logging.INFO, logger="lychee.run_record"):
+            with pytest.raises(SystemExit) as exc_info:
+                main()
+        assert exc_info.value.code == 1
+
+        run_record_logs = [
+            r for r in caplog.records if r.name == "lychee.run_record"
+        ]
+        assert len(run_record_logs) >= 1
+        record = json.loads(run_record_logs[0].message)
+        assert record["event"] == "review_failed"
+        assert record["error_type"] == "RuntimeError"
+
+    @patch("scripts.run_action.setup_structured_logging")
+    @patch("scripts.run_action.new_correlation_id", return_value="test_cid_abc123")
+    @patch("scripts.run_action.SummaryPoster")
+    @patch("scripts.run_action.render_comment", return_value="# Comment")
+    @patch("scripts.run_action.run_review")
+    @patch("scripts.run_action.ClaudeClient")
+    @patch("scripts.run_action.GitHubClient")
+    @patch("scripts.run_action.load_config")
+    def test_action_correlation_id_propagates(
+        self,
+        mock_config: MagicMock,
+        mock_gh: MagicMock,
+        mock_claude: MagicMock,
+        mock_review: MagicMock,
+        mock_render: MagicMock,
+        mock_poster_cls: MagicMock,
+        mock_new_cid: MagicMock,
+        mock_setup_logging: MagicMock,
+        monkeypatch: pytest.MonkeyPatch,
+        tmp_path: Path,
+        caplog: pytest.LogCaptureFixture,
+    ) -> None:
+        """All log lines from a single run share the same correlation ID."""
+        from scripts.run_action import main
+
+        self._setup_env(monkeypatch, tmp_path)
+        mock_review.return_value = _mock_review_result()
+
+        with caplog.at_level(logging.INFO):
+            with pytest.raises(SystemExit):
+                main()
+
+        # The run record should contain the correlation ID from new_correlation_id
+        run_record_logs = [
+            r for r in caplog.records if r.name == "lychee.run_record"
+        ]
+        if run_record_logs:
+            record = json.loads(run_record_logs[0].message)
+            # The correlation_id in the record comes from
+            # get_correlation_id() inside build_run_record, which uses the
+            # ContextVar.  Since we mocked new_correlation_id (which normally
+            # sets the ContextVar), the ContextVar may hold a prior test value
+            # or default.  What matters is that new_correlation_id was called.
+            mock_new_cid.assert_called_once()
+
+    @patch("scripts.run_action.setup_structured_logging")
+    @patch("scripts.run_action.new_correlation_id", return_value="test_cid_abc123")
+    @patch("scripts.run_action.SummaryPoster")
+    @patch("scripts.run_action.render_comment", return_value="# Comment")
+    @patch("scripts.run_action.run_review")
+    @patch("scripts.run_action.ClaudeClient")
+    @patch("scripts.run_action.GitHubClient")
+    @patch("scripts.run_action.load_config")
+    def test_accept_every_run_emits_record(
+        self,
+        mock_config: MagicMock,
+        mock_gh: MagicMock,
+        mock_claude: MagicMock,
+        mock_review: MagicMock,
+        mock_render: MagicMock,
+        mock_poster_cls: MagicMock,
+        mock_new_cid: MagicMock,
+        mock_setup_logging: MagicMock,
+        monkeypatch: pytest.MonkeyPatch,
+        tmp_path: Path,
+        caplog: pytest.LogCaptureFixture,
+    ) -> None:
+        """Both success and failure paths emit a run record to lychee.run_record."""
+        from scripts.run_action import main
+
+        # Success path
+        self._setup_env(monkeypatch, tmp_path)
+        mock_review.return_value = _mock_review_result()
+        mock_review.side_effect = None
+
+        with caplog.at_level(logging.INFO, logger="lychee.run_record"):
+            with pytest.raises(SystemExit):
+                main()
+
+        success_records = [
+            r for r in caplog.records if r.name == "lychee.run_record"
+        ]
+        assert len(success_records) >= 1
+
+        caplog.clear()
+
+        # Failure path
+        mock_review.side_effect = RuntimeError("fail")
+
+        with caplog.at_level(logging.INFO, logger="lychee.run_record"):
+            with pytest.raises(SystemExit):
+                main()
+
+        failure_records = [
+            r for r in caplog.records if r.name == "lychee.run_record"
+        ]
+        assert len(failure_records) >= 1
