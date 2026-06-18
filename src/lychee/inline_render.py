@@ -1,0 +1,52 @@
+"""Inline comment renderer — formats a single Finding for GitHub review comments."""
+
+from __future__ import annotations
+
+from lychee.models import Finding, Severity
+
+SEVERITY_LABELS: dict[Severity, str] = {
+    Severity.info: "Info",
+    Severity.minor: "Minor",
+    Severity.major: "Major",
+    Severity.critical: "Critical",
+}
+
+_SEVERITY_EMOJI: dict[Severity, str] = {
+    Severity.info: "ℹ️",  # noqa: RUF001
+    Severity.minor: "⚠️",
+    Severity.major: "🔶",
+    Severity.critical: "🔴",
+}
+
+
+def render_inline_comment(finding: Finding) -> str:
+    """Render a Finding as a GitHub inline review comment body.
+
+    Format::
+
+        {emoji} **{Severity}** [{category}]: {message}
+
+    When the finding carries a suggestion, a GitHub suggestion block is
+    appended so reviewers can apply the fix with one click.
+    """
+    emoji = _SEVERITY_EMOJI[finding.severity]
+    label = SEVERITY_LABELS[finding.severity]
+    category = finding.category.value
+    body = f"{emoji} **{label}** [{category}]: {finding.message}"
+
+    if finding.suggestion is not None:
+        body += "\n\n" + render_suggestion_block(finding.suggestion)
+
+    return body
+
+
+def render_suggestion_block(suggestion: str) -> str:
+    """Wrap *suggestion* in GitHub's suggestion syntax for one-click apply.
+
+    Returns::
+
+        ```suggestion
+        {suggestion}
+        ```
+    """
+    return f"```suggestion\n{suggestion}\n```"
