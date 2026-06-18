@@ -12,7 +12,7 @@ import json
 import logging
 import uuid
 from contextvars import ContextVar
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from lychee.models import Severity
@@ -138,7 +138,7 @@ def build_run_record(
     return {
         "event": "review_complete",
         "correlation_id": get_correlation_id(),
-        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "timestamp": datetime.now(UTC).isoformat(),
         "repo": repo,
         "pr_number": pr_number,
         "head_sha": head_sha,
