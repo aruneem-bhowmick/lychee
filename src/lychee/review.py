@@ -13,6 +13,7 @@ from lychee.context import ReviewContext, build_context
 from lychee.cost import check_budget, compute_cost
 from lychee.github_client import GitHubClient, PullRequestRef
 from lychee.models import ReviewResult
+from lychee.observability import set_review_strategy, set_triage_verdict
 from lychee.prompt import (
     build_map_user_message,
     build_messages,
@@ -238,6 +239,8 @@ def run_review(
 
         triage_result = run_triage(context, claude_client, config)
         if triage_result.is_trivial:
+            set_review_strategy("trivial")
+            set_triage_verdict(triage_result.verdict.value)
             _logger.info(
                 "Triage routed to cheap path: verdict=%s reason=%s",
                 triage_result.verdict.value,
@@ -255,6 +258,7 @@ def run_review(
                 result.usage,
             )
             return result
+        set_triage_verdict(triage_result.verdict.value)
         _logger.info(
             "Triage routed to full review: verdict=%s reason=%s",
             triage_result.verdict.value,
@@ -273,6 +277,7 @@ def run_review(
     )
 
     if _should_map_reduce(context, config):
+        set_review_strategy("map_reduce")
         groups = _partition_files(context.changed_files, _MAP_GROUP_SIZE)
         _logger.info(
             "Map-reduce mode: %d files → %d groups of ≤%d",
@@ -289,6 +294,7 @@ def run_review(
             context, partial_results, config, claude_client, system, model_override
         )
     else:
+        set_review_strategy("single_pass")
         messages = build_messages(context, config)
         result = claude_client.review(messages, system=system, model_override=model_override)
         cost = compute_cost(result.usage, result.model)
