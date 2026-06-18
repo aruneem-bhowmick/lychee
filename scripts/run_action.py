@@ -6,6 +6,7 @@ import json
 import logging
 import os
 import sys
+import time
 from pathlib import Path
 from typing import Any
 
@@ -13,6 +14,15 @@ from lychee.claude import ClaudeClient
 from lychee.config import load_config
 from lychee.cost import BudgetExceededError, compute_cost, format_cost_line
 from lychee.github_client import GitHubClient, PullRequestRef
+from lychee.observability import (
+    build_run_record,
+    compute_finding_counts,
+    emit_run_record,
+    get_review_strategy,
+    get_triage_verdict,
+    new_correlation_id,
+    setup_structured_logging,
+)
 from lychee.poster import SummaryPoster
 from lychee.render import render_comment
 from lychee.review import run_review
@@ -45,13 +55,8 @@ def main() -> None:
     Raises SystemExit(0) on success or non-applicable event.
     Raises SystemExit(1) on failure.
     """
-    logging.basicConfig(
-        level=logging.INFO,
-        format=(
-            '{"time":"%(asctime)s","name":"%(name)s",'
-            '"level":"%(levelname)s","message":"%(message)s"}'
-        ),
-    )
+    new_correlation_id()
+    setup_structured_logging()
 
     try:
         github_token = os.environ.get("GITHUB_TOKEN")
@@ -83,13 +88,30 @@ def main() -> None:
         github_client = GitHubClient(token=github_token)
         claude_client = ClaudeClient(api_key=anthropic_key, model=config.model.default)
 
+        start = time.monotonic()
         result = run_review(pr_ref, config, github_client, claude_client)
+        duration = time.monotonic() - start
 
         cost_usd = compute_cost(result.usage, result.model)
         cost_line: str | None = None
         if config.features.cost_footer:
             cost_line = format_cost_line(cost_usd, result.usage)
         _logger.info("Review cost: $%.4f", cost_usd)
+
+        run_record = build_run_record(
+            repo=repo,
+            pr_number=pr_number,
+            head_sha=head_sha,
+            model=result.model,
+            usage=result.usage,
+            cost_usd=cost_usd,
+            ripeness=result.ripeness.value,
+            finding_counts=compute_finding_counts(result.findings),
+            duration_seconds=duration,
+            review_strategy=get_review_strategy(),
+            triage_verdict=get_triage_verdict(),
+        )
+        emit_run_record(run_record)
 
         comment_body = render_comment(result, cost_line=cost_line)
 
@@ -107,6 +129,14 @@ def main() -> None:
             exc.spent_usd,
             exc.cap_usd,
         )
+        emit_run_record(
+            {
+                "event": "review_failed",
+                "error_type": "BudgetExceededError",
+                "spent_usd": exc.spent_usd,
+                "cap_usd": exc.cap_usd,
+            }
+        )
         try:
             abort_poster = SummaryPoster(github_client)
             abort_pr = github_client.get_pull_request(PullRequestRef.parse(pr_ref))
@@ -121,6 +151,12 @@ def main() -> None:
         raise
     except Exception as exc:
         _logger.error("Review failed: %s", type(exc).__name__)
+        emit_run_record(
+            {
+                "event": "review_failed",
+                "error_type": type(exc).__name__,
+            }
+        )
         sys.exit(1)
 
 
