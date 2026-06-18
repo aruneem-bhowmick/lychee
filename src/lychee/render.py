@@ -27,16 +27,29 @@ _RIPENESS_BADGE: dict[Ripeness, str] = {
 }
 
 
+def severity_at_or_above(severity: str, threshold: str) -> bool:
+    """Return True if *severity* is at or above *threshold*.
+
+    Both arguments must be valid severity strings (``info``, ``minor``,
+    ``major``, ``critical``).  This is a public helper that exposes the
+    severity comparison logic without leaking ``_SEVERITY_RANK``.
+    """
+    return _SEVERITY_RANK[severity] >= _SEVERITY_RANK[threshold]
+
+
 def render_comment(
     result: ReviewResult,
     cost_line: str | None = None,
     severity_threshold: str = "info",
+    fallback_findings: list[Finding] | None = None,
 ) -> str:
     """Render a ReviewResult to the PR comment markdown string.
 
-    Sections in order: Header → Nectar → The Peel → Pits → Footer.
+    Sections in order: Header → Nectar → The Peel → Pits → (Fallback) → Footer.
     cost_line is inserted before the footer when provided; pass None to omit it entirely.
     severity_threshold filters out findings below the given severity level.
+    fallback_findings, when non-empty, renders a collapsible section of findings
+    that could not be posted as inline comments.
     """
     threshold_rank = _SEVERITY_RANK[severity_threshold]
     filtered = [f for f in result.findings if _SEVERITY_RANK[f.severity.value] >= threshold_rank]
@@ -51,6 +64,9 @@ def render_comment(
         f"## 🪨 Pits\n{_render_pits(filtered)}",
         "---",
     ]
+    if fallback_findings:
+        parts.append(_render_fallback_findings(fallback_findings))
+        parts.append("---")
     if cost_line is not None:
         parts.append(cost_line)
     parts.append("*Reviewed to the core by Lychee*")
@@ -95,3 +111,20 @@ def _render_finding(finding: Finding) -> str:
         return base + suggestion_block
 
     return base
+
+
+def _render_fallback_findings(findings: list[Finding]) -> str:
+    """Render unmappable findings in a collapsible ``<details>`` block.
+
+    These are findings that could not be posted as inline review comments
+    (e.g. file-level findings, or lines outside the diff).
+    """
+    count = len(findings)
+    label = "finding" if count == 1 else "findings"
+    items = "\n".join(_render_finding(f) for f in findings)
+    return (
+        f"<details>\n"
+        f"<summary>📌 {count} {label} not posted inline</summary>\n\n"
+        f"{items}\n"
+        f"</details>"
+    )
