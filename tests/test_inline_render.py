@@ -13,7 +13,6 @@ import pytest
 from lychee.inline_render import SEVERITY_LABELS, render_inline_comment, render_suggestion_block
 from lychee.models import Category, Finding, Severity
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------

@@ -11,9 +11,13 @@ from __future__ import annotations
 
 import pytest
 
-from lychee.diff_mapping import DiffPosition, build_position_map, map_finding_to_position, parse_diff_files
+from lychee.diff_mapping import (
+    DiffPosition,
+    build_position_map,
+    map_finding_to_position,
+    parse_diff_files,
+)
 from lychee.models import Category, Finding, Severity
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -107,7 +111,12 @@ def _make_finding(file: str = "src/app.py", line: int | None = 2, **kwargs: obje
 
 def test_imports() -> None:
     """All public names import cleanly from lychee.diff_mapping."""
-    from lychee.diff_mapping import DiffPosition, build_position_map, map_finding_to_position, parse_diff_files
+    from lychee.diff_mapping import (
+        DiffPosition,
+        build_position_map,
+        map_finding_to_position,
+        parse_diff_files,
+    )
 
     assert callable(build_position_map)
     assert callable(map_finding_to_position)
