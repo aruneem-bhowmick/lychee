@@ -4,11 +4,15 @@ from __future__ import annotations
 
 import json
 import logging
+from dataclasses import dataclass, field
 from typing import Any
 
 from github import GithubException
 
-from lychee.render import REVIEW_MARKER
+from lychee.diff_mapping import DiffPosition, build_position_map, map_finding_to_position
+from lychee.inline_render import render_inline_comment
+from lychee.models import Finding
+from lychee.render import REVIEW_MARKER, severity_at_or_above
 
 _logger = logging.getLogger(__name__)
 
@@ -127,3 +131,123 @@ class SummaryPoster:
             return None
 
         return parsed
+
+
+@dataclass(frozen=True)
+class InlinePostResult:
+    """Result of an inline review comment posting operation.
+
+    Attributes:
+        review_id: The GitHub review ID, or ``None`` if no review was created.
+        inline_count: Number of findings posted as inline comments.
+        fallback_count: Number of findings that could not be posted inline.
+        fallback_findings: The list of unmappable findings (for summary comment).
+    """
+
+    review_id: int | None
+    inline_count: int
+    fallback_count: int
+    fallback_findings: list[Finding] = field(default_factory=list)
+
+
+class InlineReviewPoster:
+    """Posts review findings as inline comments on specific diff lines."""
+
+    def __init__(self, github_client: Any) -> None:
+        """Initialise with a GitHubClient instance."""
+        self._github_client = github_client
+
+    def post(
+        self,
+        pr: Any,  # github.PullRequest.PullRequest
+        result: Any,  # ReviewResult
+        diff: str,
+        severity_threshold: str = "info",
+        previous_state: dict[str, Any] | None = None,
+    ) -> InlinePostResult:
+        """Post findings as inline review comments on the PR.
+
+        Builds a position map from the diff, partitions findings into
+        inline-mappable and fallback, renders comments, and submits a
+        single review via ``pr.create_review()``.
+
+        Returns an ``InlinePostResult`` with counts and fallback findings.
+
+        Raises ``PosterError`` on GitHub API failures.
+        """
+        position_map = build_position_map(diff)
+        inline_pairs, fallback = self._partition_findings(
+            result.findings, position_map, severity_threshold
+        )
+
+        if not inline_pairs:
+            return InlinePostResult(
+                review_id=None,
+                inline_count=0,
+                fallback_count=len(fallback),
+                fallback_findings=fallback,
+            )
+
+        comments = self._build_review_comments(inline_pairs)
+
+        try:
+            review = pr.create_review(event="COMMENT", comments=comments)
+            review_id: int = review.id
+        except GithubException as exc:
+            raise PosterError(f"GitHub API error during inline review: {exc}") from exc
+
+        _logger.info(
+            "Posted inline review #%d with %d comments (%d fallback)",
+            review_id,
+            len(inline_pairs),
+            len(fallback),
+        )
+
+        return InlinePostResult(
+            review_id=review_id,
+            inline_count=len(inline_pairs),
+            fallback_count=len(fallback),
+            fallback_findings=fallback,
+        )
+
+    @staticmethod
+    def _partition_findings(
+        findings: list[Finding],
+        position_map: dict[str, dict[int, int]],
+        severity_threshold: str,
+    ) -> tuple[list[tuple[Finding, DiffPosition]], list[Finding]]:
+        """Split findings into inline-mappable pairs and fallback list.
+
+        Findings below the severity threshold are excluded entirely.
+        """
+        inline: list[tuple[Finding, DiffPosition]] = []
+        fallback: list[Finding] = []
+
+        for finding in findings:
+            if not severity_at_or_above(finding.severity.value, severity_threshold):
+                continue
+
+            pos = map_finding_to_position(finding, position_map)
+            if pos is not None:
+                inline.append((finding, pos))
+            else:
+                fallback.append(finding)
+
+        return inline, fallback
+
+    @staticmethod
+    def _build_review_comments(
+        inline_pairs: list[tuple[Finding, DiffPosition]],
+    ) -> list[dict[str, Any]]:
+        """Build the list of review comment dicts for ``pr.create_review()``.
+
+        Each dict has ``path``, ``position``, and ``body`` keys.
+        """
+        return [
+            {
+                "path": pos.path,
+                "position": pos.position,
+                "body": render_inline_comment(finding),
+            }
+            for finding, pos in inline_pairs
+        ]
