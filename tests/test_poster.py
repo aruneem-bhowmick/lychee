@@ -521,9 +521,7 @@ def test_inline_poster_instantiates() -> None:
 
 def test_inline_post_result_is_frozen() -> None:
     """InlinePostResult is a frozen dataclass."""
-    result = InlinePostResult(
-        review_id=1, inline_count=0, fallback_count=0, fallback_findings=[]
-    )
+    result = InlinePostResult(review_id=1, inline_count=0, fallback_count=0, fallback_findings=[])
     with pytest.raises(AttributeError):
         result.review_id = 999  # type: ignore[misc]
 
@@ -637,10 +635,12 @@ def test_inline_single_finding_posts_review() -> None:
 def test_inline_multiple_findings_one_review() -> None:
     """Multiple mappable findings result in one create_review call."""
     pr = _make_mock_pr_with_review()
-    result = _make_review_result([
-        _make_inline_finding(line=1),
-        _make_inline_finding(line=2),
-    ])
+    result = _make_review_result(
+        [
+            _make_inline_finding(line=1),
+            _make_inline_finding(line=2),
+        ]
+    )
     poster = InlineReviewPoster(MagicMock())
 
     post_result = poster.post(pr, result, _INLINE_DIFF)
@@ -680,10 +680,12 @@ def test_inline_fallback_findings_returned() -> None:
     """Fallback findings are returned in the result."""
     pr = _make_mock_pr_with_review()
     file_level = _make_inline_finding(line=None, message="File-level note.")
-    result = _make_review_result([
-        _make_inline_finding(line=2),
-        file_level,
-    ])
+    result = _make_review_result(
+        [
+            _make_inline_finding(line=2),
+            file_level,
+        ]
+    )
     poster = InlineReviewPoster(MagicMock())
 
     post_result = poster.post(pr, result, _INLINE_DIFF)
@@ -737,10 +739,12 @@ def test_accept_review_event_is_comment() -> None:
 def test_accept_multiple_pits_one_review_call() -> None:
     """Multiple findings produce exactly one create_review call."""
     pr = _make_mock_pr_with_review()
-    result = _make_review_result([
-        _make_inline_finding(line=1, severity=Severity.critical),
-        _make_inline_finding(line=2, severity=Severity.minor),
-    ])
+    result = _make_review_result(
+        [
+            _make_inline_finding(line=1, severity=Severity.critical),
+            _make_inline_finding(line=2, severity=Severity.minor),
+        ]
+    )
     poster = InlineReviewPoster(MagicMock())
 
     poster.post(pr, result, _INLINE_DIFF)
@@ -751,11 +755,11 @@ def test_accept_multiple_pits_one_review_call() -> None:
 def test_accept_severities_in_comment_bodies() -> None:
     """Comment bodies contain severity labels and categories."""
     pr = _make_mock_pr_with_review()
-    result = _make_review_result([
-        _make_inline_finding(
-            line=2, severity=Severity.critical, category=Category.security
-        ),
-    ])
+    result = _make_review_result(
+        [
+            _make_inline_finding(line=2, severity=Severity.critical, category=Category.security),
+        ]
+    )
     poster = InlineReviewPoster(MagicMock())
 
     poster.post(pr, result, _INLINE_DIFF)
