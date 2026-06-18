@@ -1,0 +1,30 @@
+diff --git a/src/server.py b/src/server.py
+index ccc3333..ddd4444 100644
+--- a/src/server.py
++++ b/src/server.py
+@@ -1,6 +1,7 @@
+ """HTTP server module."""
+
+ import http.server
++import logging
+
+ HOST = "localhost"
+ PORT = 8080
+@@ -20,8 +21,9 @@
+
+ def handle_request(request):
+     """Handle an incoming HTTP request."""
+-    if request.method == "GET":
+-        return Response(200, "OK")
++    logger.info("Handling %s request", request.method)
++    if request.method in ("GET", "HEAD"):
++        return Response(200, "OK", headers={"X-Served-By": "lychee"})
+     return Response(405, "Method Not Allowed")
+
+
+@@ -35,4 +37,5 @@
+ def shutdown():
+     """Shut down the server gracefully."""
+     global _running
++    logger.info("Shutting down server")
+     _running = False

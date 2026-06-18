@@ -1,0 +1,51 @@
+diff --git a/src/config.py b/src/config.py
+index aaa1111..bbb2222 100644
+--- a/src/config.py
++++ b/src/config.py
+@@ -5,7 +5,7 @@
+
+ DEFAULT_TIMEOUT = 30
+ DEFAULT_RETRIES = 3
+-MAX_CONNECTIONS = 10
++MAX_CONNECTIONS = 50
+
+
+ def load_config(path: str) -> dict:
+diff --git a/src/newmodule.py b/src/newmodule.py
+new file mode 100644
+index 0000000..eee5555
+--- /dev/null
++++ b/src/newmodule.py
+@@ -0,0 +1,8 @@
++"""A brand new module."""
++
++
++def greet(name: str) -> str:
++    """Return a greeting string."""
++    return f"Hello, {name}!"
++
++
+diff --git a/src/legacy.py b/src/legacy.py
+deleted file mode 100644
+index fff6666..0000000
+--- a/src/legacy.py
++++ /dev/null
+@@ -1,5 +0,0 @@
+-"""Legacy module — no longer needed."""
+-
+-
+-def old_function():
+-    pass
+diff --git a/tests/test_config.py b/tests/test_config.py
+index ggg7777..hhh8888 100644
+--- a/tests/test_config.py
++++ b/tests/test_config.py
+@@ -10,3 +10,8 @@
+ def test_default_timeout():
+     config = load_config("test.yml")
+     assert config["timeout"] == 30
++
++
++def test_max_connections():
++    config = load_config("test.yml")
++    assert config["max_connections"] == 50
