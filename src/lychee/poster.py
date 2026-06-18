@@ -213,7 +213,7 @@ class InlineReviewPoster:
     @staticmethod
     def _partition_findings(
         findings: list[Finding],
-        position_map: dict[str, dict[int, int]],
+        position_map: dict[str, dict[int, DiffPosition]],
         severity_threshold: str,
     ) -> tuple[list[tuple[Finding, DiffPosition]], list[Finding]]:
         """Split findings into inline-mappable pairs and fallback list.
@@ -227,7 +227,7 @@ class InlineReviewPoster:
             if not severity_at_or_above(finding.severity.value, severity_threshold):
                 continue
 
-            pos = map_finding_to_position(finding, position_map)
+            pos = map_finding_to_position(finding.file, finding.line, position_map)
             if pos is not None:
                 inline.append((finding, pos))
             else:
