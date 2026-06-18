@@ -804,9 +804,7 @@ class TestActionObservability:
             main()
         assert exc_info.value.code == 0
 
-        run_record_logs = [
-            r for r in caplog.records if r.name == "lychee.run_record"
-        ]
+        run_record_logs = [r for r in caplog.records if r.name == "lychee.run_record"]
         assert len(run_record_logs) >= 1
         record = json.loads(run_record_logs[0].message)
         assert record["event"] == "review_complete"
@@ -848,9 +846,7 @@ class TestActionObservability:
             main()
         assert exc_info.value.code == 1
 
-        run_record_logs = [
-            r for r in caplog.records if r.name == "lychee.run_record"
-        ]
+        run_record_logs = [r for r in caplog.records if r.name == "lychee.run_record"]
         assert len(run_record_logs) >= 1
         record = json.loads(run_record_logs[0].message)
         assert record["event"] == "review_failed"
@@ -888,9 +884,7 @@ class TestActionObservability:
             main()
 
         # The run record should contain the correlation ID from new_correlation_id
-        run_record_logs = [
-            r for r in caplog.records if r.name == "lychee.run_record"
-        ]
+        run_record_logs = [r for r in caplog.records if r.name == "lychee.run_record"]
         if run_record_logs:
             # The correlation_id in the record comes from
             # get_correlation_id() inside build_run_record, which uses the
@@ -936,9 +930,7 @@ class TestActionObservability:
         ):
             main()
 
-        success_records = [
-            r for r in caplog.records if r.name == "lychee.run_record"
-        ]
+        success_records = [r for r in caplog.records if r.name == "lychee.run_record"]
         assert len(success_records) >= 1
 
         caplog.clear()
@@ -952,7 +944,5 @@ class TestActionObservability:
         ):
             main()
 
-        failure_records = [
-            r for r in caplog.records if r.name == "lychee.run_record"
-        ]
+        failure_records = [r for r in caplog.records if r.name == "lychee.run_record"]
         assert len(failure_records) >= 1
