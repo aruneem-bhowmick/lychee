@@ -797,9 +797,11 @@ class TestActionObservability:
         self._setup_env(monkeypatch, tmp_path)
         mock_review.return_value = _mock_review_result()
 
-        with caplog.at_level(logging.INFO, logger="lychee.run_record"):
-            with pytest.raises(SystemExit) as exc_info:
-                main()
+        with (
+            caplog.at_level(logging.INFO, logger="lychee.run_record"),
+            pytest.raises(SystemExit) as exc_info,
+        ):
+            main()
         assert exc_info.value.code == 0
 
         run_record_logs = [
@@ -839,9 +841,11 @@ class TestActionObservability:
 
         self._setup_env(monkeypatch, tmp_path)
 
-        with caplog.at_level(logging.INFO, logger="lychee.run_record"):
-            with pytest.raises(SystemExit) as exc_info:
-                main()
+        with (
+            caplog.at_level(logging.INFO, logger="lychee.run_record"),
+            pytest.raises(SystemExit) as exc_info,
+        ):
+            main()
         assert exc_info.value.code == 1
 
         run_record_logs = [
@@ -880,21 +884,20 @@ class TestActionObservability:
         self._setup_env(monkeypatch, tmp_path)
         mock_review.return_value = _mock_review_result()
 
-        with caplog.at_level(logging.INFO):
-            with pytest.raises(SystemExit):
-                main()
+        with caplog.at_level(logging.INFO), pytest.raises(SystemExit):
+            main()
 
         # The run record should contain the correlation ID from new_correlation_id
         run_record_logs = [
             r for r in caplog.records if r.name == "lychee.run_record"
         ]
         if run_record_logs:
-            record = json.loads(run_record_logs[0].message)
             # The correlation_id in the record comes from
             # get_correlation_id() inside build_run_record, which uses the
             # ContextVar.  Since we mocked new_correlation_id (which normally
             # sets the ContextVar), the ContextVar may hold a prior test value
             # or default.  What matters is that new_correlation_id was called.
+            json.loads(run_record_logs[0].message)
             mock_new_cid.assert_called_once()
 
     @patch("scripts.run_action.setup_structured_logging")
@@ -927,9 +930,11 @@ class TestActionObservability:
         mock_review.return_value = _mock_review_result()
         mock_review.side_effect = None
 
-        with caplog.at_level(logging.INFO, logger="lychee.run_record"):
-            with pytest.raises(SystemExit):
-                main()
+        with (
+            caplog.at_level(logging.INFO, logger="lychee.run_record"),
+            pytest.raises(SystemExit),
+        ):
+            main()
 
         success_records = [
             r for r in caplog.records if r.name == "lychee.run_record"
@@ -941,9 +946,11 @@ class TestActionObservability:
         # Failure path
         mock_review.side_effect = RuntimeError("fail")
 
-        with caplog.at_level(logging.INFO, logger="lychee.run_record"):
-            with pytest.raises(SystemExit):
-                main()
+        with (
+            caplog.at_level(logging.INFO, logger="lychee.run_record"),
+            pytest.raises(SystemExit),
+        ):
+            main()
 
         failure_records = [
             r for r in caplog.records if r.name == "lychee.run_record"
