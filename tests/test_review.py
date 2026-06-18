@@ -8,6 +8,7 @@ Framework: pytest, unittest.mock.patch.
 
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 from typing import Any
 from unittest.mock import MagicMock, patch
@@ -1430,3 +1431,65 @@ class TestBudgetCapMapReduce:
 
         with pytest.raises(BudgetExceededError):
             run_review("owner/repo#999", config, mock_github_client, claude_mock)
+
+
+# ---------------------------------------------------------------------------
+# Duration logging tests
+# ---------------------------------------------------------------------------
+
+
+class TestDurationLogging:
+    """Tests for wall-clock duration tracking in run_review."""
+
+    @patch("lychee.review.build_messages")
+    @patch("lychee.review.build_system_prompt_blocks")
+    @patch("lychee.review.build_context")
+    def test_run_review_logs_duration(
+        self,
+        mock_build_context: MagicMock,
+        mock_build_system_prompt_blocks: MagicMock,
+        mock_build_messages: MagicMock,
+        mock_github_client: MagicMock,
+        mock_claude_client: MagicMock,
+        review_context_simple: ReviewContext,
+        default_config: LycheeConfig,
+        caplog: pytest.LogCaptureFixture,
+    ) -> None:
+        """The completion log includes duration_s."""
+        mock_build_context.return_value = review_context_simple
+        mock_build_system_prompt_blocks.return_value = [
+            {"type": "text", "text": "prompt", "cache_control": {"type": "ephemeral"}}
+        ]
+        mock_build_messages.return_value = [{"role": "user", "content": "msg"}]
+
+        with caplog.at_level(logging.INFO, logger="lychee.review"):
+            run_review("owner/repo#42", default_config, mock_github_client, mock_claude_client)
+
+        # Find the "Review complete" log line
+        complete_logs = [r for r in caplog.records if "Review complete" in r.message]
+        assert len(complete_logs) >= 1
+        assert "duration_s=" in complete_logs[0].message
+
+    @patch("lychee.review.build_messages")
+    @patch("lychee.review.build_system_prompt_blocks")
+    @patch("lychee.review.build_context")
+    def test_run_review_sets_review_strategy(
+        self,
+        mock_build_context: MagicMock,
+        mock_build_system_prompt_blocks: MagicMock,
+        mock_build_messages: MagicMock,
+        mock_github_client: MagicMock,
+        mock_claude_client: MagicMock,
+        review_context_simple: ReviewContext,
+        default_config: LycheeConfig,
+    ) -> None:
+        """run_review calls set_review_strategy for single-pass reviews."""
+        mock_build_context.return_value = review_context_simple
+        mock_build_system_prompt_blocks.return_value = [
+            {"type": "text", "text": "prompt", "cache_control": {"type": "ephemeral"}}
+        ]
+        mock_build_messages.return_value = [{"role": "user", "content": "msg"}]
+
+        with patch("lychee.review.set_review_strategy") as mock_set:
+            run_review("owner/repo#42", default_config, mock_github_client, mock_claude_client)
+            mock_set.assert_called_once_with("single_pass")
