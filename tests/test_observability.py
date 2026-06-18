@@ -30,9 +30,7 @@ from lychee.observability import (
     new_correlation_id,
     set_review_strategy,
     set_triage_verdict,
-    setup_structured_logging,
 )
-
 
 # ---------------------------------------------------------------------------
 # Helpers
