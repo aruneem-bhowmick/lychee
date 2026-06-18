@@ -107,7 +107,7 @@ def test_all_severities(severity: Severity, expected_label: str) -> None:
 @pytest.mark.parametrize(
     ("severity", "expected_emoji"),
     [
-        (Severity.info, "ℹ️"),
+        (Severity.info, "ℹ️"),  # noqa: RUF001
         (Severity.minor, "⚠️"),
         (Severity.major, "🔶"),
         (Severity.critical, "🔴"),
