@@ -12,7 +12,7 @@ from pathlib import Path
 import pytest
 
 from lychee.models import Category, Finding, ReviewResult, Ripeness, Severity
-from lychee.render import REVIEW_MARKER, render_comment
+from lychee.render import REVIEW_MARKER, render_comment, severity_at_or_above
 
 FIXTURES_DIR = Path(__file__).parent / "fixtures"
 
@@ -568,3 +568,157 @@ def test_ui_comment_without_cost_footer(ripe_result_fixture: ReviewResult) -> No
     output = render_comment(ripe_result_fixture, cost_line=None)
     expected = (FIXTURES_DIR / "golden_ripe.md").read_text(encoding="utf-8")
     assert output == expected
+
+
+# ---------------------------------------------------------------------------
+# Fallback findings tests
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
+def fallback_findings() -> list[Finding]:
+    """Two findings to use as fallback findings."""
+    return [
+        Finding(
+            file="src/config.py",
+            line=None,
+            severity=Severity.info,
+            category=Category.docs,
+            message="Consider adding a module docstring.",
+        ),
+        Finding(
+            file="src/other.py",
+            line=99,
+            severity=Severity.minor,
+            category=Category.style,
+            message="Line too long.",
+        ),
+    ]
+
+
+def test_fallback_none_produces_unchanged_output(ripe_result_fixture: ReviewResult) -> None:
+    """fallback_findings=None produces the same output as the default."""
+    baseline = render_comment(ripe_result_fixture)
+    with_none = render_comment(ripe_result_fixture, fallback_findings=None)
+    assert baseline == with_none
+
+
+def test_fallback_empty_produces_unchanged_output(ripe_result_fixture: ReviewResult) -> None:
+    """fallback_findings=[] produces the same output as the default."""
+    baseline = render_comment(ripe_result_fixture)
+    with_empty = render_comment(ripe_result_fixture, fallback_findings=[])
+    assert baseline == with_empty
+
+
+def test_fallback_renders_details_block(
+    ripe_result_fixture: ReviewResult,
+    fallback_findings: list[Finding],
+) -> None:
+    """Non-empty fallback renders a <details> block."""
+    output = render_comment(ripe_result_fixture, fallback_findings=fallback_findings)
+    assert "<details>" in output
+    assert "</details>" in output
+
+
+def test_fallback_finding_messages_present(
+    ripe_result_fixture: ReviewResult,
+    fallback_findings: list[Finding],
+) -> None:
+    """Fallback finding messages appear in the output."""
+    output = render_comment(ripe_result_fixture, fallback_findings=fallback_findings)
+    for finding in fallback_findings:
+        assert finding.message in output
+
+
+def test_fallback_count_in_summary(
+    ripe_result_fixture: ReviewResult,
+    fallback_findings: list[Finding],
+) -> None:
+    """Fallback count appears in the summary text."""
+    output = render_comment(ripe_result_fixture, fallback_findings=fallback_findings)
+    assert "2 findings not posted inline" in output
+
+
+def test_fallback_placement_after_pits_before_footer(
+    ripe_result_fixture: ReviewResult,
+    fallback_findings: list[Finding],
+) -> None:
+    """Fallback section appears after Pits and before the footer."""
+    output = render_comment(ripe_result_fixture, fallback_findings=fallback_findings)
+    pits_pos = output.index("## 🪨 Pits")
+    details_pos = output.index("<details>")
+    footer_pos = output.index("*Reviewed to the core by Lychee*")
+    assert pits_pos < details_pos < footer_pos
+
+
+def test_fallback_with_cost_line(
+    ripe_result_fixture: ReviewResult,
+    fallback_findings: list[Finding],
+) -> None:
+    """Integration: fallback + cost_line both render correctly."""
+    cost = "💰 Cost: $0.003"
+    output = render_comment(
+        ripe_result_fixture, cost_line=cost, fallback_findings=fallback_findings
+    )
+    assert "<details>" in output
+    assert cost in output
+    # Order: details before cost before footer
+    details_pos = output.index("<details>")
+    cost_pos = output.index(cost)
+    footer_pos = output.index("*Reviewed to the core by Lychee*")
+    assert details_pos < cost_pos < footer_pos
+
+
+def test_fallback_golden_snapshot(
+    ripe_result_fixture: ReviewResult,
+    fallback_findings: list[Finding],
+) -> None:
+    """Regression: fallback output matches golden snapshot exactly."""
+    expected = (FIXTURES_DIR / "golden_ripe_with_fallback.md").read_text(encoding="utf-8")
+    output = render_comment(ripe_result_fixture, fallback_findings=fallback_findings)
+    assert output == expected
+
+
+def test_fallback_single_finding(ripe_result_fixture: ReviewResult) -> None:
+    """Single fallback finding uses singular 'finding' label."""
+    fallback = [
+        Finding(
+            file="x.py",
+            severity=Severity.info,
+            category=Category.other,
+            message="Note.",
+        ),
+    ]
+    output = render_comment(ripe_result_fixture, fallback_findings=fallback)
+    assert "1 finding not posted inline" in output
+
+
+# ---------------------------------------------------------------------------
+# severity_at_or_above tests
+# ---------------------------------------------------------------------------
+
+
+def test_severity_at_or_above_same() -> None:
+    """Same severity is at or above itself."""
+    assert severity_at_or_above("info", "info") is True
+    assert severity_at_or_above("critical", "critical") is True
+
+
+def test_severity_at_or_above_higher() -> None:
+    """Higher severity is at or above a lower threshold."""
+    assert severity_at_or_above("critical", "info") is True
+    assert severity_at_or_above("major", "minor") is True
+
+
+def test_severity_at_or_above_lower() -> None:
+    """Lower severity is NOT at or above a higher threshold."""
+    assert severity_at_or_above("info", "minor") is False
+    assert severity_at_or_above("minor", "major") is False
+
+
+def test_severity_at_or_above_all_pairs() -> None:
+    """Exhaustive check of all severity pairs."""
+    severities = ["info", "minor", "major", "critical"]
+    for i, sev in enumerate(severities):
+        for j, thresh in enumerate(severities):
+            assert severity_at_or_above(sev, thresh) == (i >= j)
