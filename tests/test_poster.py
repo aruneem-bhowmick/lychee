@@ -593,7 +593,7 @@ def test_build_review_comments_format() -> None:
     from lychee.diff_mapping import DiffPosition
 
     finding = _make_inline_finding()
-    pos = DiffPosition(path="src/app.py", position=3, line=2)
+    pos = DiffPosition(path="src/app.py", position=3, head_line=2)
     comments = InlineReviewPoster._build_review_comments([(finding, pos)])
     assert len(comments) == 1
     comment = comments[0]
@@ -608,7 +608,7 @@ def test_build_review_comments_body_content() -> None:
     from lychee.inline_render import render_inline_comment
 
     finding = _make_inline_finding(message="Custom msg.")
-    pos = DiffPosition(path="src/app.py", position=3, line=2)
+    pos = DiffPosition(path="src/app.py", position=3, head_line=2)
     comments = InlineReviewPoster._build_review_comments([(finding, pos)])
     assert comments[0]["body"] == render_inline_comment(finding)
 
@@ -806,7 +806,7 @@ def test_regression_review_comments_snapshot() -> None:
         category=Category.style,
         message="Import order.",
     )
-    pos = DiffPosition(path="src/app.py", position=3, line=2)
+    pos = DiffPosition(path="src/app.py", position=3, head_line=2)
     comments = InlineReviewPoster._build_review_comments([(finding, pos)])
 
     assert comments == [
