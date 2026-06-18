@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
+import time
 from pathlib import Path
 from typing import Any
 
@@ -230,6 +231,7 @@ def run_review(
     Logs a structured info record on completion: PR reference, model,
     ripeness, finding count, usage.
     """
+    start = time.monotonic()
     parsed_ref = PullRequestRef.parse(pr_ref)
     context = build_context(github_client, parsed_ref, config)
 
@@ -249,12 +251,14 @@ def run_review(
             result = run_trivial_review(context, claude_client, config)
             cost = compute_cost(result.usage, result.model)
             check_budget(cost, config.review.budget_cap_usd)
+            duration = time.monotonic() - start
             _logger.info(
-                "Review complete: pr=%s model=%s ripeness=%s findings=%d usage=%s",
+                "Review complete: pr=%s model=%s ripeness=%s findings=%d duration_s=%.3f usage=%s",
                 pr_ref,
                 result.model,
                 result.ripeness.value,
                 len(result.findings),
+                duration,
                 result.usage,
             )
             return result
@@ -300,12 +304,14 @@ def run_review(
         cost = compute_cost(result.usage, result.model)
         check_budget(cost, config.review.budget_cap_usd)
 
+    duration = time.monotonic() - start
     _logger.info(
-        "Review complete: pr=%s model=%s ripeness=%s findings=%d usage=%s",
+        "Review complete: pr=%s model=%s ripeness=%s findings=%d duration_s=%.3f usage=%s",
         pr_ref,
         result.model,
         result.ripeness.value,
         len(result.findings),
+        duration,
         result.usage,
     )
 
