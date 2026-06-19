@@ -8,10 +8,14 @@ Framework: pytest.  Coverage target: >= 90% on src/lychee/inline_render.py.
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 
 from lychee.inline_render import SEVERITY_LABELS, render_inline_comment, render_suggestion_block
 from lychee.models import Category, Finding, Severity
+
+FIXTURES_DIR: Path = Path(__file__).parent / "fixtures"
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -24,6 +28,7 @@ def _make_finding(
     message: str = "Trailing whitespace.",
     suggestion: str | None = None,
 ) -> Finding:
+    """Build a Finding with sensible defaults for inline-render tests."""
     return Finding(
         file="src/app.py",
         line=10,
@@ -41,7 +46,11 @@ def _make_finding(
 
 def test_imports() -> None:
     """All public names import cleanly from lychee.inline_render."""
-    from lychee.inline_render import SEVERITY_LABELS, render_inline_comment, render_suggestion_block
+    from lychee.inline_render import (
+        SEVERITY_LABELS,
+        render_inline_comment,
+        render_suggestion_block,
+    )
 
     assert callable(render_inline_comment)
     assert callable(render_suggestion_block)
@@ -57,6 +66,15 @@ def test_severity_labels_cover_all_values() -> None:
     """SEVERITY_LABELS has an entry for every Severity enum member."""
     for sev in Severity:
         assert sev in SEVERITY_LABELS, f"Missing label for {sev}"
+
+
+def test_render_inline_comment_non_empty() -> None:
+    """render_inline_comment always returns a non-empty string for any valid Finding."""
+    for sev in Severity:
+        for cat in Category:
+            finding = _make_finding(severity=sev, category=cat)
+            result = render_inline_comment(finding)
+            assert result, f"Empty output for severity={sev}, category={cat}"
 
 
 # ---------------------------------------------------------------------------
@@ -107,10 +125,10 @@ def test_all_severities(severity: Severity, expected_label: str) -> None:
 @pytest.mark.parametrize(
     ("severity", "expected_emoji"),
     [
-        (Severity.info, "ℹ️"),  # noqa: RUF001
-        (Severity.minor, "⚠️"),
-        (Severity.major, "🔶"),
-        (Severity.critical, "🔴"),
+        (Severity.info, "\u2139\ufe0f"),
+        (Severity.minor, "\u26a0\ufe0f"),
+        (Severity.major, "\U0001f536"),
+        (Severity.critical, "\U0001f534"),
     ],
 )
 def test_all_severity_emojis(severity: Severity, expected_emoji: str) -> None:
@@ -118,6 +136,17 @@ def test_all_severity_emojis(severity: Severity, expected_emoji: str) -> None:
     finding = _make_finding(severity=severity)
     result = render_inline_comment(finding)
     assert expected_emoji in result
+
+
+@pytest.mark.parametrize(
+    "category",
+    list(Category),
+)
+def test_all_categories(category: Category) -> None:
+    """Each category value appears in the rendered output."""
+    finding = _make_finding(category=category)
+    result = render_inline_comment(finding)
+    assert f"(*{category.value}*)" in result
 
 
 # ---------------------------------------------------------------------------
@@ -138,6 +167,31 @@ def test_suggestion_block_multi_line() -> None:
     assert result == "```suggestion\nline1\nline2\nline3\n```"
 
 
+def test_suggestion_block_strips_trailing_whitespace() -> None:
+    """Trailing whitespace on each line is stripped inside the suggestion block."""
+    suggestion = "x = 1   \ny = 2\t\nz = 3"
+    result = render_suggestion_block(suggestion)
+    assert result == "```suggestion\nx = 1\ny = 2\nz = 3\n```"
+
+
+def test_suggestion_block_no_extra_blank_lines() -> None:
+    """Leading and trailing blank lines inside the fence are stripped."""
+    suggestion = "\n\nx = 1\ny = 2\n\n"
+    result = render_suggestion_block(suggestion)
+    # No blank lines between opening fence and first content, or
+    # between last content and closing fence.
+    lines = result.split("\n")
+    assert lines[0] == "```suggestion"
+    assert lines[1] == "x = 1"
+    assert lines[-2] == "y = 2"
+    assert lines[-1] == "```"
+
+
+def test_suggestion_block_empty_string_defense() -> None:
+    """An empty suggestion string returns an empty string (defensive guard)."""
+    assert render_suggestion_block("") == ""
+
+
 # ---------------------------------------------------------------------------
 # Regression tests
 # ---------------------------------------------------------------------------
@@ -147,6 +201,35 @@ def test_deterministic_output() -> None:
     """render_inline_comment produces identical output on consecutive calls."""
     finding = _make_finding(suggestion="fix()")
     assert render_inline_comment(finding) == render_inline_comment(finding)
+
+
+def test_inline_comment_with_suggestion_snapshot() -> None:
+    """Golden snapshot: rendered comment with a suggestion block."""
+    finding = Finding(
+        file="src/auth.py",
+        line=42,
+        severity=Severity.major,
+        category=Category.security,
+        message="SQL injection via unsanitized input.",
+        suggestion="cursor.execute(query, (user_input,))",
+    )
+    result = render_inline_comment(finding)
+    expected = (FIXTURES_DIR / "golden_inline_with_suggestion.md").read_text(encoding="utf-8")
+    assert result == expected.rstrip("\n")
+
+
+def test_inline_comment_without_suggestion_snapshot() -> None:
+    """Golden snapshot: rendered comment without a suggestion block."""
+    finding = Finding(
+        file="src/utils.py",
+        line=10,
+        severity=Severity.minor,
+        category=Category.style,
+        message="Trailing whitespace.",
+    )
+    result = render_inline_comment(finding)
+    expected = (FIXTURES_DIR / "golden_inline_without_suggestion.md").read_text(encoding="utf-8")
+    assert result == expected.rstrip("\n")
 
 
 # ---------------------------------------------------------------------------
@@ -169,6 +252,21 @@ def test_no_suggestion_no_fences() -> None:
     assert "```" not in result
 
 
+def test_accept_suggestions_render_as_appliable() -> None:
+    """A finding with a suggestion produces the exact GitHub one-click-apply syntax."""
+    finding = _make_finding(suggestion="fixed = True")
+    result = render_inline_comment(finding)
+    assert "```suggestion\nfixed = True\n```" in result
+
+
+def test_accept_absent_suggestion_no_block() -> None:
+    """A finding without a suggestion produces no suggestion fence at all."""
+    finding = _make_finding(suggestion=None)
+    result = render_inline_comment(finding)
+    assert "```suggestion" not in result
+    assert "suggestion" not in result.lower() or "suggestion" not in result.split("```")
+
+
 # ---------------------------------------------------------------------------
 # UI tests
 # ---------------------------------------------------------------------------
@@ -179,6 +277,30 @@ def test_suggestion_block_exact_syntax() -> None:
     result = render_suggestion_block("code")
     assert result.startswith("```suggestion\n")
     assert result.endswith("\n```")
+
+
+def test_ui_inline_comment_valid_markdown() -> None:
+    """Rendered body is well-formed GitHub-flavored markdown.
+
+    Checks that bold markers and italic markers are balanced, and that
+    code fences (if present) are balanced.
+    """
+    finding = _make_finding(suggestion="fix()")
+    result = render_inline_comment(finding)
+
+    # Bold markers (**) should appear in pairs.
+    bold_count = result.count("**")
+    assert bold_count % 2 == 0, f"Unbalanced bold markers: {bold_count}"
+
+    # Italic markers (*) outside bold should be balanced.
+    # Remove bold markers first, then count remaining single *.
+    without_bold = result.replace("**", "")
+    star_count = without_bold.count("*")
+    assert star_count % 2 == 0, f"Unbalanced italic markers: {star_count}"
+
+    # Code fences should be balanced.
+    fence_count = result.count("```")
+    assert fence_count % 2 == 0, f"Unbalanced code fences: {fence_count}"
 
 
 def test_severity_labels_include_text_not_just_emoji() -> None:
