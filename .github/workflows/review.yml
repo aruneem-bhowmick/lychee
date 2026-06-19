@@ -3,6 +3,8 @@ name: Lychee PR Review
 on:
   pull_request:
     types: [opened, synchronize, reopened]
+  issue_comment:
+    types: [created]
 
 permissions:
   contents: read
@@ -11,8 +13,16 @@ permissions:
 jobs:
   review:
     runs-on: ubuntu-latest
-    # Skip when the API key secret is unavailable (fork PRs, unconfigured repos)
-    if: ${{ github.event.pull_request.head.repo.full_name == github.repository && secrets.ANTHROPIC_API_KEY != '' }}
+    # Skip when the API key secret is unavailable (fork PRs, unconfigured repos).
+    # For issue_comment events, only run when the comment is on a PR and mentions @lychee.
+    if: >-
+      (github.event_name == 'pull_request' &&
+       github.event.pull_request.head.repo.full_name == github.repository &&
+       secrets.ANTHROPIC_API_KEY != '') ||
+      (github.event_name == 'issue_comment' &&
+       github.event.issue.pull_request &&
+       contains(github.event.comment.body, '@lychee') &&
+       secrets.ANTHROPIC_API_KEY != '')
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
