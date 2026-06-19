@@ -697,6 +697,320 @@ def test_fallback_single_finding(ripe_result_fixture: ReviewResult) -> None:
 
 
 # ---------------------------------------------------------------------------
+# Unit tests — _render_fallback_finding format
+# ---------------------------------------------------------------------------
+
+
+def test_render_fallback_findings_single() -> None:
+    """One unmappable finding renders with the correct label and format."""
+    from lychee.render import _render_fallback_findings
+
+    finding = Finding(
+        file="src/app.py",
+        line=10,
+        severity=Severity.minor,
+        category=Category.style,
+        message="Trailing whitespace.",
+    )
+    result = _render_fallback_findings([finding])
+    assert "### Findings not on changed lines" in result
+    assert "**[minor]**" in result
+    assert "`src/app.py:10`" in result
+    assert "(*style*)" in result
+    assert "Trailing whitespace." in result
+    assert "*(not on a changed line)*" in result
+
+
+def test_render_fallback_findings_multiple() -> None:
+    """Multiple findings render as a list under the heading."""
+    from lychee.render import _render_fallback_findings
+
+    findings = [
+        Finding(
+            file="a.py",
+            line=1,
+            severity=Severity.minor,
+            category=Category.style,
+            message="Issue one.",
+        ),
+        Finding(
+            file="b.py",
+            line=2,
+            severity=Severity.major,
+            category=Category.correctness,
+            message="Issue two.",
+        ),
+    ]
+    result = _render_fallback_findings(findings)
+    assert result.count("- **[") == 2
+    assert "Issue one." in result
+    assert "Issue two." in result
+
+
+def test_render_fallback_findings_with_line() -> None:
+    """Finding with a line number renders as file:line."""
+    from lychee.render import _render_fallback_finding
+
+    finding = Finding(
+        file="src/utils.py",
+        line=42,
+        severity=Severity.info,
+        category=Category.docs,
+        message="Missing docstring.",
+    )
+    result = _render_fallback_finding(finding)
+    assert "`src/utils.py:42`" in result
+
+
+def test_render_fallback_findings_without_line() -> None:
+    """Finding with line=None renders as file only (no colon or line number)."""
+    from lychee.render import _render_fallback_finding
+
+    finding = Finding(
+        file="src/config.py",
+        line=None,
+        severity=Severity.info,
+        category=Category.docs,
+        message="Consider adding a module docstring.",
+    )
+    result = _render_fallback_finding(finding)
+    assert "`src/config.py`" in result
+    # The file location should not have a colon-separated line number.
+    assert "`src/config.py:" not in result
+
+
+def test_render_fallback_findings_with_suggestion() -> None:
+    """Suggestion in fallback uses a plain code block, not a ```suggestion block."""
+    from lychee.render import _render_fallback_finding
+
+    finding = Finding(
+        file="src/auth.py",
+        line=15,
+        severity=Severity.major,
+        category=Category.security,
+        message="Hardcoded password.",
+        suggestion='password = os.environ["DB_PASS"]',
+    )
+    result = _render_fallback_finding(finding)
+    # Plain fenced code block, not ```suggestion.
+    assert "```\n" in result
+    assert "```suggestion" not in result
+    assert 'password = os.environ["DB_PASS"]' in result
+
+
+def test_render_fallback_findings_severity_badge() -> None:
+    """Severity is shown as the leading badge in fallback findings."""
+    from lychee.render import _render_fallback_finding
+
+    for sev in Severity:
+        finding = Finding(
+            file="x.py",
+            severity=sev,
+            category=Category.other,
+            message="msg",
+        )
+        result = _render_fallback_finding(finding)
+        assert f"**[{sev.value}]**" in result
+
+
+def test_render_fallback_severity_threshold(
+    ripe_result_fixture: ReviewResult,
+) -> None:
+    """Fallback findings below the severity threshold are excluded."""
+    fallback = [
+        Finding(
+            file="a.py",
+            severity=Severity.info,
+            category=Category.docs,
+            message="Info finding.",
+        ),
+        Finding(
+            file="b.py",
+            severity=Severity.major,
+            category=Category.correctness,
+            message="Major finding.",
+        ),
+    ]
+    output = render_comment(
+        ripe_result_fixture,
+        severity_threshold="minor",
+        fallback_findings=fallback,
+    )
+    # Info finding should be excluded by threshold.
+    assert "Info finding." not in output
+    assert "Major finding." in output
+
+
+def test_render_fallback_threshold_filters_all(
+    ripe_result_fixture: ReviewResult,
+) -> None:
+    """When all fallback findings are below threshold, no fallback section renders."""
+    fallback = [
+        Finding(
+            file="a.py",
+            severity=Severity.info,
+            category=Category.docs,
+            message="Info only.",
+        ),
+    ]
+    output = render_comment(
+        ripe_result_fixture,
+        severity_threshold="minor",
+        fallback_findings=fallback,
+    )
+    assert "### Findings not on changed lines" not in output
+    assert "Info only." not in output
+
+
+# ---------------------------------------------------------------------------
+# Integration tests — fallback + mixed findings
+# ---------------------------------------------------------------------------
+
+
+def test_render_comment_with_mixed_findings() -> None:
+    """A ReviewResult with fallback findings renders both Pits and fallback sections.
+
+    The Pits section shows all findings from result.findings (subject to
+    threshold); the fallback section shows the unmappable findings passed
+    separately.  Both sections coexist in the output.
+    """
+    result = ReviewResult(
+        ripeness=Ripeness.unripe,
+        summary="Mixed review.",
+        walkthrough="Details here.",
+        findings=[
+            Finding(
+                file="src/core.py",
+                line=5,
+                severity=Severity.major,
+                category=Category.correctness,
+                message="Inline finding in Pits.",
+            ),
+        ],
+        model="test-model",
+        usage={},
+    )
+    fallback = [
+        Finding(
+            file="src/legacy.py",
+            line=200,
+            severity=Severity.minor,
+            category=Category.style,
+            message="Unmappable legacy finding.",
+        ),
+    ]
+    output = render_comment(result, fallback_findings=fallback)
+
+    # Both sections present.
+    assert "## 🪨 Pits" in output
+    assert "### Findings not on changed lines" in output
+
+    # Both finding messages present.
+    assert "Inline finding in Pits." in output
+    assert "Unmappable legacy finding." in output
+
+    # Fallback section between Nectar and The Peel; Pits comes later.
+    fallback_pos = output.index("### Findings not on changed lines")
+    peel_pos = output.index("## 🌿 The Peel")
+    pits_pos = output.index("## 🪨 Pits")
+    assert fallback_pos < peel_pos < pits_pos
+
+
+# ---------------------------------------------------------------------------
+# Acceptance tests — fallback
+# ---------------------------------------------------------------------------
+
+
+def test_accept_no_finding_lost(ripe_result_fixture: ReviewResult) -> None:
+    """Every unmappable finding passed as fallback has a rendering in the output."""
+    fallback = [
+        Finding(file="a.py", severity=Severity.info, category=Category.docs, message="F1."),
+        Finding(file="b.py", severity=Severity.minor, category=Category.style, message="F2."),
+        Finding(file="c.py", severity=Severity.major, category=Category.security, message="F3."),
+    ]
+    output = render_comment(ripe_result_fixture, fallback_findings=fallback)
+    for finding in fallback:
+        assert finding.message in output, f"Finding lost: {finding.message}"
+
+
+def test_accept_fallback_labeled(ripe_result_fixture: ReviewResult) -> None:
+    """Each fallback finding's rendered block contains the text 'not on a changed line'."""
+    fallback = [
+        Finding(file="a.py", severity=Severity.info, category=Category.docs, message="F1."),
+        Finding(file="b.py", severity=Severity.minor, category=Category.style, message="F2."),
+    ]
+    output = render_comment(ripe_result_fixture, fallback_findings=fallback)
+    count = output.count("not on a changed line")
+    assert count == len(fallback)
+
+
+# ---------------------------------------------------------------------------
+# Regression tests — fallback snapshots
+# ---------------------------------------------------------------------------
+
+
+def test_render_comment_no_fallback_snapshot_unchanged(
+    ripe_result_fixture: ReviewResult,
+) -> None:
+    """The no-fallback golden snapshot is unchanged by the fallback feature."""
+    expected = (FIXTURES_DIR / "golden_ripe.md").read_text(encoding="utf-8")
+    output = render_comment(ripe_result_fixture)
+    assert output == expected
+
+
+# ---------------------------------------------------------------------------
+# UI tests — fallback
+# ---------------------------------------------------------------------------
+
+
+def test_ui_fallback_section_valid_markdown(
+    ripe_result_fixture: ReviewResult,
+) -> None:
+    """The rendered fallback section is valid GitHub-flavored markdown.
+
+    Checks that code fences are balanced and bold/italic markers are paired.
+    """
+    fallback = [
+        Finding(
+            file="a.py",
+            line=10,
+            severity=Severity.minor,
+            category=Category.style,
+            message="Issue.",
+            suggestion="fixed()",
+        ),
+    ]
+    output = render_comment(ripe_result_fixture, fallback_findings=fallback)
+    fence_count = output.count("```")
+    assert fence_count % 2 == 0, f"Unbalanced fences: {fence_count}"
+
+    # Bold markers (**) should be paired.
+    bold_count = output.count("**")
+    assert bold_count % 2 == 0, f"Unbalanced bold markers: {bold_count}"
+
+
+def test_ui_fallback_section_readable_without_color(
+    ripe_result_fixture: ReviewResult,
+) -> None:
+    """The '(not on a changed line)' label is text, not relying on color or emoji alone.
+
+    Ensures accessibility per NFR-8: the label communicates meaning
+    through text, not visual indicators that may be invisible in some
+    rendering contexts.
+    """
+    fallback = [
+        Finding(
+            file="x.py",
+            severity=Severity.info,
+            category=Category.other,
+            message="Note.",
+        ),
+    ]
+    output = render_comment(ripe_result_fixture, fallback_findings=fallback)
+    assert "not on a changed line" in output
+
+
+# ---------------------------------------------------------------------------
 # severity_at_or_above tests
 # ---------------------------------------------------------------------------
 
