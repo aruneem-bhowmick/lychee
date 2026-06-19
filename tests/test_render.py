@@ -610,14 +610,13 @@ def test_fallback_empty_produces_unchanged_output(ripe_result_fixture: ReviewRes
     assert baseline == with_empty
 
 
-def test_fallback_renders_details_block(
+def test_fallback_renders_heading(
     ripe_result_fixture: ReviewResult,
     fallback_findings: list[Finding],
 ) -> None:
-    """Non-empty fallback renders a <details> block."""
+    """Non-empty fallback renders a '### Findings not on changed lines' heading."""
     output = render_comment(ripe_result_fixture, fallback_findings=fallback_findings)
-    assert "<details>" in output
-    assert "</details>" in output
+    assert "### Findings not on changed lines" in output
 
 
 def test_fallback_finding_messages_present(
@@ -630,25 +629,26 @@ def test_fallback_finding_messages_present(
         assert finding.message in output
 
 
-def test_fallback_count_in_summary(
+def test_fallback_label_present(
     ripe_result_fixture: ReviewResult,
     fallback_findings: list[Finding],
 ) -> None:
-    """Fallback count appears in the summary text."""
+    """Each fallback finding carries the '(not on a changed line)' label."""
     output = render_comment(ripe_result_fixture, fallback_findings=fallback_findings)
-    assert "2 findings not posted inline" in output
+    label_count = output.count("*(not on a changed line)*")
+    assert label_count == len(fallback_findings)
 
 
-def test_fallback_placement_after_pits_before_footer(
+def test_fallback_placement_after_nectar_before_peel(
     ripe_result_fixture: ReviewResult,
     fallback_findings: list[Finding],
 ) -> None:
-    """Fallback section appears after Pits and before the footer."""
+    """Fallback section appears after Nectar and before The Peel."""
     output = render_comment(ripe_result_fixture, fallback_findings=fallback_findings)
-    pits_pos = output.index("## 🪨 Pits")
-    details_pos = output.index("<details>")
-    footer_pos = output.index("*Reviewed to the core by Lychee*")
-    assert pits_pos < details_pos < footer_pos
+    nectar_pos = output.index("## 🍯 Nectar")
+    fallback_pos = output.index("### Findings not on changed lines")
+    peel_pos = output.index("## 🌿 The Peel")
+    assert nectar_pos < fallback_pos < peel_pos
 
 
 def test_fallback_with_cost_line(
@@ -660,13 +660,14 @@ def test_fallback_with_cost_line(
     output = render_comment(
         ripe_result_fixture, cost_line=cost, fallback_findings=fallback_findings
     )
-    assert "<details>" in output
+    assert "### Findings not on changed lines" in output
     assert cost in output
-    # Order: details before cost before footer
-    details_pos = output.index("<details>")
+    # Order: fallback before peel before pits before cost before footer
+    fallback_pos = output.index("### Findings not on changed lines")
+    peel_pos = output.index("## 🌿 The Peel")
     cost_pos = output.index(cost)
     footer_pos = output.index("*Reviewed to the core by Lychee*")
-    assert details_pos < cost_pos < footer_pos
+    assert fallback_pos < peel_pos < cost_pos < footer_pos
 
 
 def test_fallback_golden_snapshot(
@@ -680,7 +681,7 @@ def test_fallback_golden_snapshot(
 
 
 def test_fallback_single_finding(ripe_result_fixture: ReviewResult) -> None:
-    """Single fallback finding uses singular 'finding' label."""
+    """Single fallback finding renders with heading and label."""
     fallback = [
         Finding(
             file="x.py",
@@ -690,7 +691,9 @@ def test_fallback_single_finding(ripe_result_fixture: ReviewResult) -> None:
         ),
     ]
     output = render_comment(ripe_result_fixture, fallback_findings=fallback)
-    assert "1 finding not posted inline" in output
+    assert "### Findings not on changed lines" in output
+    assert "*(not on a changed line)*" in output
+    assert "Note." in output
 
 
 # ---------------------------------------------------------------------------
