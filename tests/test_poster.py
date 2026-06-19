@@ -816,3 +816,73 @@ def test_regression_review_comments_snapshot() -> None:
             "body": render_inline_comment(finding),
         }
     ]
+
+
+# ===========================================================================
+# Dedup-aware InlineReviewPoster tests
+# ===========================================================================
+
+
+def test_inline_poster_dedup_skips_duplicates() -> None:
+    """Post with previous state containing some findings skips duplicates."""  # P3-R3
+    from lychee.dedup import build_inline_state
+
+    pr = _make_mock_pr_with_review()
+    finding = _make_inline_finding(line=2, message="Already reviewed.")
+    result = _make_review_result([finding])
+    poster = InlineReviewPoster(MagicMock())
+
+    previous_state = build_inline_state([finding], "old_sha")
+    post_result = poster.post(pr, result, _INLINE_DIFF, previous_state=previous_state)
+
+    assert post_result.review_id is None
+    assert post_result.inline_count == 0
+    pr.create_review.assert_not_called()
+
+
+def test_inline_poster_dedup_no_previous_state() -> None:
+    """Post with previous_state=None posts all mappable findings."""  # P3-R3
+    pr = _make_mock_pr_with_review()
+    finding = _make_inline_finding(line=2, message="Brand new finding.")
+    result = _make_review_result([finding])
+    poster = InlineReviewPoster(MagicMock())
+
+    post_result = poster.post(pr, result, _INLINE_DIFF, previous_state=None)
+
+    assert post_result.review_id == 200
+    assert post_result.inline_count == 1
+    pr.create_review.assert_called_once()
+
+
+def test_inline_poster_dedup_all_duplicates_no_review() -> None:
+    """When all findings are duplicates, create_review is not called."""  # P3-R3
+    from lychee.dedup import build_inline_state
+
+    pr = _make_mock_pr_with_review()
+    f1 = _make_inline_finding(line=2, message="Dup A.")
+    f2 = _make_inline_finding(line=1, message="Dup B.")
+    result = _make_review_result([f1, f2])
+    poster = InlineReviewPoster(MagicMock())
+
+    previous_state = build_inline_state([f1, f2], "old_sha")
+    post_result = poster.post(pr, result, _INLINE_DIFF, previous_state=previous_state)
+
+    assert post_result.review_id is None
+    assert post_result.inline_count == 0
+    pr.create_review.assert_not_called()
+
+
+def test_inline_poster_posted_findings_tracked() -> None:
+    """posted_findings in InlinePostResult tracks what was actually posted."""  # P3-R3
+    pr = _make_mock_pr_with_review()
+    f1 = _make_inline_finding(line=2, message="Finding one.")
+    f2 = _make_inline_finding(line=1, message="Finding two.")
+    result = _make_review_result([f1, f2])
+    poster = InlineReviewPoster(MagicMock())
+
+    post_result = poster.post(pr, result, _INLINE_DIFF)
+
+    assert len(post_result.posted_findings) == 2
+    messages = {f.message for f in post_result.posted_findings}
+    assert "Finding one." in messages
+    assert "Finding two." in messages
