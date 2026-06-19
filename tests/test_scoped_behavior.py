@@ -198,9 +198,7 @@ def test_resolve_overrides_first_match() -> None:
 def test_resolve_overrides_no_match() -> None:
     """No matching rule returns an empty dict."""
     config = LycheeConfig(
-        review=ReviewConfig(
-            scope_rules=[ScopeRule(paths=["tests/**"], model="claude-opus-4-8")]
-        )
+        review=ReviewConfig(scope_rules=[ScopeRule(paths=["tests/**"], model="claude-opus-4-8")])
     )
     overrides = resolve_scope_overrides(config, ["src/app.py"], [])
     assert overrides == {}
@@ -209,9 +207,7 @@ def test_resolve_overrides_no_match() -> None:
 def test_resolve_overrides_partial() -> None:
     """A rule with only model set returns only {'model': ...}."""
     config = LycheeConfig(
-        review=ReviewConfig(
-            scope_rules=[ScopeRule(paths=["src/**"], model="claude-opus-4-8")]
-        )
+        review=ReviewConfig(scope_rules=[ScopeRule(paths=["src/**"], model="claude-opus-4-8")])
     )
     overrides = resolve_scope_overrides(config, ["src/app.py"], [])
     assert overrides == {"model": "claude-opus-4-8"}
@@ -223,9 +219,7 @@ def test_resolve_overrides_path_glob() -> None:
     """paths: ['src/core/**'] matches src/core/engine.py."""
     config = LycheeConfig(
         review=ReviewConfig(
-            scope_rules=[
-                ScopeRule(paths=["src/core/**"], severity_threshold="critical")
-            ]
+            scope_rules=[ScopeRule(paths=["src/core/**"], severity_threshold="critical")]
         )
     )
     overrides = resolve_scope_overrides(config, ["src/core/engine.py"], [])
@@ -254,9 +248,7 @@ def test_resolve_overrides_label_no_match() -> None:
     """A label-based rule returns empty dict when labels do not match."""
     config = LycheeConfig(
         review=ReviewConfig(
-            scope_rules=[
-                ScopeRule(labels=["security"], severity_threshold="critical")
-            ]
+            scope_rules=[ScopeRule(labels=["security"], severity_threshold="critical")]
         )
     )
     overrides = resolve_scope_overrides(config, ["src/app.py"], ["bugfix"])
@@ -273,9 +265,7 @@ def test_resolve_overrides_no_scope_rules() -> None:
 def test_resolve_overrides_empty_file_paths() -> None:
     """Empty file_paths list returns empty dict even with rules defined."""
     config = LycheeConfig(
-        review=ReviewConfig(
-            scope_rules=[ScopeRule(paths=["src/**"], model="claude-opus-4-8")]
-        )
+        review=ReviewConfig(scope_rules=[ScopeRule(paths=["src/**"], model="claude-opus-4-8")])
     )
     overrides = resolve_scope_overrides(config, [], [])
     assert overrides == {}
@@ -305,9 +295,7 @@ def test_resolve_overrides_all_fields() -> None:
 def test_resolve_overrides_ignore_rule_returns_empty() -> None:
     """An ignore rule matches but has no model/threshold/tone overrides to return."""
     config = LycheeConfig(
-        review=ReviewConfig(
-            scope_rules=[ScopeRule(paths=["generated/**"], ignore=True)]
-        )
+        review=ReviewConfig(scope_rules=[ScopeRule(paths=["generated/**"], ignore=True)])
     )
     overrides = resolve_scope_overrides(config, ["generated/out.py"], [])
     assert overrides == {}
@@ -344,10 +332,7 @@ def test_config_with_authorization_parses(tmp_path: Path) -> None:
     """A YAML with authorization.allowed_users loads correctly."""
     cfg = tmp_path / ".lychee.yml"
     cfg.write_text(
-        "authorization:\n"
-        "  allowed_users:\n"
-        "    - admin-user\n"
-        "    - deploy-bot\n",
+        "authorization:\n" "  allowed_users:\n" "    - admin-user\n" "    - deploy-bot\n",
         encoding="utf-8",
     )
     config = load_config(cfg)
