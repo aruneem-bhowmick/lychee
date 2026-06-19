@@ -184,7 +184,7 @@ def _load_fixture(name: str) -> str:
 
 def test_diff_mapping_importable() -> None:
     """All public names import cleanly from lychee.diff_mapping."""
-    from lychee.diff_mapping import (  # noqa: F811
+    from lychee.diff_mapping import (
         DiffPosition,
         build_position_map,
         map_finding_to_position,
