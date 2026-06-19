@@ -16,9 +16,10 @@ from pathlib import Path
 REVIEW_MODULE_PATH: Path = Path(__file__).parent.parent / "src" / "lychee" / "review.py"
 
 # SHA-256 hash of review.py captured before inline commenting work began.
-# Update this value only when review.py is intentionally modified outside
-# the inline commenting scope.
-_EXPECTED_SHA256 = "2dacba67a2246c005de4da6e090f22fc5da275bd224d34cb4440a02ba2469d90"
+# Computed from LF-normalized content so the check is consistent across
+# platforms (Windows CRLF vs Linux LF).  Update this value only when
+# review.py is intentionally modified outside the inline commenting scope.
+_EXPECTED_SHA256 = "00a845e881314f70389067fa922008f59140073f2dc5bb2387a3ab5cfb7bf20c"
 
 
 def test_engine_review_py_unchanged() -> None:
@@ -29,7 +30,7 @@ def test_engine_review_py_unchanged() -> None:
     updated for unrelated reasons, regenerate the hash and update
     ``_EXPECTED_SHA256``.
     """
-    content = REVIEW_MODULE_PATH.read_bytes()
+    content = REVIEW_MODULE_PATH.read_bytes().replace(b"\r\n", b"\n")
     actual_hash = hashlib.sha256(content).hexdigest()
     assert actual_hash == _EXPECTED_SHA256, (
         f"review.py has been modified.\n"
@@ -53,9 +54,7 @@ def test_engine_review_py_no_git_diff() -> None:
         text=True,
         check=False,
     )
-    assert result.stdout == "", (
-        f"review.py has uncommitted changes:\n{result.stdout}"
-    )
+    assert result.stdout == "", f"review.py has uncommitted changes:\n{result.stdout}"
 
 
 def test_accept_engine_code_untouched() -> None:
@@ -66,8 +65,6 @@ def test_accept_engine_code_untouched() -> None:
     """
     assert REVIEW_MODULE_PATH.exists(), f"review.py not found at {REVIEW_MODULE_PATH}"
 
-    content = REVIEW_MODULE_PATH.read_bytes()
+    content = REVIEW_MODULE_PATH.read_bytes().replace(b"\r\n", b"\n")
     actual_hash = hashlib.sha256(content).hexdigest()
-    assert actual_hash == _EXPECTED_SHA256, (
-        "review.py has been modified (acceptance check failed)."
-    )
+    assert actual_hash == _EXPECTED_SHA256, "review.py has been modified (acceptance check failed)."
