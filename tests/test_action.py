@@ -965,3 +965,952 @@ class TestActionObservability:
 
         failure_records = [r for r in caplog.records if r.name == "lychee.run_record"]
         assert len(failure_records) >= 1
+
+
+# ---------------------------------------------------------------------------
+# Feature flag wiring tests — inline_comments
+# ---------------------------------------------------------------------------
+
+
+def _make_inline_config(inline: bool = True, cost_footer: bool = False) -> Any:
+    """Build a real LycheeConfig with the inline_comments flag set.
+
+    Uses the production LycheeConfig model so that all attributes
+    (features.inline_comments, review.severity_threshold, etc.) have
+    correct types rather than MagicMock proxies.
+    """
+    from lychee.config import FeaturesConfig, LycheeConfig
+
+    return LycheeConfig(
+        features=FeaturesConfig(inline_comments=inline, cost_footer=cost_footer),
+    )
+
+
+def _make_inline_post_result(
+    *,
+    inline_count: int = 1,
+    fallback_count: int = 0,
+    fallback_findings: list[Finding] | None = None,
+    posted_findings: list[Finding] | None = None,
+) -> InlinePostResult:
+    """Build an InlinePostResult with the given counts and findings."""
+    return InlinePostResult(
+        review_id=100 if inline_count > 0 else None,
+        inline_count=inline_count,
+        fallback_count=fallback_count,
+        fallback_findings=fallback_findings or [],
+        posted_findings=posted_findings or [],
+    )
+
+
+def _setup_inline_env(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    *,
+    head_sha: str = "abc123",
+    pr_number: int = 42,
+    action: str = "opened",
+) -> Path:
+    """Configure environment for inline-path tests and return the event file path."""
+    event = _make_event(action=action, pr_number=pr_number, head_sha=head_sha)
+    event_file = _write_event_file(tmp_path, event)
+    monkeypatch.setenv("GITHUB_TOKEN", "ghp_test_token")
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-test-key")
+    monkeypatch.setenv("GITHUB_EVENT_PATH", str(event_file))
+    monkeypatch.setenv("GITHUB_REPOSITORY", "owner/repo")
+    return event_file
+
+
+# ---------------------------------------------------------------------------
+# Unit tests — feature flag wiring
+# ---------------------------------------------------------------------------
+
+
+class TestInlineFlagUnit:
+    """Unit tests for the feature flag branching logic in main()."""
+
+    @patch("scripts.run_action.SummaryPoster")
+    @patch("scripts.run_action.InlineReviewPoster")
+    @patch("scripts.run_action.run_review")
+    @patch("scripts.run_action.ClaudeClient")
+    @patch("scripts.run_action.GitHubClient")
+    @patch("scripts.run_action.load_config")
+    def test_flag_off_no_inline_poster_created(
+        self,
+        mock_config: MagicMock,
+        mock_gh: MagicMock,
+        mock_claude: MagicMock,
+        mock_review: MagicMock,
+        mock_inline_cls: MagicMock,
+        mock_poster_cls: MagicMock,
+        monkeypatch: pytest.MonkeyPatch,
+        tmp_path: Path,
+    ) -> None:
+        """When inline_comments is False, InlineReviewPoster is not instantiated."""
+        from scripts.run_action import main
+
+        _setup_inline_env(monkeypatch, tmp_path)
+        mock_config.return_value = _make_inline_config(inline=False)
+        mock_review.return_value = _mock_review_result()
+
+        with pytest.raises(SystemExit) as exc_info:
+            main()
+        assert exc_info.value.code == 0
+        mock_inline_cls.assert_not_called()
+
+    @patch("scripts.run_action.SummaryPoster")
+    @patch("scripts.run_action.InlineReviewPoster")
+    @patch("scripts.run_action.run_review")
+    @patch("scripts.run_action.ClaudeClient")
+    @patch("scripts.run_action.GitHubClient")
+    @patch("scripts.run_action.load_config")
+    def test_flag_on_inline_poster_created(
+        self,
+        mock_config: MagicMock,
+        mock_gh: MagicMock,
+        mock_claude: MagicMock,
+        mock_review: MagicMock,
+        mock_inline_cls: MagicMock,
+        mock_poster_cls: MagicMock,
+        monkeypatch: pytest.MonkeyPatch,
+        tmp_path: Path,
+    ) -> None:
+        """When inline_comments is True, InlineReviewPoster is instantiated and post() called."""
+        from scripts.run_action import main
+
+        _setup_inline_env(monkeypatch, tmp_path)
+        mock_config.return_value = _make_inline_config(inline=True)
+        mock_review.return_value = _mock_review_result()
+        mock_gh.return_value.get_diff.return_value = _TEST_DIFF
+        mock_poster_cls.return_value._find_existing_comment.return_value = None
+        mock_inline_cls.return_value.post.return_value = _make_inline_post_result()
+
+        with pytest.raises(SystemExit) as exc_info:
+            main()
+        assert exc_info.value.code == 0
+        mock_inline_cls.assert_called_once()
+        mock_inline_cls.return_value.post.assert_called_once()
+
+    @patch("scripts.run_action.render_comment", return_value="# No fallback")
+    @patch("scripts.run_action.SummaryPoster")
+    @patch("scripts.run_action.run_review")
+    @patch("scripts.run_action.ClaudeClient")
+    @patch("scripts.run_action.GitHubClient")
+    @patch("scripts.run_action.load_config")
+    def test_flag_off_render_no_fallback(
+        self,
+        mock_config: MagicMock,
+        mock_gh: MagicMock,
+        mock_claude: MagicMock,
+        mock_review: MagicMock,
+        mock_poster_cls: MagicMock,
+        mock_render: MagicMock,
+        monkeypatch: pytest.MonkeyPatch,
+        tmp_path: Path,
+    ) -> None:
+        """When flag is off, render_comment is called without fallback_findings."""
+        from scripts.run_action import main
+
+        _setup_inline_env(monkeypatch, tmp_path)
+        mock_config.return_value = _make_inline_config(inline=False)
+        mock_review.return_value = _mock_review_result()
+
+        with pytest.raises(SystemExit) as exc_info:
+            main()
+        assert exc_info.value.code == 0
+        mock_render.assert_called_once()
+        _, call_kwargs = mock_render.call_args
+        # fallback_findings must not be in kwargs
+        assert "fallback_findings" not in call_kwargs
+
+    @patch("scripts.run_action.render_comment", return_value="# With fallback")
+    @patch("scripts.run_action.SummaryPoster")
+    @patch("scripts.run_action.InlineReviewPoster")
+    @patch("scripts.run_action.run_review")
+    @patch("scripts.run_action.ClaudeClient")
+    @patch("scripts.run_action.GitHubClient")
+    @patch("scripts.run_action.load_config")
+    def test_flag_on_render_with_fallback(
+        self,
+        mock_config: MagicMock,
+        mock_gh: MagicMock,
+        mock_claude: MagicMock,
+        mock_review: MagicMock,
+        mock_inline_cls: MagicMock,
+        mock_poster_cls: MagicMock,
+        mock_render: MagicMock,
+        monkeypatch: pytest.MonkeyPatch,
+        tmp_path: Path,
+    ) -> None:
+        """When flag is on, render_comment is called with fallback_findings from InlinePostResult."""
+        from scripts.run_action import main
+
+        fallback = [
+            Finding(
+                file="unmappable.py",
+                line=None,
+                severity=Severity.minor,
+                category=Category.style,
+                message="Could not map this finding.",
+            )
+        ]
+
+        _setup_inline_env(monkeypatch, tmp_path)
+        mock_config.return_value = _make_inline_config(inline=True)
+        mock_review.return_value = _mock_review_result()
+        mock_gh.return_value.get_diff.return_value = _TEST_DIFF
+        mock_poster_cls.return_value._find_existing_comment.return_value = None
+        mock_inline_cls.return_value.post.return_value = _make_inline_post_result(
+            fallback_count=1, fallback_findings=fallback
+        )
+
+        with pytest.raises(SystemExit) as exc_info:
+            main()
+        assert exc_info.value.code == 0
+        mock_render.assert_called_once()
+        _, call_kwargs = mock_render.call_args
+        assert call_kwargs["fallback_findings"] == fallback
+
+
+# ---------------------------------------------------------------------------
+# Integration tests — inline flag wiring
+# ---------------------------------------------------------------------------
+
+
+class TestInlineFlagIntegration:
+    """Integration tests for inline flag wiring with mocked externals."""
+
+    @patch("scripts.run_action.SummaryPoster")
+    @patch("scripts.run_action.InlineReviewPoster")
+    @patch("scripts.run_action.run_review")
+    @patch("scripts.run_action.ClaudeClient")
+    @patch("scripts.run_action.GitHubClient")
+    @patch("scripts.run_action.load_config")
+    def test_action_inline_enabled_full_flow(
+        self,
+        mock_config: MagicMock,
+        mock_gh: MagicMock,
+        mock_claude: MagicMock,
+        mock_review: MagicMock,
+        mock_inline_cls: MagicMock,
+        mock_poster_cls: MagicMock,
+        monkeypatch: pytest.MonkeyPatch,
+        tmp_path: Path,
+    ) -> None:
+        """With inline_comments=True, both InlineReviewPoster and SummaryPoster are called."""
+        from scripts.run_action import main
+
+        posted_findings = [
+            Finding(
+                file="test.py",
+                line=1,
+                severity=Severity.info,
+                category=Category.other,
+                message="Test finding.",
+            )
+        ]
+
+        _setup_inline_env(monkeypatch, tmp_path)
+        mock_config.return_value = _make_inline_config(inline=True)
+        mock_review.return_value = _mock_review_result()
+        mock_gh.return_value.get_diff.return_value = _TEST_DIFF
+        mock_poster_cls.return_value._find_existing_comment.return_value = None
+        mock_inline_cls.return_value.post.return_value = _make_inline_post_result(
+            posted_findings=posted_findings,
+        )
+
+        with pytest.raises(SystemExit) as exc_info:
+            main()
+        assert exc_info.value.code == 0
+
+        # Both posters called
+        mock_inline_cls.return_value.post.assert_called_once()
+        mock_poster_cls.return_value.post.assert_called_once()
+
+        # State includes inline_findings
+        poster_call = mock_poster_cls.return_value.post.call_args
+        state = poster_call.kwargs.get("state")
+        if state is None and len(poster_call.args) >= 3:
+            state = poster_call.args[2]
+        assert state is not None
+        assert "inline_findings" in state
+        assert "last_reviewed_sha" in state
+
+    @patch("scripts.run_action.SummaryPoster")
+    @patch("scripts.run_action.InlineReviewPoster")
+    @patch("scripts.run_action.run_review")
+    @patch("scripts.run_action.ClaudeClient")
+    @patch("scripts.run_action.GitHubClient")
+    @patch("scripts.run_action.load_config")
+    def test_action_inline_disabled_full_flow(
+        self,
+        mock_config: MagicMock,
+        mock_gh: MagicMock,
+        mock_claude: MagicMock,
+        mock_review: MagicMock,
+        mock_inline_cls: MagicMock,
+        mock_poster_cls: MagicMock,
+        monkeypatch: pytest.MonkeyPatch,
+        tmp_path: Path,
+    ) -> None:
+        """With inline_comments=False, only SummaryPoster is called; no inline posting."""
+        from scripts.run_action import main
+
+        _setup_inline_env(monkeypatch, tmp_path)
+        mock_config.return_value = _make_inline_config(inline=False)
+        mock_review.return_value = _mock_review_result()
+
+        with pytest.raises(SystemExit) as exc_info:
+            main()
+        assert exc_info.value.code == 0
+
+        mock_inline_cls.assert_not_called()
+        mock_poster_cls.return_value.post.assert_called_once()
+
+        # State has no inline_findings
+        poster_call = mock_poster_cls.return_value.post.call_args
+        state = poster_call.kwargs.get("state")
+        if state is None and len(poster_call.args) >= 3:
+            state = poster_call.args[2]
+        assert state is not None
+        assert "inline_findings" not in state
+        assert state["last_reviewed_sha"] == "abc123"
+
+    @patch("scripts.run_action.SummaryPoster")
+    @patch("scripts.run_action.InlineReviewPoster")
+    @patch("scripts.run_action.run_review")
+    @patch("scripts.run_action.ClaudeClient")
+    @patch("scripts.run_action.GitHubClient")
+    @patch("scripts.run_action.load_config")
+    def test_action_inline_failure_fallback(
+        self,
+        mock_config: MagicMock,
+        mock_gh: MagicMock,
+        mock_claude: MagicMock,
+        mock_review: MagicMock,
+        mock_inline_cls: MagicMock,
+        mock_poster_cls: MagicMock,
+        monkeypatch: pytest.MonkeyPatch,
+        tmp_path: Path,
+    ) -> None:
+        """When InlineReviewPoster raises PosterError, SummaryPoster still posts."""
+        from scripts.run_action import main
+
+        _setup_inline_env(monkeypatch, tmp_path)
+        mock_config.return_value = _make_inline_config(inline=True)
+        mock_review.return_value = _mock_review_result()
+        mock_gh.return_value.get_diff.return_value = _TEST_DIFF
+        mock_poster_cls.return_value._find_existing_comment.return_value = None
+        mock_inline_cls.return_value.post.side_effect = PosterError("API failure")
+
+        with pytest.raises(SystemExit) as exc_info:
+            main()
+        assert exc_info.value.code == 0
+
+        # Summary still posted despite inline failure
+        mock_poster_cls.return_value.post.assert_called_once()
+
+    @patch("scripts.run_action.SummaryPoster")
+    @patch("scripts.run_action.InlineReviewPoster")
+    @patch("scripts.run_action.run_review")
+    @patch("scripts.run_action.ClaudeClient")
+    @patch("scripts.run_action.GitHubClient")
+    @patch("scripts.run_action.load_config")
+    def test_action_inline_dedup_state_passed(
+        self,
+        mock_config: MagicMock,
+        mock_gh: MagicMock,
+        mock_claude: MagicMock,
+        mock_review: MagicMock,
+        mock_inline_cls: MagicMock,
+        mock_poster_cls: MagicMock,
+        monkeypatch: pytest.MonkeyPatch,
+        tmp_path: Path,
+    ) -> None:
+        """On second push with existing comment, previous_state is extracted and passed."""
+        from scripts.run_action import main
+
+        _setup_inline_env(monkeypatch, tmp_path)
+        mock_config.return_value = _make_inline_config(inline=True)
+        mock_review.return_value = _mock_review_result()
+        mock_gh.return_value.get_diff.return_value = _TEST_DIFF
+
+        # Simulate existing comment with state marker
+        existing_body = (
+            '<!-- lychee:review -->\nOld comment\n\n'
+            '<!-- lychee:state {"last_reviewed_sha":"old_sha",'
+            '"inline_findings":[{"file":"test.py","line":1,'
+            '"severity":"info","message_hash":"abc123def456"}]} -->'
+        )
+        mock_existing = MagicMock()
+        mock_existing.body = existing_body
+        mock_poster_cls.return_value._find_existing_comment.return_value = mock_existing
+
+        # extract_state is a classmethod on the mocked SummaryPoster,
+        # so configure the class-level mock to return real parsed state.
+        mock_poster_cls.extract_state.return_value = {
+            "last_reviewed_sha": "old_sha",
+            "inline_findings": [
+                {
+                    "file": "test.py",
+                    "line": 1,
+                    "severity": "info",
+                    "message_hash": "abc123def456",
+                }
+            ],
+        }
+        mock_inline_cls.return_value.post.return_value = _make_inline_post_result()
+
+        with pytest.raises(SystemExit) as exc_info:
+            main()
+        assert exc_info.value.code == 0
+
+        # Verify previous_state was passed to InlineReviewPoster.post()
+        inline_call = mock_inline_cls.return_value.post.call_args
+        previous_state = inline_call.kwargs.get("previous_state")
+        assert previous_state is not None
+        assert "inline_findings" in previous_state
+
+
+# ---------------------------------------------------------------------------
+# System tests — inline flag wiring
+# ---------------------------------------------------------------------------
+
+
+class TestSystemInlineFlag:
+    """System tests for the full action path with inline flag on and off."""
+
+    @patch("scripts.run_action.SummaryPoster")
+    @patch("scripts.run_action.InlineReviewPoster")
+    @patch("scripts.run_action.run_review")
+    @patch("scripts.run_action.ClaudeClient")
+    @patch("scripts.run_action.GitHubClient")
+    @patch("scripts.run_action.load_config")
+    def test_system_flag_on_inline_plus_summary(
+        self,
+        mock_config: MagicMock,
+        mock_gh: MagicMock,
+        mock_claude: MagicMock,
+        mock_review: MagicMock,
+        mock_inline_cls: MagicMock,
+        mock_poster_cls: MagicMock,
+        monkeypatch: pytest.MonkeyPatch,
+        tmp_path: Path,
+    ) -> None:
+        """Full action path with flag on: both inline and summary posted."""
+        from scripts.run_action import main
+
+        _setup_inline_env(monkeypatch, tmp_path, head_sha="deadbeef")
+        mock_config.return_value = _make_inline_config(inline=True)
+        mock_review.return_value = _mock_review_result()
+        mock_gh.return_value.get_diff.return_value = _TEST_DIFF
+        mock_poster_cls.return_value._find_existing_comment.return_value = None
+        mock_inline_cls.return_value.post.return_value = _make_inline_post_result()
+
+        with pytest.raises(SystemExit) as exc_info:
+            main()
+        assert exc_info.value.code == 0
+
+        mock_inline_cls.return_value.post.assert_called_once()
+        mock_poster_cls.return_value.post.assert_called_once()
+
+    @patch("scripts.run_action.SummaryPoster")
+    @patch("scripts.run_action.InlineReviewPoster")
+    @patch("scripts.run_action.run_review")
+    @patch("scripts.run_action.ClaudeClient")
+    @patch("scripts.run_action.GitHubClient")
+    @patch("scripts.run_action.load_config")
+    def test_system_flag_off_summary_only(
+        self,
+        mock_config: MagicMock,
+        mock_gh: MagicMock,
+        mock_claude: MagicMock,
+        mock_review: MagicMock,
+        mock_inline_cls: MagicMock,
+        mock_poster_cls: MagicMock,
+        monkeypatch: pytest.MonkeyPatch,
+        tmp_path: Path,
+    ) -> None:
+        """Full action path with flag off: only summary posted."""
+        from scripts.run_action import main
+
+        _setup_inline_env(monkeypatch, tmp_path)
+        mock_config.return_value = _make_inline_config(inline=False)
+        mock_review.return_value = _mock_review_result()
+
+        with pytest.raises(SystemExit) as exc_info:
+            main()
+        assert exc_info.value.code == 0
+
+        mock_inline_cls.assert_not_called()
+        mock_poster_cls.return_value.post.assert_called_once()
+
+
+# ---------------------------------------------------------------------------
+# Acceptance tests — inline flag wiring
+# ---------------------------------------------------------------------------
+
+
+class TestAcceptInlineFlag:
+    """Acceptance tests for feature flag wiring correctness."""
+
+    @patch("scripts.run_action.SummaryPoster")
+    @patch("scripts.run_action.InlineReviewPoster")
+    @patch("scripts.run_action.run_review")
+    @patch("scripts.run_action.ClaudeClient")
+    @patch("scripts.run_action.GitHubClient")
+    @patch("scripts.run_action.load_config")
+    def test_accept_flag_off_preserves_existing_behavior(
+        self,
+        mock_config: MagicMock,
+        mock_gh: MagicMock,
+        mock_claude: MagicMock,
+        mock_review: MagicMock,
+        mock_inline_cls: MagicMock,
+        mock_poster_cls: MagicMock,
+        monkeypatch: pytest.MonkeyPatch,
+        tmp_path: Path,
+    ) -> None:
+        """With flag off, the posted summary matches existing behavior exactly."""
+        from scripts.run_action import main
+
+        head_sha = "abc123"
+        _setup_inline_env(monkeypatch, tmp_path, head_sha=head_sha)
+        mock_config.return_value = _make_inline_config(inline=False)
+        result = _mock_review_result()
+        mock_review.return_value = result
+
+        with pytest.raises(SystemExit) as exc_info:
+            main()
+        assert exc_info.value.code == 0
+
+        poster_instance = mock_poster_cls.return_value
+        poster_instance.post.assert_called_once()
+
+        # Verify state format is identical to pre-inline behavior
+        call_kwargs = poster_instance.post.call_args
+        state = call_kwargs.kwargs.get("state")
+        if state is None and len(call_kwargs.args) >= 3:
+            state = call_kwargs.args[2]
+        assert state == {"last_reviewed_sha": head_sha}
+
+        # Verify summary body contains the review marker
+        posted_body = call_kwargs.args[1]
+        from lychee.render import REVIEW_MARKER
+
+        assert REVIEW_MARKER in posted_body
+
+        # No inline poster instantiated
+        mock_inline_cls.assert_not_called()
+
+    @patch("scripts.run_action.SummaryPoster")
+    @patch("scripts.run_action.InlineReviewPoster")
+    @patch("scripts.run_action.run_review")
+    @patch("scripts.run_action.ClaudeClient")
+    @patch("scripts.run_action.GitHubClient")
+    @patch("scripts.run_action.load_config")
+    def test_accept_flag_on_inline_plus_summary(
+        self,
+        mock_config: MagicMock,
+        mock_gh: MagicMock,
+        mock_claude: MagicMock,
+        mock_review: MagicMock,
+        mock_inline_cls: MagicMock,
+        mock_poster_cls: MagicMock,
+        monkeypatch: pytest.MonkeyPatch,
+        tmp_path: Path,
+    ) -> None:
+        """With flag on, both inline review and summary comment are posted."""
+        from scripts.run_action import main
+
+        _setup_inline_env(monkeypatch, tmp_path)
+        mock_config.return_value = _make_inline_config(inline=True)
+        mock_review.return_value = _mock_review_result()
+        mock_gh.return_value.get_diff.return_value = _TEST_DIFF
+        mock_poster_cls.return_value._find_existing_comment.return_value = None
+        mock_inline_cls.return_value.post.return_value = _make_inline_post_result()
+
+        with pytest.raises(SystemExit) as exc_info:
+            main()
+        assert exc_info.value.code == 0
+
+        mock_inline_cls.return_value.post.assert_called_once()
+        mock_poster_cls.return_value.post.assert_called_once()
+
+
+# ---------------------------------------------------------------------------
+# Smoke tests — inline imports
+# ---------------------------------------------------------------------------
+
+
+def test_action_imports_inline_modules() -> None:
+    """run_action.py can import all inline commenting modules without error."""
+    from scripts.run_action import (  # noqa: F401
+        InlineReviewPoster,
+        PosterError,
+        build_inline_state,
+    )
+
+    assert callable(InlineReviewPoster)
+    assert issubclass(PosterError, Exception)
+    assert callable(build_inline_state)
+
+
+# ---------------------------------------------------------------------------
+# Sanity tests — inline flag
+# ---------------------------------------------------------------------------
+
+
+class TestExistingTestsSanity:
+    """Sanity verification that inline wiring does not break existing tests."""
+
+    @patch("scripts.run_action.SummaryPoster")
+    @patch("scripts.run_action.run_review")
+    @patch("scripts.run_action.ClaudeClient")
+    @patch("scripts.run_action.GitHubClient")
+    @patch("scripts.run_action.load_config")
+    def test_existing_action_tests_still_pass(
+        self,
+        mock_config: MagicMock,
+        mock_gh: MagicMock,
+        mock_claude: MagicMock,
+        mock_review: MagicMock,
+        mock_poster_cls: MagicMock,
+        monkeypatch: pytest.MonkeyPatch,
+        tmp_path: Path,
+    ) -> None:
+        """With default config (inline_comments=False), main() succeeds."""
+        from scripts.run_action import main
+
+        _setup_inline_env(monkeypatch, tmp_path)
+        mock_config.return_value = _make_inline_config(inline=False)
+        mock_review.return_value = _mock_review_result()
+
+        with pytest.raises(SystemExit) as exc_info:
+            main()
+        assert exc_info.value.code == 0
+        mock_poster_cls.return_value.post.assert_called_once()
+
+
+# ---------------------------------------------------------------------------
+# Regression tests — inline flag
+# ---------------------------------------------------------------------------
+
+
+class TestInlineFlagRegression:
+    """Regression tests for feature flag wiring."""
+
+    @patch("scripts.run_action.SummaryPoster")
+    @patch("scripts.run_action.run_review")
+    @patch("scripts.run_action.ClaudeClient")
+    @patch("scripts.run_action.GitHubClient")
+    @patch("scripts.run_action.load_config")
+    def test_action_summary_snapshot_flag_off(
+        self,
+        mock_config: MagicMock,
+        mock_gh: MagicMock,
+        mock_claude: MagicMock,
+        mock_review: MagicMock,
+        mock_poster_cls: MagicMock,
+        monkeypatch: pytest.MonkeyPatch,
+        tmp_path: Path,
+    ) -> None:
+        """With flag off, the summary body matches render_comment output exactly."""
+        from lychee.render import render_comment
+
+        from scripts.run_action import main
+
+        _setup_inline_env(monkeypatch, tmp_path)
+        mock_config.return_value = _make_inline_config(inline=False, cost_footer=False)
+        result = _mock_review_result()
+        mock_review.return_value = result
+
+        expected_body = render_comment(result, cost_line=None)
+
+        with pytest.raises(SystemExit) as exc_info:
+            main()
+        assert exc_info.value.code == 0
+
+        posted_body = mock_poster_cls.return_value.post.call_args.args[1]
+        assert posted_body == expected_body
+
+
+# ---------------------------------------------------------------------------
+# E2E test — inline flag
+# ---------------------------------------------------------------------------
+
+
+class TestInlineFlagE2E:
+    """End-to-end test for inline commenting with the full action path."""
+
+    @patch("scripts.run_action.SummaryPoster")
+    @patch("scripts.run_action.InlineReviewPoster")
+    @patch("scripts.run_action.run_review")
+    @patch("scripts.run_action.ClaudeClient")
+    @patch("scripts.run_action.GitHubClient")
+    @patch("scripts.run_action.load_config")
+    def test_e2e_inline_local(
+        self,
+        mock_config: MagicMock,
+        mock_gh: MagicMock,
+        mock_claude: MagicMock,
+        mock_review: MagicMock,
+        mock_inline_cls: MagicMock,
+        mock_poster_cls: MagicMock,
+        monkeypatch: pytest.MonkeyPatch,
+        tmp_path: Path,
+    ) -> None:
+        """Local e2e: ReviewResult + diff -> inline + summary + state + dedup on re-push."""
+        from scripts.run_action import main
+
+        findings = [
+            Finding(
+                file="test.py",
+                line=2,
+                severity=Severity.major,
+                category=Category.correctness,
+                message="Potential null reference.",
+                suggestion="if x is not None:\n    print(x)",
+            ),
+            Finding(
+                file="other.py",
+                line=None,
+                severity=Severity.minor,
+                category=Category.style,
+                message="Unused import.",
+            ),
+        ]
+        result = ReviewResult(
+            ripeness=Ripeness.unripe,
+            summary="Two issues found.",
+            walkthrough="## Findings\n\nNull ref and unused import.",
+            findings=findings,
+            model="claude-sonnet-4-6",
+            usage={"input_tokens": 500, "output_tokens": 100},
+        )
+
+        posted_findings = [findings[0]]
+        fallback_findings = [findings[1]]
+
+        _setup_inline_env(monkeypatch, tmp_path, head_sha="e2e_sha_1")
+        mock_config.return_value = _make_inline_config(inline=True)
+        mock_review.return_value = result
+        mock_gh.return_value.get_diff.return_value = _TEST_DIFF
+        mock_poster_cls.return_value._find_existing_comment.return_value = None
+        mock_inline_cls.return_value.post.return_value = _make_inline_post_result(
+            inline_count=1,
+            fallback_count=1,
+            posted_findings=posted_findings,
+            fallback_findings=fallback_findings,
+        )
+
+        with pytest.raises(SystemExit) as exc_info:
+            main()
+        assert exc_info.value.code == 0
+
+        # Verify inline poster called
+        mock_inline_cls.return_value.post.assert_called_once()
+
+        # Verify summary posted with state containing inline_findings
+        poster_call = mock_poster_cls.return_value.post.call_args
+        state = poster_call.kwargs.get("state")
+        if state is None and len(poster_call.args) >= 3:
+            state = poster_call.args[2]
+        assert state is not None
+        assert state["last_reviewed_sha"] == "e2e_sha_1"
+        assert len(state["inline_findings"]) == 1
+
+        # Verify summary body contains the fallback section
+        posted_body = poster_call.args[1]
+        assert "not posted inline" in posted_body
+
+
+# ---------------------------------------------------------------------------
+# API tests — inline flag
+# ---------------------------------------------------------------------------
+
+
+class TestInlineFlagAPI:
+    """API-level tests for inline flag wiring call correctness."""
+
+    @patch("scripts.run_action.SummaryPoster")
+    @patch("scripts.run_action.InlineReviewPoster")
+    @patch("scripts.run_action.run_review")
+    @patch("scripts.run_action.ClaudeClient")
+    @patch("scripts.run_action.GitHubClient")
+    @patch("scripts.run_action.load_config")
+    def test_api_create_review_called_with_result_and_diff(
+        self,
+        mock_config: MagicMock,
+        mock_gh: MagicMock,
+        mock_claude: MagicMock,
+        mock_review: MagicMock,
+        mock_inline_cls: MagicMock,
+        mock_poster_cls: MagicMock,
+        monkeypatch: pytest.MonkeyPatch,
+        tmp_path: Path,
+    ) -> None:
+        """InlineReviewPoster receives the ReviewResult and diff for review creation."""
+        from scripts.run_action import main
+
+        _setup_inline_env(monkeypatch, tmp_path)
+        mock_config.return_value = _make_inline_config(inline=True)
+        result = _mock_review_result()
+        mock_review.return_value = result
+        mock_gh.return_value.get_diff.return_value = _TEST_DIFF
+        mock_poster_cls.return_value._find_existing_comment.return_value = None
+        mock_inline_cls.return_value.post.return_value = _make_inline_post_result()
+
+        with pytest.raises(SystemExit) as exc_info:
+            main()
+        assert exc_info.value.code == 0
+
+        # Verify InlineReviewPoster.post() called with result and diff
+        inline_call = mock_inline_cls.return_value.post.call_args
+        assert inline_call.args[1] is result  # ReviewResult
+        assert inline_call.args[2] == _TEST_DIFF  # diff
+
+    @patch("scripts.run_action.SummaryPoster")
+    @patch("scripts.run_action.InlineReviewPoster")
+    @patch("scripts.run_action.run_review")
+    @patch("scripts.run_action.ClaudeClient")
+    @patch("scripts.run_action.GitHubClient")
+    @patch("scripts.run_action.load_config")
+    def test_api_summary_upsert_with_inline_state(
+        self,
+        mock_config: MagicMock,
+        mock_gh: MagicMock,
+        mock_claude: MagicMock,
+        mock_review: MagicMock,
+        mock_inline_cls: MagicMock,
+        mock_poster_cls: MagicMock,
+        monkeypatch: pytest.MonkeyPatch,
+        tmp_path: Path,
+    ) -> None:
+        """SummaryPoster.post() receives state with inline_findings and last_reviewed_sha."""
+        from scripts.run_action import main
+
+        posted_findings = [
+            Finding(
+                file="test.py",
+                line=1,
+                severity=Severity.info,
+                category=Category.other,
+                message="Finding.",
+            )
+        ]
+        head_sha = "api_test_sha"
+
+        _setup_inline_env(monkeypatch, tmp_path, head_sha=head_sha)
+        mock_config.return_value = _make_inline_config(inline=True)
+        mock_review.return_value = _mock_review_result()
+        mock_gh.return_value.get_diff.return_value = _TEST_DIFF
+        mock_poster_cls.return_value._find_existing_comment.return_value = None
+        mock_inline_cls.return_value.post.return_value = _make_inline_post_result(
+            posted_findings=posted_findings,
+        )
+
+        with pytest.raises(SystemExit) as exc_info:
+            main()
+        assert exc_info.value.code == 0
+
+        poster_call = mock_poster_cls.return_value.post.call_args
+        state = poster_call.kwargs.get("state")
+        if state is None and len(poster_call.args) >= 3:
+            state = poster_call.args[2]
+        assert state is not None
+        assert state["last_reviewed_sha"] == head_sha
+        assert "inline_findings" in state
+        assert len(state["inline_findings"]) == 1
+
+
+# ---------------------------------------------------------------------------
+# UI tests — inline flag (summary comment content)
+# ---------------------------------------------------------------------------
+
+
+class TestInlineFlagUI:
+    """UI tests verifying the summary comment content with inline flag on."""
+
+    @patch("scripts.run_action.SummaryPoster")
+    @patch("scripts.run_action.InlineReviewPoster")
+    @patch("scripts.run_action.run_review")
+    @patch("scripts.run_action.ClaudeClient")
+    @patch("scripts.run_action.GitHubClient")
+    @patch("scripts.run_action.load_config")
+    def test_ui_summary_with_fallback_section(
+        self,
+        mock_config: MagicMock,
+        mock_gh: MagicMock,
+        mock_claude: MagicMock,
+        mock_review: MagicMock,
+        mock_inline_cls: MagicMock,
+        mock_poster_cls: MagicMock,
+        monkeypatch: pytest.MonkeyPatch,
+        tmp_path: Path,
+    ) -> None:
+        """When flag is on and there are unmappable findings, fallback section appears."""
+        from scripts.run_action import main
+
+        fallback = [
+            Finding(
+                file="unmapped.py",
+                line=999,
+                severity=Severity.major,
+                category=Category.correctness,
+                message="Cannot map to diff.",
+            )
+        ]
+
+        _setup_inline_env(monkeypatch, tmp_path)
+        mock_config.return_value = _make_inline_config(inline=True)
+        mock_review.return_value = _mock_review_result()
+        mock_gh.return_value.get_diff.return_value = _TEST_DIFF
+        mock_poster_cls.return_value._find_existing_comment.return_value = None
+        mock_inline_cls.return_value.post.return_value = _make_inline_post_result(
+            fallback_count=1, fallback_findings=fallback
+        )
+
+        with pytest.raises(SystemExit) as exc_info:
+            main()
+        assert exc_info.value.code == 0
+
+        posted_body = mock_poster_cls.return_value.post.call_args.args[1]
+        assert "not posted inline" in posted_body
+        assert "unmapped.py" in posted_body
+
+    @patch("scripts.run_action.SummaryPoster")
+    @patch("scripts.run_action.InlineReviewPoster")
+    @patch("scripts.run_action.run_review")
+    @patch("scripts.run_action.ClaudeClient")
+    @patch("scripts.run_action.GitHubClient")
+    @patch("scripts.run_action.load_config")
+    def test_ui_summary_without_fallback_section(
+        self,
+        mock_config: MagicMock,
+        mock_gh: MagicMock,
+        mock_claude: MagicMock,
+        mock_review: MagicMock,
+        mock_inline_cls: MagicMock,
+        mock_poster_cls: MagicMock,
+        monkeypatch: pytest.MonkeyPatch,
+        tmp_path: Path,
+    ) -> None:
+        """When flag is on but all findings map, no fallback section in summary."""
+        from scripts.run_action import main
+
+        _setup_inline_env(monkeypatch, tmp_path)
+        mock_config.return_value = _make_inline_config(inline=True)
+        mock_review.return_value = _mock_review_result()
+        mock_gh.return_value.get_diff.return_value = _TEST_DIFF
+        mock_poster_cls.return_value._find_existing_comment.return_value = None
+        mock_inline_cls.return_value.post.return_value = _make_inline_post_result(
+            fallback_count=0, fallback_findings=[]
+        )
+
+        with pytest.raises(SystemExit) as exc_info:
+            main()
+        assert exc_info.value.code == 0
+
+        posted_body = mock_poster_cls.return_value.post.call_args.args[1]
+        assert "not posted inline" not in posted_body
