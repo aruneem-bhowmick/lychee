@@ -481,10 +481,7 @@ def test_scope_rule_unknown_key_rejected_via_config(tmp_path: Path) -> None:
     """An unknown key inside a scope rule raises LycheeConfigError."""
     bad = tmp_path / ".lychee.yml"
     bad.write_text(
-        "review:\n"
-        "  scope_rules:\n"
-        "    - paths: ['src/**']\n"
-        "      priority: high\n",
+        "review:\n" "  scope_rules:\n" "    - paths: ['src/**']\n" "      priority: high\n",
         encoding="utf-8",
     )
     with pytest.raises(LycheeConfigError):
@@ -495,9 +492,7 @@ def test_scope_rule_invalid_severity_via_config(tmp_path: Path) -> None:
     """An invalid severity_threshold in a scope rule raises LycheeConfigError."""
     bad = tmp_path / ".lychee.yml"
     bad.write_text(
-        "review:\n"
-        "  scope_rules:\n"
-        "    - severity_threshold: blocker\n",
+        "review:\n" "  scope_rules:\n" "    - severity_threshold: blocker\n",
         encoding="utf-8",
     )
     with pytest.raises(LycheeConfigError):
@@ -508,9 +503,7 @@ def test_scope_rule_invalid_tone_via_config(tmp_path: Path) -> None:
     """An invalid tone in a scope rule raises LycheeConfigError."""
     bad = tmp_path / ".lychee.yml"
     bad.write_text(
-        "review:\n"
-        "  scope_rules:\n"
-        "    - tone: aggressive\n",
+        "review:\n" "  scope_rules:\n" "    - tone: aggressive\n",
         encoding="utf-8",
     )
     with pytest.raises(LycheeConfigError):

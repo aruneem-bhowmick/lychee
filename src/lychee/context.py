@@ -65,14 +65,11 @@ def build_context(
     if scope_rules:
         before_count = len(changed_files)
         changed_files = [
-            f for f in changed_files
-            if not should_ignore_file(f.filename, scope_rules, labels)
+            f for f in changed_files if not should_ignore_file(f.filename, scope_rules, labels)
         ]
         filtered_count = before_count - len(changed_files)
         if filtered_count:
-            _logger.info(
-                "Scope rules filtered %d file(s) from review context", filtered_count
-            )
+            _logger.info("Scope rules filtered %d file(s) from review context", filtered_count)
 
     commit_messages = client.get_commit_messages(pr)
 
