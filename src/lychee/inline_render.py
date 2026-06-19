@@ -24,15 +24,17 @@ def render_inline_comment(finding: Finding) -> str:
 
     Format::
 
-        {emoji} **{Severity}** [{category}]: {message}
+        {emoji} **[{Severity}]** (*{category}*): {message}
 
-    When the finding carries a suggestion, a GitHub suggestion block is
-    appended so reviewers can apply the fix with one click.
+    The severity label is wrapped in bold brackets for visual weight, the
+    category is rendered in italic parentheses for scannability, and an emoji
+    prefix aids quick triage.  When the finding carries a suggestion, a GitHub
+    suggestion block is appended so reviewers can apply the fix with one click.
     """
     emoji = _SEVERITY_EMOJI[finding.severity]
     label = SEVERITY_LABELS[finding.severity]
     category = finding.category.value
-    body = f"{emoji} **{label}** [{category}]: {finding.message}"
+    body = f"{emoji} **[{label}]** (*{category}*): {finding.message}"
 
     if finding.suggestion is not None:
         body += "\n\n" + render_suggestion_block(finding.suggestion)
