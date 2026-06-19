@@ -28,6 +28,13 @@ from lychee.poster import InlineReviewPoster, PosterError, SummaryPoster
 from lychee.render import render_comment
 from lychee.review import run_review
 
+__all__ = [
+    "InlineReviewPoster",
+    "PosterError",
+    "build_inline_state",
+    "main",
+]
+
 _logger = logging.getLogger("lychee.action")
 
 # Supported pull_request event actions
@@ -240,9 +247,7 @@ def _post_inline_and_render(
         return comment_body, state
 
     except PosterError as exc:
-        _logger.error(
-            "Inline posting failed, falling back to summary only: %s", exc
-        )
+        _logger.error("Inline posting failed, falling back to summary only: %s", exc)
         comment_body = render_comment(
             result,
             cost_line=cost_line,
