@@ -68,8 +68,8 @@ def test_basic_rendering() -> None:
     """Basic finding renders with emoji, severity label, category, and message."""
     finding = _make_finding()
     result = render_inline_comment(finding)
-    assert "**Minor**" in result
-    assert "[style]" in result
+    assert "**[Minor]**" in result
+    assert "(*style*)" in result
     assert "Trailing whitespace." in result
 
 
@@ -91,10 +91,10 @@ def test_rendering_with_suggestion() -> None:
 @pytest.mark.parametrize(
     ("severity", "expected_label"),
     [
-        (Severity.info, "**Info**"),
-        (Severity.minor, "**Minor**"),
-        (Severity.major, "**Major**"),
-        (Severity.critical, "**Critical**"),
+        (Severity.info, "**[Info]**"),
+        (Severity.minor, "**[Minor]**"),
+        (Severity.major, "**[Major]**"),
+        (Severity.critical, "**[Critical]**"),
     ],
 )
 def test_all_severities(severity: Severity, expected_label: str) -> None:
