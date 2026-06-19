@@ -73,14 +73,21 @@ is valid."""
 _TONE_INSTRUCTIONS: dict[str, str] = {
     "balanced": "",
     "concise": (
-        "Be concise. Keep the Nectar under 3 sentences. "
-        "Keep each finding message under 2 sentences. "
-        "Omit the walkthrough if the PR is straightforward."
+        "Be brief and concise throughout. "
+        "Keep the Nectar (summary) under 3 sentences. "
+        "Use a short bullet-list format for the walkthrough instead of full paragraphs. "
+        "Keep each finding message to one sentence. "
+        "Omit low-value details, minor style observations, and informational notes. "
+        "Skip the walkthrough entirely if the PR is straightforward."
     ),
     "detailed": (
-        "Be thorough and detailed. Provide extensive context in the Nectar. "
-        "Walk through each file's changes comprehensively. "
-        "Explain the reasoning behind each finding."
+        "Be thorough and detailed throughout. "
+        "Provide extensive context in the Nectar (summary), covering motivation and impact. "
+        "Write a multi-paragraph walkthrough covering each changed file, explaining what "
+        "changed and why it matters. "
+        "Give verbose finding explanations with rationale and concrete examples of the "
+        "problem and how to fix it. "
+        "Include thorough suggestion blocks with complete, ready-to-apply code when possible."
     ),
 }
 
