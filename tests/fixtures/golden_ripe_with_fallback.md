@@ -10,6 +10,12 @@ This PR looks good overall with minor style issues.
 
 ---
 
+### Findings not on changed lines
+- **[info]** `src/config.py` (*docs*): Consider adding a module docstring. *(not on a changed line)*
+- **[minor]** `src/other.py:99` (*style*): Line too long. *(not on a changed line)*
+
+---
+
 ## 🌿 The Peel
 ## Changes
 
@@ -23,15 +29,6 @@ Added utility functions and updated main module.
 
 ### Info (1)
 - **[docs]** `src/utils.py`: Missing module docstring.
-
----
-
-<details>
-<summary>📌 2 findings not posted inline</summary>
-
-- **[docs]** `src/config.py`: Consider adding a module docstring.
-- **[style]** `src/other.py` (line 99): Line too long.
-</details>
 
 ---
 
