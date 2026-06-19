@@ -9,6 +9,7 @@ from typing import Any
 
 from github import GithubException
 
+from lychee.dedup import deduplicate_findings, extract_previous_fingerprints
 from lychee.diff_mapping import DiffPosition, build_position_map, map_finding_to_position
 from lychee.inline_render import render_inline_comment
 from lychee.models import Finding
@@ -142,12 +143,14 @@ class InlinePostResult:
         inline_count: Number of findings posted as inline comments.
         fallback_count: Number of findings that could not be posted inline.
         fallback_findings: The list of unmappable findings (for summary comment).
+        posted_findings: The findings that were actually posted inline (for state tracking).
     """
 
     review_id: int | None
     inline_count: int
     fallback_count: int
     fallback_findings: list[Finding] = field(default_factory=list)
+    posted_findings: list[Finding] = field(default_factory=list)
 
 
 class InlineReviewPoster:
@@ -168,10 +171,16 @@ class InlineReviewPoster:
         """Post findings as inline review comments on the PR.
 
         Builds a position map from the diff, partitions findings into
-        inline-mappable and fallback, renders comments, and submits a
-        single review via ``pr.create_review()``.
+        inline-mappable and fallback, deduplicates against *previous_state*
+        when available, renders comments, and submits a single review via
+        ``pr.create_review()``.
 
-        Returns an ``InlinePostResult`` with counts and fallback findings.
+        When *previous_state* contains ``inline_findings``, findings that
+        match a previous fingerprint are skipped.  The returned
+        ``InlinePostResult`` includes only newly posted findings (for
+        state update).
+
+        Returns an ``InlinePostResult`` with counts, fallback, and posted findings.
 
         Raises ``PosterError`` on GitHub API failures.
         """
@@ -180,12 +189,24 @@ class InlineReviewPoster:
             result.findings, position_map, severity_threshold
         )
 
+        # Dedup: filter out previously posted findings if state is available.
+        mappable_findings = [f for f, _pos in inline_pairs]
+        previous_fps = extract_previous_fingerprints(previous_state)
+        if previous_fps:
+            to_post, _already = deduplicate_findings(mappable_findings, previous_fps)
+            # Rebuild inline_pairs with only the to_post findings.
+            to_post_set = set(id(f) for f in to_post)
+            inline_pairs = [(f, p) for f, p in inline_pairs if id(f) in to_post_set]
+
+        posted_findings = [f for f, _pos in inline_pairs]
+
         if not inline_pairs:
             return InlinePostResult(
                 review_id=None,
                 inline_count=0,
                 fallback_count=len(fallback),
                 fallback_findings=fallback,
+                posted_findings=posted_findings,
             )
 
         comments = self._build_review_comments(inline_pairs)
@@ -208,6 +229,7 @@ class InlineReviewPoster:
             inline_count=len(inline_pairs),
             fallback_count=len(fallback),
             fallback_findings=fallback,
+            posted_findings=posted_findings,
         )
 
     @staticmethod
