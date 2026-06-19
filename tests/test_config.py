@@ -16,11 +16,13 @@ import pydantic
 import pytest
 
 from lychee.config import (
+    AuthorizationConfig,
     FeaturesConfig,
     LycheeConfig,
     LycheeConfigError,
     ModelConfig,
     ReviewConfig,
+    ScopeRule,
     load_config,
 )
 
@@ -35,16 +37,27 @@ FIXTURES_DIR = Path(__file__).parent / "fixtures"
 def test_config_module_imports() -> None:
     """All public names import cleanly from lychee.config."""
     from lychee.config import (
+        AuthorizationConfig,
         FeaturesConfig,
         LycheeConfig,
         LycheeConfigError,
         ModelConfig,
         ReviewConfig,
+        ScopeRule,
         load_config,
     )
 
     assert all(
-        [LycheeConfig, LycheeConfigError, load_config, ModelConfig, ReviewConfig, FeaturesConfig]
+        [
+            LycheeConfig,
+            LycheeConfigError,
+            load_config,
+            ModelConfig,
+            ReviewConfig,
+            FeaturesConfig,
+            ScopeRule,
+            AuthorizationConfig,
+        ]
     )
 
 
@@ -66,10 +79,12 @@ def test_load_empty_file_returns_defaults() -> None:
     assert config.review.severity_threshold == "info"
     assert config.review.tone == "balanced"
     assert config.review.language == "en"
+    assert config.review.scope_rules == []
     assert config.features.inline_comments is False
     assert config.features.cost_footer is True
     assert config.features.commands is False
     assert config.conventions_file is None
+    assert config.authorization.allowed_users == []
 
 
 def test_load_absent_file_returns_defaults() -> None:
@@ -97,6 +112,12 @@ def test_load_valid_config_overrides_defaults() -> None:
     assert config.features.cost_footer is False
     assert config.features.commands is True
     assert config.conventions_file == "CONVENTIONS.md"
+    assert len(config.review.scope_rules) == 2
+    assert config.review.scope_rules[0].paths == ["src/core/**"]
+    assert config.review.scope_rules[0].model == "claude-opus-4-8"
+    assert config.review.scope_rules[1].labels == ["generated"]
+    assert config.review.scope_rules[1].ignore is True
+    assert config.authorization.allowed_users == ["admin-user", "bot-user"]
 
 
 def test_defaults_applied_for_omitted_keys(tmp_path: Path) -> None:
@@ -318,6 +339,7 @@ def test_model_config_has_correct_sub_model_types() -> None:
     assert isinstance(config.model, ModelConfig)
     assert isinstance(config.review, ReviewConfig)
     assert isinstance(config.features, FeaturesConfig)
+    assert isinstance(config.authorization, AuthorizationConfig)
 
 
 # ---------------------------------------------------------------------------
@@ -439,6 +461,7 @@ def test_accept_defaults_documented_and_tested() -> None:
     assert config.review.severity_threshold == "info"
     assert config.review.tone == "balanced"
     assert config.review.language == "en"
+    assert config.review.scope_rules == []
 
     # Feature defaults
     assert config.features.inline_comments is False
@@ -447,3 +470,4 @@ def test_accept_defaults_documented_and_tested() -> None:
 
     # Top-level defaults
     assert config.conventions_file is None
+    assert config.authorization.allowed_users == []

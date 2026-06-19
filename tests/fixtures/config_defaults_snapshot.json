@@ -1,4 +1,7 @@
 {
+  "authorization": {
+    "allowed_users": []
+  },
   "conventions_file": null,
   "features": {
     "commands": false,
@@ -17,6 +20,7 @@
     "language": "en",
     "max_file_bytes": 102400,
     "max_files": 50,
+    "scope_rules": [],
     "severity_threshold": "info",
     "tone": "balanced"
   }
