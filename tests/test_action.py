@@ -1722,7 +1722,7 @@ class TestInlineFlagE2E:
 
         # Verify summary body contains the fallback section
         posted_body = poster_call.args[1]
-        assert "not posted inline" in posted_body
+        assert "not on a changed line" in posted_body
 
 
 # ---------------------------------------------------------------------------
@@ -1876,7 +1876,7 @@ class TestInlineFlagUI:
         assert exc_info.value.code == 0
 
         posted_body = mock_poster_cls.return_value.post.call_args.args[1]
-        assert "not posted inline" in posted_body
+        assert "not on a changed line" in posted_body
         assert "unmapped.py" in posted_body
 
     @patch("scripts.run_action.SummaryPoster")
@@ -1913,4 +1913,4 @@ class TestInlineFlagUI:
         assert exc_info.value.code == 0
 
         posted_body = mock_poster_cls.return_value.post.call_args.args[1]
-        assert "not posted inline" not in posted_body
+        assert "not on a changed line" not in posted_body
