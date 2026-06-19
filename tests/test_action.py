@@ -1142,7 +1142,7 @@ class TestInlineFlagUnit:
         monkeypatch: pytest.MonkeyPatch,
         tmp_path: Path,
     ) -> None:
-        """When flag is on, render_comment is called with fallback_findings from InlinePostResult."""
+        """render_comment receives fallback_findings from InlinePostResult."""
         from scripts.run_action import main
 
         fallback = [
@@ -1337,7 +1337,7 @@ class TestInlineFlagIntegration:
 
         # Simulate existing comment with state marker
         existing_body = (
-            '<!-- lychee:review -->\nOld comment\n\n'
+            "<!-- lychee:review -->\nOld comment\n\n"
             '<!-- lychee:state {"last_reviewed_sha":"old_sha",'
             '"inline_findings":[{"file":"test.py","line":1,'
             '"severity":"info","message_hash":"abc123def456"}]} -->'
@@ -1545,7 +1545,7 @@ class TestAcceptInlineFlag:
 
 def test_action_imports_inline_modules() -> None:
     """run_action.py can import all inline commenting modules without error."""
-    from scripts.run_action import (  # noqa: F401
+    from scripts.run_action import (
         InlineReviewPoster,
         PosterError,
         build_inline_state,
@@ -1616,9 +1616,9 @@ class TestInlineFlagRegression:
         tmp_path: Path,
     ) -> None:
         """With flag off, the summary body matches render_comment output exactly."""
-        from lychee.render import render_comment
-
         from scripts.run_action import main
+
+        from lychee.render import render_comment
 
         _setup_inline_env(monkeypatch, tmp_path)
         mock_config.return_value = _make_inline_config(inline=False, cost_footer=False)
