@@ -15,6 +15,14 @@ review:
   severity_threshold: major
   tone: concise
   language: fr
+  scope_rules:
+    - paths:
+        - "src/core/**"
+      model: claude-opus-4-8
+      severity_threshold: critical
+    - labels:
+        - "generated"
+      ignore: true
 
 features:
   inline_comments: true
@@ -22,3 +30,8 @@ features:
   commands: true
 
 conventions_file: CONVENTIONS.md
+
+authorization:
+  allowed_users:
+    - admin-user
+    - bot-user

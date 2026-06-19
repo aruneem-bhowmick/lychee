@@ -8,7 +8,7 @@ from typing import Any
 
 import pydantic
 
-from lychee.config import LycheeConfig
+from lychee.config import LycheeConfig, should_ignore_file
 from lychee.github_client import GitHubClient, PullRequestRef
 
 _logger = logging.getLogger(__name__)
@@ -37,11 +37,17 @@ def build_context(
     client: GitHubClient,
     pr_ref: PullRequestRef,
     config: LycheeConfig,
+    *,
+    pr_labels: list[str] | None = None,
 ) -> ReviewContext:
     """Fetch and assemble all PR context needed for a review.
 
     Orchestrates calls to GitHubClient to gather PR metadata, diff,
     changed file contents, commit messages, and an optional conventions file.
+
+    When ``pr_labels`` is provided and the config contains scope rules,
+    files matching an ``ignore=True`` scope rule are filtered out of the
+    returned context.
     """
     pr = client.get_pull_request(pr_ref)
     diff = client.get_diff(pr_ref)
@@ -52,6 +58,21 @@ def build_context(
         max_file_bytes=config.review.max_file_bytes,
         ignore_globs=config.review.ignore_globs,
     )
+
+    labels = pr_labels if pr_labels is not None else []
+    scope_rules = config.review.scope_rules
+
+    if scope_rules:
+        before_count = len(changed_files)
+        changed_files = [
+            f for f in changed_files
+            if not should_ignore_file(f.filename, scope_rules, labels)
+        ]
+        filtered_count = before_count - len(changed_files)
+        if filtered_count:
+            _logger.info(
+                "Scope rules filtered %d file(s) from review context", filtered_count
+            )
 
     commit_messages = client.get_commit_messages(pr)
 

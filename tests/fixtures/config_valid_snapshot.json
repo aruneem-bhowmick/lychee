@@ -1,4 +1,10 @@
 {
+  "authorization": {
+    "allowed_users": [
+      "admin-user",
+      "bot-user"
+    ]
+  },
   "conventions_file": "CONVENTIONS.md",
   "features": {
     "commands": true,
@@ -20,6 +26,28 @@
     "language": "fr",
     "max_file_bytes": 51200,
     "max_files": 25,
+    "scope_rules": [
+      {
+        "ignore": false,
+        "labels": [],
+        "model": "claude-opus-4-8",
+        "paths": [
+          "src/core/**"
+        ],
+        "severity_threshold": "critical",
+        "tone": null
+      },
+      {
+        "ignore": true,
+        "labels": [
+          "generated"
+        ],
+        "model": null,
+        "paths": [],
+        "severity_threshold": null,
+        "tone": null
+      }
+    ],
     "severity_threshold": "major",
     "tone": "concise"
   }
