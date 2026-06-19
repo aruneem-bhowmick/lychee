@@ -22,7 +22,6 @@ from lychee.config import (
     LycheeConfigError,
     ModelConfig,
     ReviewConfig,
-    ScopeRule,
     load_config,
 )
 
@@ -470,4 +469,70 @@ def test_accept_defaults_documented_and_tested() -> None:
 
     # Top-level defaults
     assert config.conventions_file is None
+    assert config.authorization.allowed_users == []
+
+
+# ---------------------------------------------------------------------------
+# Unit tests -- ScopeRule and AuthorizationConfig in config loading
+# ---------------------------------------------------------------------------
+
+
+def test_scope_rule_unknown_key_rejected_via_config(tmp_path: Path) -> None:
+    """An unknown key inside a scope rule raises LycheeConfigError."""
+    bad = tmp_path / ".lychee.yml"
+    bad.write_text(
+        "review:\n"
+        "  scope_rules:\n"
+        "    - paths: ['src/**']\n"
+        "      priority: high\n",
+        encoding="utf-8",
+    )
+    with pytest.raises(LycheeConfigError):
+        load_config(bad)
+
+
+def test_scope_rule_invalid_severity_via_config(tmp_path: Path) -> None:
+    """An invalid severity_threshold in a scope rule raises LycheeConfigError."""
+    bad = tmp_path / ".lychee.yml"
+    bad.write_text(
+        "review:\n"
+        "  scope_rules:\n"
+        "    - severity_threshold: blocker\n",
+        encoding="utf-8",
+    )
+    with pytest.raises(LycheeConfigError):
+        load_config(bad)
+
+
+def test_scope_rule_invalid_tone_via_config(tmp_path: Path) -> None:
+    """An invalid tone in a scope rule raises LycheeConfigError."""
+    bad = tmp_path / ".lychee.yml"
+    bad.write_text(
+        "review:\n"
+        "  scope_rules:\n"
+        "    - tone: aggressive\n",
+        encoding="utf-8",
+    )
+    with pytest.raises(LycheeConfigError):
+        load_config(bad)
+
+
+def test_authorization_unknown_key_rejected_via_config(tmp_path: Path) -> None:
+    """An unknown key inside the authorization section raises LycheeConfigError."""
+    bad = tmp_path / ".lychee.yml"
+    bad.write_text("authorization:\n  roles: [admin]\n", encoding="utf-8")
+    with pytest.raises(LycheeConfigError, match=r"[Uu]nknown"):
+        load_config(bad)
+
+
+def test_scope_rules_default_empty() -> None:
+    """ReviewConfig constructed with no arguments has empty scope_rules."""
+    config = LycheeConfig()
+    assert config.review.scope_rules == []
+
+
+def test_authorization_default() -> None:
+    """LycheeConfig constructed with no arguments has default AuthorizationConfig."""
+    config = LycheeConfig()
+    assert config.authorization == AuthorizationConfig()
     assert config.authorization.allowed_users == []
