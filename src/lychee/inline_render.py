@@ -45,10 +45,33 @@ def render_inline_comment(finding: Finding) -> str:
 def render_suggestion_block(suggestion: str) -> str:
     """Wrap *suggestion* in GitHub's suggestion syntax for one-click apply.
 
+    Trailing whitespace is stripped from each line and leading/trailing
+    blank lines inside the fence are removed — GitHub renders them
+    literally, which produces unwanted empty lines in the suggestion diff.
+
+    Returns an empty string when *suggestion* is empty (defensive; Pydantic
+    validation normally rejects empty suggestions).
+
     Returns::
 
         ```suggestion
         {suggestion}
         ```
     """
-    return f"```suggestion\n{suggestion}\n```"
+    if not suggestion:
+        return ""
+
+    # Strip trailing whitespace per line, then remove leading/trailing
+    # blank lines inside the fence.
+    lines = [line.rstrip() for line in suggestion.splitlines()]
+
+    # Remove leading blank lines.
+    while lines and not lines[0]:
+        lines.pop(0)
+
+    # Remove trailing blank lines.
+    while lines and not lines[-1]:
+        lines.pop()
+
+    cleaned = "\n".join(lines)
+    return f"```suggestion\n{cleaned}\n```"
