@@ -92,10 +92,8 @@ def setup_structured_logging(level: int = logging.INFO) -> None:
         '"message":"%(message)s"}'
     )
     handler.setFormatter(logging.Formatter(fmt))
+    handler.addFilter(CorrelationFilter())
     root.addHandler(handler)
-
-    # Add the correlation filter to the root logger
-    root.addFilter(CorrelationFilter())
 
 
 # ---------------------------------------------------------------------------
