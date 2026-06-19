@@ -309,3 +309,63 @@ def test_severity_labels_include_text_not_just_emoji() -> None:
         finding = _make_finding(severity=sev)
         result = render_inline_comment(finding)
         assert SEVERITY_LABELS[sev] in result
+
+
+# ---------------------------------------------------------------------------
+# Integration tests
+# ---------------------------------------------------------------------------
+
+
+def test_inline_comment_with_real_finding_model() -> None:
+    """Construct a Finding via Pydantic and render it; verify well-formed output.
+
+    This exercises the full path from model construction through rendering,
+    ensuring Pydantic validation and the renderer work together correctly.
+    """
+    finding = Finding(
+        file="src/auth.py",
+        line=15,
+        severity=Severity.critical,
+        category=Category.security,
+        message="Hardcoded secret in source code.",
+        suggestion='secret = os.environ["API_KEY"]',
+    )
+    result = render_inline_comment(finding)
+    assert "**[Critical]**" in result
+    assert "(*security*)" in result
+    assert "Hardcoded secret in source code." in result
+    assert "```suggestion" in result
+    assert 'secret = os.environ["API_KEY"]' in result
+
+
+def test_inline_comment_integrated_with_diff_position() -> None:
+    """Rendered comment body is suitable for the GitHub review API.
+
+    Given a Finding and a DiffPosition, the rendered body should contain
+    only severity, category, message, and suggestion — no file/line info,
+    since position is conveyed separately via the API's path/position fields.
+    """
+    from lychee.diff_mapping import DiffPosition
+
+    finding = Finding(
+        file="src/utils.py",
+        line=42,
+        severity=Severity.minor,
+        category=Category.performance,
+        message="Unnecessary list copy in loop.",
+        suggestion="for item in items:",
+    )
+    _pos = DiffPosition(path="src/utils.py", position=10, head_line=42)
+    body = render_inline_comment(finding)
+
+    # Body should NOT contain file path or line number — those are
+    # conveyed via the GitHub API's path and position fields.
+    assert "src/utils.py" not in body
+    assert "line 42" not in body
+    assert ":42" not in body
+
+    # Body should contain the meaningful review content.
+    assert "**[Minor]**" in body
+    assert "(*performance*)" in body
+    assert "Unnecessary list copy in loop." in body
+    assert "```suggestion\nfor item in items:\n```" in body
