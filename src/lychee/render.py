@@ -45,11 +45,21 @@ def render_comment(
 ) -> str:
     """Render a ReviewResult to the PR comment markdown string.
 
-    Sections in order: Header → Nectar → The Peel → Pits → (Fallback) → Footer.
-    cost_line is inserted before the footer when provided; pass None to omit it entirely.
-    severity_threshold filters out findings below the given severity level.
-    fallback_findings, when non-empty, renders a collapsible section of findings
-    that could not be posted as inline comments.
+    Sections in order:
+        Header → Nectar → (Fallback) → The Peel → Pits → Footer.
+
+    *cost_line* is inserted before the footer when provided; pass ``None``
+    to omit it.
+
+    *severity_threshold* filters findings in both the Pits section and the
+    fallback section; findings below the threshold are excluded from both.
+
+    *fallback_findings*, when non-empty, renders a
+    ``### Findings not on changed lines`` section between the Nectar and
+    The Peel.  Each finding is labeled ``(not on a changed line)`` so the
+    author understands why it appears in the summary rather than inline.
+    When ``None`` or empty, the section is omitted and output is identical
+    to the no-fallback case.
     """
     threshold_rank = _SEVERITY_RANK[severity_threshold]
     filtered = [f for f in result.findings if _SEVERITY_RANK[f.severity.value] >= threshold_rank]
@@ -59,14 +69,25 @@ def render_comment(
         "---",
         f"## 🍯 Nectar\n{result.summary}",
         "---",
+    ]
+
+    # Fallback findings sit between Nectar and The Peel so the author
+    # sees them early, but they remain visually separated from the inline
+    # findings reported in the Pits section.
+    if fallback_findings:
+        filtered_fallback = [
+            f for f in fallback_findings if _SEVERITY_RANK[f.severity.value] >= threshold_rank
+        ]
+        if filtered_fallback:
+            parts.append(_render_fallback_findings(filtered_fallback))
+            parts.append("---")
+
+    parts += [
         f"## 🌿 The Peel\n{result.walkthrough}",
         "---",
         f"## 🪨 Pits\n{_render_pits(filtered)}",
         "---",
     ]
-    if fallback_findings:
-        parts.append(_render_fallback_findings(fallback_findings))
-        parts.append("---")
     if cost_line is not None:
         parts.append(cost_line)
     parts.append("*Reviewed to the core by Lychee*")
@@ -114,17 +135,42 @@ def _render_finding(finding: Finding) -> str:
 
 
 def _render_fallback_findings(findings: list[Finding]) -> str:
-    """Render unmappable findings in a collapsible ``<details>`` block.
+    """Render unmappable findings under a ``### Findings not on changed lines`` heading.
 
     These are findings that could not be posted as inline review comments
-    (e.g. file-level findings, or lines outside the diff).
+    because their file/line does not appear in any diff hunk.  Each finding
+    is labeled ``(not on a changed line)`` so the author understands why it
+    is in the summary rather than inline.
+
+    Suggestions are rendered in a plain code block (not a ``suggestion``
+    block, since GitHub's one-click-apply only works on inline comments).
     """
-    count = len(findings)
-    label = "finding" if count == 1 else "findings"
-    items = "\n".join(_render_finding(f) for f in findings)
-    return (
-        f"<details>\n"
-        f"<summary>📌 {count} {label} not posted inline</summary>\n\n"
-        f"{items}\n"
-        f"</details>"
+    items = "\n".join(_render_fallback_finding(f) for f in findings)
+    return f"### Findings not on changed lines\n{items}"
+
+
+def _render_fallback_finding(finding: Finding) -> str:
+    """Render a single unmappable Finding as a labeled markdown list item.
+
+    Format::
+
+        - **[severity]** ``file:line`` (*category*): message *(not on a changed line)*
+
+    When *line* is ``None``, the location renders as ``file`` without a
+    line number.  Suggestions are wrapped in a plain fenced code block.
+    """
+    severity = finding.severity.value
+    location = (
+        f"`{finding.file}:{finding.line}`" if finding.line is not None else f"`{finding.file}`"
     )
+    category = finding.category.value
+    base = (
+        f"- **[{severity}]** {location} (*{category}*): "
+        f"{finding.message} *(not on a changed line)*"
+    )
+
+    if finding.suggestion is not None:
+        code_block = f"\n\n  ```\n  {finding.suggestion}\n  ```"
+        return base + code_block
+
+    return base
