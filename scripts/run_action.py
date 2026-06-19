@@ -13,6 +13,7 @@ from typing import Any
 from lychee.claude import ClaudeClient
 from lychee.config import load_config
 from lychee.cost import BudgetExceededError, compute_cost, format_cost_line
+from lychee.dedup import build_inline_state
 from lychee.github_client import GitHubClient, PullRequestRef
 from lychee.observability import (
     build_run_record,
@@ -23,7 +24,7 @@ from lychee.observability import (
     new_correlation_id,
     setup_structured_logging,
 )
-from lychee.poster import SummaryPoster
+from lychee.poster import InlineReviewPoster, PosterError, SummaryPoster
 from lychee.render import render_comment
 from lychee.review import run_review
 
@@ -42,8 +43,10 @@ def main() -> None:
     4. Load config.
     5. Construct GitHubClient and ClaudeClient.
     6. Run the review engine.
-    7. Render the comment.
-    8. Post/upsert the comment with state.
+    7. Branch on ``features.inline_comments``:
+       - True: post inline comments + summary with fallback findings.
+       - False: post summary comment only (existing behavior).
+    8. Post/upsert the summary comment with state.
     9. Exit 0 on success; exit 1 on failure (after logging).
 
     Reads from environment:
@@ -113,12 +116,28 @@ def main() -> None:
         )
         emit_run_record(run_record)
 
-        comment_body = render_comment(result, cost_line=cost_line)
+        parsed_ref = PullRequestRef.parse(pr_ref)
+        summary_poster = SummaryPoster(github_client)
+        pr_obj = github_client.get_pull_request(parsed_ref)
 
-        poster = SummaryPoster(github_client)
-        pr_obj = github_client.get_pull_request(PullRequestRef.parse(pr_ref))
-        state: dict[str, Any] = {"last_reviewed_sha": head_sha}
-        poster.post(pr_obj, comment_body, state=state)
+        if config.features.inline_comments:
+            _logger.info("Sink mode: inline + summary")
+            comment_body, state = _post_inline_and_render(
+                config=config,
+                github_client=github_client,
+                summary_poster=summary_poster,
+                pr_obj=pr_obj,
+                parsed_ref=parsed_ref,
+                result=result,
+                head_sha=head_sha,
+                cost_line=cost_line,
+            )
+        else:
+            _logger.info("Sink mode: summary only")
+            comment_body = render_comment(result, cost_line=cost_line)
+            state = {"last_reviewed_sha": head_sha}
+
+        summary_poster.post(pr_obj, comment_body, state=state)
 
         _logger.info("Review posted for %s", pr_ref)
         sys.exit(0)
@@ -158,6 +177,78 @@ def main() -> None:
             }
         )
         sys.exit(1)
+
+
+def _post_inline_and_render(
+    *,
+    config: Any,
+    github_client: GitHubClient,
+    summary_poster: SummaryPoster,
+    pr_obj: Any,
+    parsed_ref: PullRequestRef,
+    result: Any,
+    head_sha: str,
+    cost_line: str | None,
+) -> tuple[str, dict[str, Any]]:
+    """Post inline comments and render the summary with fallback findings.
+
+    Fetches the diff, extracts previous state for dedup, posts inline
+    comments via ``InlineReviewPoster``, and renders the summary comment
+    with any unmappable findings folded into the fallback section.
+
+    If inline posting fails, logs the error and falls back to summary-only
+    mode so the summary comment is never blocked by an inline failure.
+
+    Returns (comment_body, state) for the caller to pass to
+    ``SummaryPoster.post()``.
+    """
+    try:
+        diff = github_client.get_diff(parsed_ref)
+
+        # Extract previous state from existing summary comment for dedup.
+        existing_comment = summary_poster._find_existing_comment(pr_obj)
+        previous_state: dict[str, Any] | None = None
+        if existing_comment is not None:
+            previous_state = SummaryPoster.extract_state(existing_comment.body)
+
+        inline_poster = InlineReviewPoster(github_client)
+        inline_result = inline_poster.post(
+            pr_obj,
+            result,
+            diff,
+            severity_threshold=config.review.severity_threshold,
+            previous_state=previous_state,
+        )
+
+        _logger.info(
+            "Inline posting: %d posted, %d fallback",
+            inline_result.inline_count,
+            inline_result.fallback_count,
+        )
+
+        comment_body = render_comment(
+            result,
+            cost_line=cost_line,
+            severity_threshold=config.review.severity_threshold,
+            fallback_findings=inline_result.fallback_findings,
+        )
+
+        state: dict[str, Any] = build_inline_state(
+            inline_result.posted_findings,
+            head_sha=head_sha,
+        )
+        return comment_body, state
+
+    except PosterError as exc:
+        _logger.error(
+            "Inline posting failed, falling back to summary only: %s", exc
+        )
+        comment_body = render_comment(
+            result,
+            cost_line=cost_line,
+            severity_threshold=config.review.severity_threshold,
+        )
+        return comment_body, {"last_reviewed_sha": head_sha}
 
 
 def _parse_event(event_path: str) -> dict[str, Any]:

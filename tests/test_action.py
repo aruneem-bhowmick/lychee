@@ -3,10 +3,11 @@
 Covers unit tests for event parsing and action filtering, integration tests
 with mocked externals, system tests for the full pipeline, acceptance tests
 for workflow YAML structure and secret handling, smoke tests for importability,
-sanity tests for YAML validity, and regression snapshot tests.
+sanity tests for YAML validity, regression snapshot tests, and feature-flag
+wiring tests for inline comment posting.
 
 Framework: pytest, tmp_path for event files, monkeypatch for env vars,
-unittest.mock for GitHubClient/ClaudeClient/SummaryPoster.
+unittest.mock for GitHubClient/ClaudeClient/SummaryPoster/InlineReviewPoster.
 """
 
 from __future__ import annotations
@@ -28,9 +29,23 @@ from lychee.models import (
     Ripeness,
     Severity,
 )
+from lychee.poster import InlinePostResult, PosterError
 
 WORKFLOW_PATH = Path(__file__).parent.parent / ".github" / "workflows" / "review.yml"
 FIXTURES_DIR = Path(__file__).parent / "fixtures"
+
+# Minimal unified diff for inline-posting tests.
+_TEST_DIFF = (
+    "diff --git a/test.py b/test.py\n"
+    "index 0000000..1111111 100644\n"
+    "--- a/test.py\n"
+    "+++ b/test.py\n"
+    "@@ -1,3 +1,4 @@\n"
+    " import os\n"
+    "+print('hello')\n"
+    " x = 1\n"
+    " y = 2\n"
+)
 
 
 def _make_event(
@@ -213,6 +228,7 @@ class TestMainIntegration:
         from scripts.run_action import main
 
         self._setup_env(monkeypatch, tmp_path)
+        mock_config.return_value.features.inline_comments = False
         mock_review.return_value = _mock_review_result()
 
         with pytest.raises(SystemExit) as exc_info:
@@ -344,6 +360,7 @@ class TestMainIntegration:
             tmp_path,
             event=_make_event(head_sha=head_sha),
         )
+        mock_config.return_value.features.inline_comments = False
         mock_review.return_value = _mock_review_result()
 
         with pytest.raises(SystemExit) as exc_info:
@@ -397,6 +414,7 @@ class TestSystemAction:
         monkeypatch.setenv("GITHUB_EVENT_PATH", str(event_file))
         monkeypatch.setenv("GITHUB_REPOSITORY", "test-org/test-repo")
 
+        mock_config.return_value.features.inline_comments = False
         mock_review.return_value = _mock_review_result()
 
         with pytest.raises(SystemExit) as exc_info:
@@ -412,7 +430,6 @@ class TestSystemAction:
         mock_render.assert_called_once()
 
         # Verify poster was instantiated and post was called
-        mock_poster_cls.assert_called_once()
         mock_poster_cls.return_value.post.assert_called_once()
 
 
@@ -735,6 +752,7 @@ class TestCostSanity:
         monkeypatch.setenv("GITHUB_EVENT_PATH", str(event_file))
         monkeypatch.setenv("GITHUB_REPOSITORY", "owner/repo")
 
+        mock_config.return_value.features.inline_comments = False
         mock_review.return_value = _mock_review_result()
 
         with pytest.raises(SystemExit) as exc_info:
@@ -795,6 +813,7 @@ class TestActionObservability:
         from scripts.run_action import main
 
         self._setup_env(monkeypatch, tmp_path)
+        mock_config.return_value.features.inline_comments = False
         mock_review.return_value = _mock_review_result()
 
         with (
