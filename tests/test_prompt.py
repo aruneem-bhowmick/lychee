@@ -577,16 +577,16 @@ class TestToneAndLanguage:
         config = LycheeConfig(review={"tone": "concise"})  # type: ignore[arg-type]
         output = build_system_prompt(config)
         assert "## Tone" in output
-        assert "Be concise" in output
-        assert "Keep the Nectar under 3 sentences" in output
+        assert "brief and concise" in output
+        assert "Keep the Nectar (summary) under 3 sentences" in output
 
     def test_build_system_prompt_tone_detailed(self) -> None:
         """Detailed tone appends the detailed instruction."""
         config = LycheeConfig(review={"tone": "detailed"})  # type: ignore[arg-type]
         output = build_system_prompt(config)
         assert "## Tone" in output
-        assert "Be thorough and detailed" in output
-        assert "Walk through each file" in output
+        assert "thorough and detailed" in output
+        assert "multi-paragraph walkthrough" in output
 
     def test_build_system_prompt_language_en(self) -> None:
         """Default language (en) produces no '## Language' section."""
@@ -606,7 +606,7 @@ class TestToneAndLanguage:
         config = LycheeConfig(review={"tone": "concise", "language": "fr"})  # type: ignore[arg-type]
         output = build_system_prompt(config)
         assert "## Tone" in output
-        assert "Be concise" in output
+        assert "brief and concise" in output
         assert "## Language" in output
         assert "in fr" in output
 
@@ -615,13 +615,13 @@ class TestToneAndLanguage:
         config = LycheeConfig(review={"tone": "detailed"})  # type: ignore[arg-type]
         blocks = build_system_prompt_blocks(config)
         assert "## Tone" in blocks[0]["text"]
-        assert "Be thorough and detailed" in blocks[0]["text"]
+        assert "thorough and detailed" in blocks[0]["text"]
 
     def test_accept_tone_reflected(self) -> None:
         """Acceptance: concise config produces concise instruction in prompt."""
         config = LycheeConfig(review={"tone": "concise"})  # type: ignore[arg-type]
         output = build_system_prompt(config)
-        assert "Omit the walkthrough if the PR is straightforward" in output
+        assert "Skip the walkthrough entirely if the PR is straightforward" in output
 
     def test_accept_language_reflected(self) -> None:
         """Acceptance: language='ja' produces language instruction."""
@@ -638,6 +638,18 @@ class TestToneAndLanguage:
         assert output == snapshot, (
             "System prompt with tone=concise changed. If intentional, "
             "regenerate tests/fixtures/system_prompt_concise_snapshot.txt."
+        )
+
+    def test_system_prompt_with_tone_detailed_snapshot(self) -> None:
+        """Regression: prompt with tone='detailed' matches snapshot."""
+        config = LycheeConfig(review={"tone": "detailed"})  # type: ignore[arg-type]
+        output = build_system_prompt(config)
+        snapshot = (FIXTURES_DIR / "system_prompt_detailed_snapshot.txt").read_text(
+            encoding="utf-8"
+        )
+        assert output == snapshot, (
+            "System prompt with tone=detailed changed. If intentional, "
+            "regenerate tests/fixtures/system_prompt_detailed_snapshot.txt."
         )
 
     def test_default_config_prompt_unchanged(self) -> None:
