@@ -14,7 +14,8 @@ import hashlib
 import hmac
 import json
 import logging
-from typing import Any, Awaitable, Callable
+from collections.abc import Awaitable, Callable
+from typing import Any
 
 from starlette.applications import Starlette
 from starlette.requests import Request
