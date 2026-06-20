@@ -25,7 +25,6 @@ from lychee.config import (
     AuthorizationConfig,
     FeaturesConfig,
     LycheeConfig,
-    ModelConfig,
     ReviewConfig,
     ScopeRule,
 )
@@ -855,9 +854,9 @@ class TestSanityDispatch:
         tmp_path: Path,
     ) -> None:
         """Inline commenting still works when commands are also enabled."""
-        from lychee.poster import InlinePostResult
-
         from scripts.run_action import main
+
+        from lychee.poster import InlinePostResult
 
         event = _make_pr_event(action="opened")
         event_file = _write_event_file(tmp_path, event)
