@@ -111,7 +111,7 @@ class AppAuthenticator:
             now = time.time()
 
         payload = {
-            "iss": self._app_id,
+            "iss": str(self._app_id),
             "iat": int(now) - _JWT_IAT_BACKDATE_SECONDS,
             "exp": int(now) + _JWT_EXPIRY_SECONDS,
         }
