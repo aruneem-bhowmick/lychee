@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import os
 import time
 import uuid
 from dataclasses import dataclass, field
@@ -19,7 +20,24 @@ from enum import StrEnum
 from typing import Any
 
 from lychee.app_auth import AppAuthenticator
+from lychee.authorization import format_refusal, is_authorized
+from lychee.claude import ClaudeClient
+from lychee.command_render import COMMAND_RENDERERS
+from lychee.commands import HELP_TEXT, Command, ParsedCommand, UnknownCommand, parse_command
 from lychee.config import LycheeConfig
+from lychee.cost import compute_cost, format_cost_line
+from lychee.github_client import GitHubClient, PullRequestRef
+from lychee.observability import (
+    build_run_record,
+    compute_finding_counts,
+    emit_run_record,
+    get_review_strategy,
+    get_triage_verdict,
+    new_correlation_id,
+)
+from lychee.poster import SummaryPoster
+from lychee.render import render_comment
+from lychee.review import run_review
 from lychee.state_store import ReviewState, StateStore
 
 logger = logging.getLogger(__name__)
@@ -312,22 +330,6 @@ class WorkerPool:
         the result.  Updates the state store with the reviewed SHA and
         comment ID.
         """
-        from lychee.claude import ClaudeClient
-        from lychee.context import build_context
-        from lychee.cost import compute_cost, format_cost_line
-        from lychee.github_client import GitHubClient, PullRequestRef
-        from lychee.observability import (
-            build_run_record,
-            compute_finding_counts,
-            emit_run_record,
-            get_review_strategy,
-            get_triage_verdict,
-            new_correlation_id,
-        )
-        from lychee.poster import SummaryPoster
-        from lychee.render import render_comment
-        from lychee.review import run_review
-
         new_correlation_id()
 
         token = await self._authenticator.get_installation_token(job.installation_id)
@@ -336,7 +338,6 @@ class WorkerPool:
         pr_ref_str = f"{job.repo_full_name}#{job.pr_number}"
         parsed_ref = PullRequestRef.parse(pr_ref_str)
 
-        # Attempt to load repo-level config.
         repo_config = self._config
 
         anthropic_key = _get_anthropic_key()
@@ -390,14 +391,6 @@ class WorkerPool:
         ``parse_command`` and ``is_authorized`` logic, and dispatches
         via an installation-token-authenticated GitHub client.
         """
-        from lychee.authorization import is_authorized
-        from lychee.claude import ClaudeClient
-        from lychee.command_render import render_command_response
-        from lychee.commands import parse_command
-        from lychee.github_client import GitHubClient, PullRequestRef
-        from lychee.observability import new_correlation_id
-        from lychee.review import run_review
-
         new_correlation_id()
 
         token = await self._authenticator.get_installation_token(job.installation_id)
@@ -410,19 +403,13 @@ class WorkerPool:
         if parsed is None:
             return
 
-        from lychee.commands import ParsedCommand, UnknownCommand
-
         if isinstance(parsed, UnknownCommand):
-            from lychee.commands import HELP_TEXT
-
             pr_ref = PullRequestRef.parse(f"{job.repo_full_name}#{job.pr_number}")
             pr = gh.get_pull_request(pr_ref)
             pr.create_issue_comment(HELP_TEXT)
             return
 
         if not is_authorized(comment_author, self._config):
-            from lychee.authorization import format_refusal
-
             pr_ref = PullRequestRef.parse(f"{job.repo_full_name}#{job.pr_number}")
             pr = gh.get_pull_request(pr_ref)
             pr.create_issue_comment(format_refusal(comment_author))
@@ -435,7 +422,8 @@ class WorkerPool:
         claude_client = ClaudeClient(api_key=anthropic_key, model=self._config.model.default)
 
         result = run_review(pr_ref_str, self._config, gh, claude_client)
-        response = render_command_response(parsed.command, result)
+        renderer = COMMAND_RENDERERS[parsed.command.value]
+        response = renderer(result)
 
         pr_ref = PullRequestRef.parse(pr_ref_str)
         pr = gh.get_pull_request(pr_ref)
@@ -518,8 +506,6 @@ def _get_anthropic_key() -> str:
     Raises:
         RuntimeError: If ``ANTHROPIC_API_KEY`` is not set.
     """
-    import os
-
     key = os.environ.get("ANTHROPIC_API_KEY", "")
     if not key:
         raise RuntimeError("ANTHROPIC_API_KEY environment variable is not set")
