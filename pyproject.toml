@@ -15,6 +15,7 @@ dependencies = [
     "uvicorn[standard]>=0.29.0",
     "PyJWT>=2.8.0",
     "cryptography>=42.0.0",
+    "aiosqlite>=0.20.0",
 ]
 
 [project.optional-dependencies]
