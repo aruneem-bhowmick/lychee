@@ -5,6 +5,7 @@ regression tests, and the COMMAND_RENDERERS mapping.
 
 Framework: pytest, ReviewResult fixtures from conftest.py.
 """
+
 # P4-R2
 
 from __future__ import annotations

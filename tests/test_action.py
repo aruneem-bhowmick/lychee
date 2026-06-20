@@ -1970,9 +1970,7 @@ class TestMainIssueComment:
         monkeypatch.setenv("GITHUB_EVENT_PATH", str(event_file))
         monkeypatch.setenv("GITHUB_REPOSITORY", "owner/repo")
 
-        mock_config.return_value = LycheeConfig(
-            features=FeaturesConfig(commands=True)
-        )
+        mock_config.return_value = LycheeConfig(features=FeaturesConfig(commands=True))
         mock_review.return_value = _mock_review_result()
 
         with pytest.raises(SystemExit) as exc_info:
@@ -2009,9 +2007,7 @@ class TestMainIssueComment:
         monkeypatch.setenv("GITHUB_EVENT_PATH", str(event_file))
         monkeypatch.setenv("GITHUB_REPOSITORY", "owner/repo")
 
-        mock_config.return_value = LycheeConfig(
-            features=FeaturesConfig(commands=False)
-        )
+        mock_config.return_value = LycheeConfig(features=FeaturesConfig(commands=False))
 
         with pytest.raises(SystemExit) as exc_info:
             main()
@@ -2047,9 +2043,7 @@ class TestMainIssueComment:
         monkeypatch.setenv("GITHUB_EVENT_PATH", str(event_file))
         monkeypatch.setenv("GITHUB_REPOSITORY", "owner/repo")
 
-        mock_config.return_value = LycheeConfig(
-            features=FeaturesConfig(commands=True)
-        )
+        mock_config.return_value = LycheeConfig(features=FeaturesConfig(commands=True))
         mock_review.return_value = _mock_review_result()
 
         with pytest.raises(SystemExit) as exc_info:

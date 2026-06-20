@@ -8,6 +8,7 @@ snapshot tests, end-to-end tests, API-level tests, and UI format tests.
 Framework: pytest, tmp_path for event files, monkeypatch for env vars,
 unittest.mock for GitHubClient/ClaudeClient/run_review/create_issue_comment.
 """
+
 # P4-R2
 
 from __future__ import annotations
@@ -382,9 +383,7 @@ class TestDispatchIntegration:
         from scripts.run_action import main
 
         event = _make_comment_event(body="@lychee peel", user="intruder")
-        _, config = _setup_env(
-            monkeypatch, tmp_path, event, allowed_users=["maintainer"]
-        )
+        _, config = _setup_env(monkeypatch, tmp_path, event, allowed_users=["maintainer"])
         mock_config.return_value = config
 
         with pytest.raises(SystemExit) as exc_info:
@@ -442,9 +441,7 @@ class TestDispatchIntegration:
         from scripts.run_action import main
 
         event = _make_comment_event(body="@lychee peel")
-        _, config = _setup_env(
-            monkeypatch, tmp_path, event, commands_enabled=False
-        )
+        _, config = _setup_env(monkeypatch, tmp_path, event, commands_enabled=False)
         mock_config.return_value = config
 
         with pytest.raises(SystemExit) as exc_info:
@@ -477,9 +474,7 @@ class TestDispatchIntegration:
         monkeypatch.setenv("GITHUB_EVENT_PATH", str(event_file))
         monkeypatch.setenv("GITHUB_REPOSITORY", "owner/repo")
 
-        mock_config.return_value = LycheeConfig(
-            features=FeaturesConfig(commands=True)
-        )
+        mock_config.return_value = LycheeConfig(features=FeaturesConfig(commands=True))
 
         with pytest.raises(SystemExit) as exc_info:
             main()
@@ -514,9 +509,7 @@ class TestSystemDispatch:
         from scripts.run_action import main
 
         event = _make_comment_event(body="@lychee peel", user="maintainer")
-        _, config = _setup_env(
-            monkeypatch, tmp_path, event, allowed_users=["maintainer"]
-        )
+        _, config = _setup_env(monkeypatch, tmp_path, event, allowed_users=["maintainer"])
         mock_config.return_value = config
         mock_review.return_value = _mock_review_result()
 
@@ -562,9 +555,7 @@ class TestSystemDispatch:
         monkeypatch.setenv("GITHUB_EVENT_PATH", str(event_file))
         monkeypatch.setenv("GITHUB_REPOSITORY", "owner/repo")
 
-        mock_config.return_value = LycheeConfig(
-            features=FeaturesConfig(commands=True)
-        )
+        mock_config.return_value = LycheeConfig(features=FeaturesConfig(commands=True))
         mock_review.return_value = _mock_review_result()
 
         with pytest.raises(SystemExit) as exc_info:
@@ -594,9 +585,7 @@ class TestSystemDispatch:
             ScopeRule(paths=["*.md"], model="claude-opus-4-8", tone="detailed"),
         ]
         event = _make_comment_event(body="@lychee peel")
-        _, config = _setup_env(
-            monkeypatch, tmp_path, event, scope_rules=scope_rules
-        )
+        _, config = _setup_env(monkeypatch, tmp_path, event, scope_rules=scope_rules)
         mock_config.return_value = config
         mock_review.return_value = _mock_review_result()
 
@@ -776,9 +765,7 @@ class TestAcceptanceDispatch:
         from scripts.run_action import main
 
         event = _make_comment_event(body="@lychee peel", user="hacker")
-        _, config = _setup_env(
-            monkeypatch, tmp_path, event, allowed_users=["admin"]
-        )
+        _, config = _setup_env(monkeypatch, tmp_path, event, allowed_users=["admin"])
         mock_config.return_value = config
 
         with pytest.raises(SystemExit) as exc_info:
@@ -826,9 +813,7 @@ class TestSanityDispatch:
         monkeypatch.setenv("GITHUB_EVENT_PATH", str(event_file))
         monkeypatch.setenv("GITHUB_REPOSITORY", "owner/repo")
 
-        mock_config.return_value = LycheeConfig(
-            features=FeaturesConfig(commands=True)
-        )
+        mock_config.return_value = LycheeConfig(features=FeaturesConfig(commands=True))
         mock_review.return_value = _mock_review_result()
 
         with pytest.raises(SystemExit) as exc_info:
@@ -1169,9 +1154,7 @@ class TestAPIDispatch:
         from scripts.run_action import main
 
         event = _make_comment_event(body="@lychee peel", user="outsider")
-        _, config = _setup_env(
-            monkeypatch, tmp_path, event, allowed_users=["admin"]
-        )
+        _, config = _setup_env(monkeypatch, tmp_path, event, allowed_users=["admin"])
         mock_config.return_value = config
 
         with pytest.raises(SystemExit):
