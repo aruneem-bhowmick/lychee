@@ -147,13 +147,17 @@ class SqliteStateStore(StateStore):
         self._db: aiosqlite.Connection | None = None
 
     async def initialize(self) -> None:
-        """Open the database and create tables if they do not exist."""
+        """Open the database and create tables if they do not exist.
+
+        Idempotent: safe to call multiple times on the same instance.
+        """
         logger.debug(
             "Initialising SqliteStateStore dsn=%s, correlation_id=%s",
             self._dsn,
             get_correlation_id(),
         )
-        self._db = await aiosqlite.connect(self._dsn)
+        if self._db is None:
+            self._db = await aiosqlite.connect(self._dsn)
         await self._db.execute(_CREATE_REVIEWS_TABLE)
         await self._db.execute(_CREATE_INSTALLATIONS_TABLE)
         await self._db.commit()
