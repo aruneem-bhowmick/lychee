@@ -1958,10 +1958,10 @@ class TestMainIssueComment:
         tmp_path: Path,
     ) -> None:
         """issue_comment event with @lychee peel triggers command flow."""
+        from scripts.run_action import main
+
         from lychee.config import FeaturesConfig, LycheeConfig
         from lychee.render import REVIEW_MARKER
-
-        from scripts.run_action import main
 
         event = _make_comment_event(body="@lychee peel")
         event_file = _write_event_file(tmp_path, event)
@@ -1998,9 +1998,9 @@ class TestMainIssueComment:
         tmp_path: Path,
     ) -> None:
         """features.commands=False skips command events."""
-        from lychee.config import FeaturesConfig, LycheeConfig
-
         from scripts.run_action import main
+
+        from lychee.config import FeaturesConfig, LycheeConfig
 
         event = _make_comment_event(body="@lychee peel")
         event_file = _write_event_file(tmp_path, event)
@@ -2036,9 +2036,9 @@ class TestMainIssueComment:
         tmp_path: Path,
     ) -> None:
         """pull_request event still triggers the review flow."""
-        from lychee.config import FeaturesConfig, LycheeConfig
-
         from scripts.run_action import main
+
+        from lychee.config import FeaturesConfig, LycheeConfig
 
         event = _make_event(action="opened")
         event_file = _write_event_file(tmp_path, event)
