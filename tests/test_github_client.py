@@ -587,3 +587,53 @@ def test_get_conventions_file_path_none(
 
     result = client.get_conventions_file("owner/repo", None, "abc123")
     assert result is None
+
+
+# ---------------------------------------------------------------------------
+# Integration tests — from_installation_token factory
+# ---------------------------------------------------------------------------
+
+
+def test_github_client_from_installation_token() -> None:
+    """from_installation_token returns a functional GitHubClient."""  # P5-R3
+
+    with patch("lychee.github_client.github.Github") as mock_gh_cls:
+        mock_instance = MagicMock()
+        mock_gh_cls.return_value = mock_instance
+
+        client = GitHubClient.from_installation_token("ghs_test_token_123")
+
+    assert client is not None
+    assert isinstance(client, GitHubClient)
+    assert client._github is mock_instance
+    # Verify Auth.Token was used
+    call_kwargs = mock_gh_cls.call_args
+    auth_arg = call_kwargs[1].get("auth") or call_kwargs[0][0]
+    assert auth_arg is not None
+
+
+# ---------------------------------------------------------------------------
+# Sanity tests — existing API unchanged after factory addition
+# ---------------------------------------------------------------------------
+
+
+def test_github_client_existing_api_unchanged() -> None:
+    """Existing GitHubClient construction (non-App path) still works."""  # P5-R3
+
+    with patch("lychee.github_client.github.Github") as mock_gh_cls:
+        mock_instance = MagicMock()
+        mock_gh_cls.return_value = mock_instance
+
+        client = GitHubClient(token="ghp_personal_token")
+
+    assert client._github is mock_instance
+    mock_gh_cls.assert_called_once_with("ghp_personal_token")
+
+    # Verify all public methods exist
+    assert hasattr(client, "get_pull_request")
+    assert hasattr(client, "get_diff")
+    assert hasattr(client, "get_changed_files")
+    assert hasattr(client, "get_file_content")
+    assert hasattr(client, "get_commit_messages")
+    assert hasattr(client, "get_conventions_file")
+    assert hasattr(client, "from_installation_token")
