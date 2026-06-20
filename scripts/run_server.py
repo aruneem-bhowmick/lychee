@@ -12,6 +12,8 @@ import asyncio
 import logging
 import os
 import sys
+from collections.abc import AsyncGenerator
+from contextlib import asynccontextmanager
 from typing import Any
 
 import uvicorn
@@ -102,18 +104,19 @@ def build_server_app(app_config: AppConfig, lychee_config: LycheeConfig) -> Star
         on_event=on_event,
     )
 
-    async def startup() -> None:
-        """Initialize the state store and start the worker pool."""
+    @asynccontextmanager
+    async def lifespan(app: Starlette) -> AsyncGenerator[None]:
+        """Initialize resources on startup and tear them down on shutdown."""
         await state_store.initialize()
         await worker_pool.start()
         logger.info("Server started: workers=%d queue_max=%d",
                      app_config.queue_workers, app_config.queue_max_size)
-
-    async def shutdown() -> None:
-        """Stop workers and close the state store."""
-        await worker_pool.stop()
-        await state_store.close()
-        logger.info("Server shut down gracefully")
+        try:
+            yield
+        finally:
+            await worker_pool.stop()
+            await state_store.close()
+            logger.info("Server shut down gracefully")
 
     async def liveness(request: Request) -> Response:
         """Return a simple liveness probe response."""
@@ -124,8 +127,7 @@ def build_server_app(app_config: AppConfig, lychee_config: LycheeConfig) -> Star
             Route("/webhook", webhook_server.handle_webhook, methods=["POST"]),
             Route("/", liveness, methods=["GET"]),
         ],
-        on_startup=[startup],
-        on_shutdown=[shutdown],
+        lifespan=lifespan,
     )
 
 
