@@ -281,6 +281,29 @@ def test_webhook_endpoint_callback_invoked() -> None:
     callback.assert_awaited_once_with("pull_request", payload)
 
 
+def test_webhook_endpoint_queue_full_returns_503() -> None:
+    """When on_event raises QueueFullError, server returns 503."""
+    from lychee.queue import QueueFullError
+
+    callback = AsyncMock(side_effect=QueueFullError("queue at capacity"))
+    client = _make_client(on_event=callback)
+
+    payload = _pr_payload("opened")
+    body = json.dumps(payload).encode()
+    sig = _sign(body)
+    resp = client.post(
+        "/webhook",
+        content=body,
+        headers={
+            "X-Hub-Signature-256": sig,
+            "X-GitHub-Event": "pull_request",
+            "Content-Type": "application/json",
+        },
+    )
+    assert resp.status_code == 503
+    assert resp.json() == {"status": "queue_full"}
+
+
 def test_webhook_endpoint_callback_error() -> None:
     """When on_event raises, server returns 500 without crashing."""
     callback = AsyncMock(side_effect=RuntimeError("boom"))
