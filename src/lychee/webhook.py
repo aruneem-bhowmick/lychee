@@ -24,6 +24,7 @@ from starlette.routing import Route
 
 from lychee.config import AppConfig
 from lychee.observability import new_correlation_id
+from lychee.queue import QueueFullError
 
 logger = logging.getLogger(__name__)
 
@@ -126,6 +127,14 @@ class WebhookServer:
             if self._on_event is not None:
                 try:
                     await self._on_event(event_type, payload)
+                except QueueFullError:
+                    logger.warning(
+                        "Queue full, rejecting event (correlation_id=%s)",
+                        correlation_id,
+                    )
+                    return JSONResponse(
+                        {"status": "queue_full"}, status_code=503
+                    )
                 except Exception:
                     logger.exception(
                         "Event callback raised an error (correlation_id=%s)",
