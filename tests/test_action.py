@@ -1914,3 +1914,146 @@ class TestInlineFlagUI:
 
         posted_body = mock_poster_cls.return_value.post.call_args.args[1]
         assert "not on a changed line" not in posted_body
+
+
+# ---------------------------------------------------------------------------
+# Command dispatch tests — issue_comment event handling  # P4-R2
+# ---------------------------------------------------------------------------
+
+
+def _make_comment_event(
+    body: str = "@lychee peel",
+    user: str = "octocat",
+    pr_number: int = 42,
+    action: str = "created",
+) -> dict[str, Any]:
+    """Build a minimal issue_comment event payload for testing."""
+    return {
+        "action": action,
+        "comment": {
+            "body": body,
+            "user": {"login": user},
+        },
+        "issue": {
+            "number": pr_number,
+            "pull_request": {"url": "https://api.github.com/repos/owner/repo/pulls/42"},
+        },
+    }
+
+
+class TestMainIssueComment:
+    """Tests for issue_comment event handling in main()."""
+
+    @patch("scripts.run_action.run_review")
+    @patch("scripts.run_action.ClaudeClient")
+    @patch("scripts.run_action.GitHubClient")
+    @patch("scripts.run_action.load_config")
+    def test_main_issue_comment_peel(  # P4-R2
+        self,
+        mock_config: MagicMock,
+        mock_gh: MagicMock,
+        mock_claude: MagicMock,
+        mock_review: MagicMock,
+        monkeypatch: pytest.MonkeyPatch,
+        tmp_path: Path,
+    ) -> None:
+        """issue_comment event with @lychee peel triggers command flow."""
+        from lychee.config import FeaturesConfig, LycheeConfig
+        from lychee.render import REVIEW_MARKER
+
+        from scripts.run_action import main
+
+        event = _make_comment_event(body="@lychee peel")
+        event_file = _write_event_file(tmp_path, event)
+        monkeypatch.setenv("GITHUB_TOKEN", "ghp_test")
+        monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-test")
+        monkeypatch.setenv("GITHUB_EVENT_PATH", str(event_file))
+        monkeypatch.setenv("GITHUB_REPOSITORY", "owner/repo")
+
+        mock_config.return_value = LycheeConfig(
+            features=FeaturesConfig(commands=True)
+        )
+        mock_review.return_value = _mock_review_result()
+
+        with pytest.raises(SystemExit) as exc_info:
+            main()
+        assert exc_info.value.code == 0
+
+        pr_obj = mock_gh.return_value.get_pull_request.return_value
+        pr_obj.create_issue_comment.assert_called_once()
+        posted = pr_obj.create_issue_comment.call_args.kwargs["body"]
+        assert REVIEW_MARKER in posted
+
+    @patch("scripts.run_action.run_review")
+    @patch("scripts.run_action.ClaudeClient")
+    @patch("scripts.run_action.GitHubClient")
+    @patch("scripts.run_action.load_config")
+    def test_main_issue_comment_commands_disabled(  # P4-R2
+        self,
+        mock_config: MagicMock,
+        mock_gh: MagicMock,
+        mock_claude: MagicMock,
+        mock_review: MagicMock,
+        monkeypatch: pytest.MonkeyPatch,
+        tmp_path: Path,
+    ) -> None:
+        """features.commands=False skips command events."""
+        from lychee.config import FeaturesConfig, LycheeConfig
+
+        from scripts.run_action import main
+
+        event = _make_comment_event(body="@lychee peel")
+        event_file = _write_event_file(tmp_path, event)
+        monkeypatch.setenv("GITHUB_TOKEN", "ghp_test")
+        monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-test")
+        monkeypatch.setenv("GITHUB_EVENT_PATH", str(event_file))
+        monkeypatch.setenv("GITHUB_REPOSITORY", "owner/repo")
+
+        mock_config.return_value = LycheeConfig(
+            features=FeaturesConfig(commands=False)
+        )
+
+        with pytest.raises(SystemExit) as exc_info:
+            main()
+        assert exc_info.value.code == 0
+        mock_review.assert_not_called()
+
+    @patch("scripts.run_action.SummaryPoster")
+    @patch("scripts.run_action.render_comment", return_value="# Comment")
+    @patch("scripts.run_action.run_review")
+    @patch("scripts.run_action.ClaudeClient")
+    @patch("scripts.run_action.GitHubClient")
+    @patch("scripts.run_action.load_config")
+    def test_main_pr_event_still_works(  # P4-R2
+        self,
+        mock_config: MagicMock,
+        mock_gh: MagicMock,
+        mock_claude: MagicMock,
+        mock_review: MagicMock,
+        mock_render: MagicMock,
+        mock_poster_cls: MagicMock,
+        monkeypatch: pytest.MonkeyPatch,
+        tmp_path: Path,
+    ) -> None:
+        """pull_request event still triggers the review flow."""
+        from lychee.config import FeaturesConfig, LycheeConfig
+
+        from scripts.run_action import main
+
+        event = _make_event(action="opened")
+        event_file = _write_event_file(tmp_path, event)
+        monkeypatch.setenv("GITHUB_TOKEN", "ghp_test")
+        monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-test")
+        monkeypatch.setenv("GITHUB_EVENT_PATH", str(event_file))
+        monkeypatch.setenv("GITHUB_REPOSITORY", "owner/repo")
+
+        mock_config.return_value = LycheeConfig(
+            features=FeaturesConfig(commands=True)
+        )
+        mock_review.return_value = _mock_review_result()
+
+        with pytest.raises(SystemExit) as exc_info:
+            main()
+        assert exc_info.value.code == 0
+        mock_review.assert_called_once()
+        mock_poster_cls.return_value.post.assert_called_once()
