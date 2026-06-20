@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import asyncio
 import json
-from datetime import UTC, datetime
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -24,7 +23,6 @@ from lychee.queue import (
     event_to_job,
 )
 from lychee.state_store import ReviewState, SqliteStateStore
-
 
 # ---------------------------------------------------------------------------
 # Helpers & fixtures
@@ -196,7 +194,7 @@ class TestEventToJob:
             "repository": {"full_name": "owner/repo"},
             "pull_request": {"number": 1},
         }
-        with pytest.raises(ValueError, match="installation.id"):
+        with pytest.raises(ValueError, match=r"installation\.id"):
             event_to_job("pull_request", payload)
 
     def test_event_to_job_missing_repo(self) -> None:
@@ -206,7 +204,7 @@ class TestEventToJob:
             "installation": {"id": 1},
             "pull_request": {"number": 1},
         }
-        with pytest.raises(ValueError, match="repository.full_name"):
+        with pytest.raises(ValueError, match=r"repository\.full_name"):
             event_to_job("pull_request", payload)
 
     def test_event_to_job_unique_ids(self) -> None:
@@ -225,7 +223,7 @@ class TestEventToJob:
             "repository": {"full_name": "owner/repo"},
             "pull_request": {},
         }
-        with pytest.raises(ValueError, match="pull_request.number"):
+        with pytest.raises(ValueError, match=r"pull_request\.number"):
             event_to_job("pull_request", payload)
 
     def test_event_to_job_missing_issue_number(self) -> None:
@@ -236,7 +234,7 @@ class TestEventToJob:
             "repository": {"full_name": "owner/repo"},
             "issue": {},
         }
-        with pytest.raises(ValueError, match="issue.number"):
+        with pytest.raises(ValueError, match=r"issue\.number"):
             event_to_job("issue_comment", payload)
 
     def test_event_to_job_unsupported_event_type(self) -> None:
@@ -586,8 +584,6 @@ class TestQueueBackpressure503:
             job = event_to_job(event_type, payload)
             await queue.enqueue(job)
 
-        payload = _make_pr_payload()
-
         # Fill the queue.
         await on_event("pull_request", _make_pr_payload(pr_number=1))
         await on_event("pull_request", _make_pr_payload(pr_number=2))
@@ -623,8 +619,6 @@ class TestMultipleWorkersConcurrent:
         )
 
         # Override _process_job to track processing.
-        original_process = pool._process_job
-
         async def tracking_process(job: Job) -> None:
             processed.append(job.job_id)
 
@@ -660,8 +654,6 @@ class TestWebhookToReviewFlow:
     ) -> None:
         """Create WebhookServer + ReviewQueue + WorkerPool; send a valid webhook; assert flow."""
         # P5-R2
-        from lychee.webhook import WebhookServer
-
         queue = ReviewQueue(max_size=10)
 
         async def on_event(event_type: str, payload: dict[str, Any]) -> None:
@@ -677,7 +669,6 @@ class TestWebhookToReviewFlow:
         )
 
         processed_jobs: list[Job] = []
-        original_process = pool._process_job
 
         async def track_process(job: Job) -> None:
             processed_jobs.append(job)
@@ -1218,9 +1209,11 @@ class TestGetAnthropicKeyMissing:
         # P5-R2
         from lychee.queue import _get_anthropic_key
 
-        with patch.dict("os.environ", {}, clear=True):
-            with pytest.raises(RuntimeError, match="ANTHROPIC_API_KEY"):
-                _get_anthropic_key()
+        with (
+            patch.dict("os.environ", {}, clear=True),
+            pytest.raises(RuntimeError, match="ANTHROPIC_API_KEY"),
+        ):
+            _get_anthropic_key()
 
     def test_get_anthropic_key_success(self) -> None:
         """_get_anthropic_key returns the key when set."""
@@ -1667,7 +1660,6 @@ class TestE2ELocalWebhookToReview:
         import hashlib
         import hmac
 
-        import httpx
         from starlette.testclient import TestClient
 
         from lychee.webhook import WebhookServer
