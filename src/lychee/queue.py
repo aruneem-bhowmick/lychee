@@ -350,7 +350,7 @@ class WorkerPool:
         cost_usd = compute_cost(result.usage, result.model)
         cost_line: str | None = None
         if repo_config.features.cost_footer:
-            cost_line = format_cost_line(cost_usd, result.model)
+            cost_line = format_cost_line(cost_usd, result.usage)
 
         comment_body = render_comment(result, cost_line=cost_line)
 
