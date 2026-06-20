@@ -1,0 +1,84 @@
+# Deployment workflow template for the Lychee GitHub App.
+#
+# Builds a Docker image and pushes it to a container registry.
+# The actual deployment target is environment-specific and should be
+# configured via repository secrets and variables.
+#
+# Triggers:
+#   - Manual dispatch (workflow_dispatch) for on-demand deployments.
+#   - Tag push matching v*.*.* for release deployments.
+
+name: Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Image tag override (default: git SHA)"
+        required: false
+        type: string
+  push:
+    tags:
+      - "v*.*.*"
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  build-and-push:
+    name: Build & Push Docker Image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata (tags, labels)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,prefix=
+            type=raw,value=${{ inputs.tag }},enable=${{ inputs.tag != '' }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # Placeholder deploy job — replace with your actual deployment mechanism.
+  # Examples: kubectl apply, AWS ECS update, Cloud Run deploy, etc.
+  deploy:
+    name: Deploy (placeholder)
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Deploy notification
+        run: |
+          echo "Docker image built and pushed successfully."
+          echo "Configure this job with your deployment target."
+          echo "Image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}"
