@@ -297,9 +297,7 @@ class WorkerPool:
             )
             now = datetime.now(UTC).isoformat()
             try:
-                existing = await self._state_store.get_review(
-                    job.repo_full_name, job.pr_number
-                )
+                existing = await self._state_store.get_review(job.repo_full_name, job.pr_number)
                 if existing is not None:
                     existing.review_status = "failed"
                     existing.updated_at = now
@@ -315,9 +313,7 @@ class WorkerPool:
                         )
                     )
             except Exception:
-                logger.exception(
-                    "Failed to update state to 'failed' for job_id=%s", job.job_id
-                )
+                logger.exception("Failed to update state to 'failed' for job_id=%s", job.job_id)
 
     async def _process_pr_review(self, job: Job) -> None:
         """Handle a pr_review job: fetch context, run review, post comment.

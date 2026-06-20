@@ -88,10 +88,12 @@ def _make_job(
         repo_full_name=repo,
         pr_number=pr_number,
         event_type="pull_request" if job_type == JobType.pr_review else "issue_comment",
-        payload=_make_pr_payload(repo=repo, pr_number=pr_number, installation_id=installation_id)
-        if job_type == JobType.pr_review
-        else _make_issue_comment_payload(
-            repo=repo, pr_number=pr_number, installation_id=installation_id
+        payload=(
+            _make_pr_payload(repo=repo, pr_number=pr_number, installation_id=installation_id)
+            if job_type == JobType.pr_review
+            else _make_issue_comment_payload(
+                repo=repo, pr_number=pr_number, installation_id=installation_id
+            )
         ),
     )
 
@@ -1692,9 +1694,7 @@ class TestE2ELocalWebhookToReview:
         # Build a signed payload.
         payload = _make_pr_payload(repo="e2e/test", pr_number=100, installation_id=999)
         body = json.dumps(payload).encode()
-        sig = "sha256=" + hmac.new(
-            webhook_secret.encode(), body, hashlib.sha256
-        ).hexdigest()
+        sig = "sha256=" + hmac.new(webhook_secret.encode(), body, hashlib.sha256).hexdigest()
 
         with TestClient(app) as client:
             response = client.post(
