@@ -108,8 +108,11 @@ def build_server_app(app_config: AppConfig, lychee_config: LycheeConfig) -> Star
         """Initialize resources on startup and tear them down on shutdown."""
         await state_store.initialize()
         await worker_pool.start()
-        logger.info("Server started: workers=%d queue_max=%d",
-                     app_config.queue_workers, app_config.queue_max_size)
+        logger.info(
+            "Server started: workers=%d queue_max=%d",
+            app_config.queue_workers,
+            app_config.queue_max_size,
+        )
         try:
             yield
         finally:

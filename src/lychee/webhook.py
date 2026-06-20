@@ -132,9 +132,7 @@ class WebhookServer:
                         "Queue full, rejecting event (correlation_id=%s)",
                         correlation_id,
                     )
-                    return JSONResponse(
-                        {"status": "queue_full"}, status_code=503
-                    )
+                    return JSONResponse({"status": "queue_full"}, status_code=503)
                 except Exception:
                     logger.exception(
                         "Event callback raised an error (correlation_id=%s)",
