@@ -9,14 +9,10 @@ to their render functions for dispatch.
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import TYPE_CHECKING
 
 from lychee.commands import Command
-from lychee.models import ReviewResult, Ripeness, Severity
+from lychee.models import ReviewResult, Ripeness
 from lychee.render import REVIEW_MARKER, render_comment
-
-if TYPE_CHECKING:
-    pass
 
 _RIPENESS_BADGE: dict[Ripeness, str] = {
     Ripeness.ripe: "🟢 **Ripe**",
