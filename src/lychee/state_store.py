@@ -253,8 +253,10 @@ class SqliteStateStore(StateStore):
             clauses.append(f"{key} = ?")
             params.append(value)
 
-        sql = "SELECT repo_full_name, pr_number, installation_id, last_reviewed_sha, " \
-              "review_status, comment_id, created_at, updated_at FROM reviews"
+        sql = (
+            "SELECT repo_full_name, pr_number, installation_id, last_reviewed_sha, "
+            "review_status, comment_id, created_at, updated_at FROM reviews"
+        )
         if clauses:
             sql += " WHERE " + " AND ".join(clauses)
 
