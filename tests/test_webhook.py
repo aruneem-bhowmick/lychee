@@ -22,7 +22,7 @@ from starlette.applications import Starlette
 from starlette.testclient import TestClient
 
 from lychee.config import AppConfig
-from lychee.webhook import WebhookServer, create_webhook_app
+from lychee.webhook import WebhookServer
 
 # ---------------------------------------------------------------------------
 # Helpers
