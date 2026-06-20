@@ -281,10 +281,7 @@ def _handle_command_event(
 
     # Render the command-specific response.
     renderer = COMMAND_RENDERERS[command.value]
-    if command == Command.peel:
-        response = renderer(result, cost_line)
-    else:
-        response = renderer(result)
+    response = renderer(result, cost_line) if command == Command.peel else renderer(result)
 
     # Post the response as an issue comment.
     pr_obj.create_issue_comment(body=response)
