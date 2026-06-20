@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import asyncio
 from collections.abc import AsyncIterator
-from datetime import UTC, datetime
 
 import pytest
 import pytest_asyncio
@@ -335,3 +334,194 @@ async def test_initialize_idempotent(store: SqliteStateStore) -> None:
 
     got = await store.get_review("owner/repo", 1)
     assert got is not None
+
+
+# ---------------------------------------------------------------------------
+# System tests — persistence and concurrency
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio()
+async def test_store_survives_reopen(tmp_path: object) -> None:
+    """Data persists across close/reopen with a file-backed DSN."""  # P5-R4
+    from pathlib import Path
+
+    db_path = Path(str(tmp_path)) / "state.db"
+    dsn = str(db_path)
+
+    store1 = SqliteStateStore(dsn=dsn)
+    await store1.initialize()
+    await store1.upsert_review(_make_review(repo="persist/me", pr=7, sha="aaa"))
+    await store1.close()
+
+    store2 = SqliteStateStore(dsn=dsn)
+    await store2.initialize()
+    got = await store2.get_review("persist/me", 7)
+    await store2.close()
+
+    assert got is not None
+    assert got.last_reviewed_sha == "aaa"
+
+
+@pytest.mark.asyncio()
+async def test_concurrent_upserts(store: SqliteStateStore) -> None:
+    """Concurrent upserts via asyncio.gather do not corrupt data."""  # P5-R4
+    tasks = [
+        store.upsert_review(_make_review(repo="concurrent/repo", pr=i, sha=f"sha-{i}"))
+        for i in range(1, 11)
+    ]
+    await asyncio.gather(*tasks)
+
+    reviews = await store.list_reviews(repo_full_name="concurrent/repo")
+    assert len(reviews) == 10
+
+
+# ---------------------------------------------------------------------------
+# Acceptance tests — restart survival and dedup
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio()
+async def test_accept_state_survives_restarts(tmp_path: object) -> None:
+    """State is recoverable after a simulated server restart."""  # P5-R4
+    from pathlib import Path
+
+    db_path = Path(str(tmp_path)) / "restart.db"
+    dsn = str(db_path)
+
+    store = SqliteStateStore(dsn=dsn)
+    await store.initialize()
+    await store.upsert_review(_make_review(repo="restart/test", pr=1, sha="original"))
+    await store.upsert_installation(_make_installation(inst=42, login="restarter"))
+    await store.close()
+
+    # "restart" — new store instance against same file
+    store = SqliteStateStore(dsn=dsn)
+    await store.initialize()
+    review = await store.get_review("restart/test", 1)
+    inst = await store.get_installation(42)
+    await store.close()
+
+    assert review is not None
+    assert review.last_reviewed_sha == "original"
+    assert inst is not None
+    assert inst.account_login == "restarter"
+
+
+@pytest.mark.asyncio()
+async def test_accept_dedup_intact(tmp_path: object) -> None:
+    """SHA preserved after simulated restart enables dedup check."""  # P5-R4
+    from pathlib import Path
+
+    db_path = Path(str(tmp_path)) / "dedup.db"
+    dsn = str(db_path)
+
+    store = SqliteStateStore(dsn=dsn)
+    await store.initialize()
+    await store.upsert_review(_make_review(repo="dedup/repo", pr=1, sha="sha-first"))
+    await store.close()
+
+    # Simulate restart
+    store = SqliteStateStore(dsn=dsn)
+    await store.initialize()
+    review = await store.get_review("dedup/repo", 1)
+    await store.close()
+
+    assert review is not None
+    assert review.last_reviewed_sha == "sha-first"
+
+
+# ---------------------------------------------------------------------------
+# Smoke tests
+# ---------------------------------------------------------------------------
+
+
+def test_state_store_module_imports() -> None:
+    """All public names are importable from lychee.state_store."""  # P5-R4
+    from lychee import state_store as mod
+
+    assert hasattr(mod, "ReviewState")
+    assert hasattr(mod, "InstallationState")
+    assert hasattr(mod, "StateStore")
+    assert hasattr(mod, "SqliteStateStore")
+    assert hasattr(mod, "create_state_store")
+
+
+# ---------------------------------------------------------------------------
+# Sanity tests
+# ---------------------------------------------------------------------------
+
+
+def test_sqlite_store_is_state_store() -> None:
+    """SqliteStateStore is a subclass of StateStore."""  # P5-R4
+    assert issubclass(SqliteStateStore, StateStore)
+
+
+@pytest.mark.asyncio()
+async def test_store_close_is_safe() -> None:
+    """Closing an already-closed store does not raise."""  # P5-R4
+    store = SqliteStateStore(dsn=":memory:")
+    await store.initialize()
+    await store.close()
+    await store.close()  # second close — should not raise
+
+
+# ---------------------------------------------------------------------------
+# Regression tests — round-trip snapshot
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("repo", "pr", "sha", "status"),
+    [
+        ("snap/alpha", 1, "aaa111", "pending"),
+        ("snap/beta", 42, "bbb222", "completed"),
+    ],
+    ids=["alpha-pending", "beta-completed"],
+)
+@pytest.mark.asyncio()
+async def test_review_state_round_trip_snapshot(
+    store: SqliteStateStore,
+    repo: str,
+    pr: int,
+    sha: str,
+    status: str,
+) -> None:
+    """Parametrized fixture: exact field equality after DB round-trip."""  # P5-R4
+    review = _make_review(repo=repo, pr=pr, sha=sha, status=status)
+    await store.upsert_review(review)
+
+    got = await store.get_review(repo, pr)
+    assert got is not None
+    assert got.repo_full_name == repo
+    assert got.pr_number == pr
+    assert got.last_reviewed_sha == sha
+    assert got.review_status == status
+    assert got.created_at == _NOW
+    assert got.updated_at == _NOW
+
+
+# ---------------------------------------------------------------------------
+# Regression tests — schema creation SQL
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio()
+async def test_schema_creation_sql() -> None:
+    """CREATE TABLE statements match expected schema."""  # P5-R4
+    from lychee.state_store import _CREATE_INSTALLATIONS_TABLE, _CREATE_REVIEWS_TABLE
+
+    assert "repo_full_name" in _CREATE_REVIEWS_TABLE
+    assert "pr_number" in _CREATE_REVIEWS_TABLE
+    assert "PRIMARY KEY (repo_full_name, pr_number)" in _CREATE_REVIEWS_TABLE
+    assert "last_reviewed_sha" in _CREATE_REVIEWS_TABLE
+    assert "review_status" in _CREATE_REVIEWS_TABLE
+    assert "comment_id" in _CREATE_REVIEWS_TABLE
+    assert "created_at" in _CREATE_REVIEWS_TABLE
+    assert "updated_at" in _CREATE_REVIEWS_TABLE
+
+    assert "installation_id INTEGER PRIMARY KEY" in _CREATE_INSTALLATIONS_TABLE
+    assert "account_login" in _CREATE_INSTALLATIONS_TABLE
+    assert "repos_count" in _CREATE_INSTALLATIONS_TABLE
+    assert "last_event_at" in _CREATE_INSTALLATIONS_TABLE
+    assert "created_at" in _CREATE_INSTALLATIONS_TABLE
