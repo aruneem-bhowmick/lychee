@@ -23,7 +23,7 @@ from lychee.app_auth import AppAuthenticator
 from lychee.authorization import format_refusal, is_authorized
 from lychee.claude import ClaudeClient
 from lychee.command_render import COMMAND_RENDERERS
-from lychee.commands import HELP_TEXT, Command, ParsedCommand, UnknownCommand, parse_command
+from lychee.commands import HELP_TEXT, UnknownCommand, parse_command
 from lychee.config import LycheeConfig
 from lychee.cost import compute_cost, format_cost_line
 from lychee.github_client import GitHubClient, PullRequestRef
@@ -109,10 +109,10 @@ class ReviewQueue:
         """
         try:
             self._queue.put_nowait(job)
-        except asyncio.QueueFull:
+        except asyncio.QueueFull as err:
             raise QueueFullError(
                 f"Queue is full (max_size={self._max_size}); cannot accept job {job.job_id}"
-            )
+            ) from err
         logger.info(
             "Job enqueued: job_id=%s repo=%s pr=%d type=%s queue_size=%d",
             job.job_id,
