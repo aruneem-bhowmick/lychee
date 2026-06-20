@@ -10,6 +10,7 @@ events are enqueued on receipt and processed concurrently by workers.
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import logging
 import os
 import time
@@ -203,19 +204,15 @@ class WorkerPool:
 
         # Unblock workers waiting on the queue.
         for _ in range(self._num_workers):
-            try:
+            with contextlib.suppress(asyncio.QueueFull):
                 self._queue._queue.put_nowait(None)
-            except asyncio.QueueFull:
-                pass
 
         if self._tasks:
-            done, pending = await asyncio.wait(self._tasks, timeout=timeout)
+            _done, pending = await asyncio.wait(self._tasks, timeout=timeout)
             for task in pending:
                 task.cancel()
-                try:
+                with contextlib.suppress(asyncio.CancelledError):
                     await task
-                except asyncio.CancelledError:
-                    pass
 
         self._tasks.clear()
         logger.info("Worker pool stopped")
