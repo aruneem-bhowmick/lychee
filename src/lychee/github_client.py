@@ -8,6 +8,7 @@ import logging
 from typing import TYPE_CHECKING
 
 import github
+import github.Auth
 import httpx
 
 if TYPE_CHECKING:
@@ -83,6 +84,24 @@ class GitHubClient:
     def __init__(self, token: str) -> None:
         """Initialise the client with a GitHub personal access token or Actions token."""
         self._github = github.Github(token)
+
+    @classmethod
+    def from_installation_token(cls, token: str) -> GitHubClient:
+        """Create a GitHubClient authenticated with an installation access token.
+
+        This factory is used by the GitHub App code path. The resulting client
+        has the same API as one created with a personal access token.
+
+        Args:
+            token: A GitHub App installation access token.
+
+        Returns:
+            A configured GitHubClient instance.
+        """
+        instance = cls.__new__(cls)
+        auth = github.Auth.Token(token)
+        instance._github = github.Github(auth=auth)
+        return instance
 
     def get_pull_request(self, ref: PullRequestRef) -> PullRequest:
         """Fetch a PullRequest object from GitHub.
