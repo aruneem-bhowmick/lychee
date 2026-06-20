@@ -10,11 +10,9 @@ webhook endpoint.
 
 from __future__ import annotations
 
-import asyncio
 import dataclasses
 import logging
 import os
-import signal
 import sys
 import time
 from collections.abc import AsyncGenerator
@@ -97,7 +95,7 @@ def build_server_app(app_config: AppConfig, lychee_config: LycheeConfig) -> Star
     Returns:
         A Starlette ASGI application ready for uvicorn.
     """
-    global _draining  # noqa: PLW0603
+    global _draining
     _draining = False
 
     queue = ReviewQueue(max_size=app_config.queue_max_size)
@@ -144,7 +142,7 @@ def build_server_app(app_config: AppConfig, lychee_config: LycheeConfig) -> Star
     @asynccontextmanager
     async def lifespan(app: Starlette) -> AsyncGenerator[None]:
         """Initialize resources on startup and tear them down on shutdown."""
-        global _draining  # noqa: PLW0603
+        global _draining
 
         logger.info("Server starting: initializing state store and worker pool")
         await state_store.initialize()

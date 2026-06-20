@@ -13,10 +13,7 @@ from __future__ import annotations
 import asyncio
 import dataclasses
 import time
-from collections.abc import AsyncGenerator
-from contextlib import asynccontextmanager
-from typing import Any
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from starlette.applications import Starlette
@@ -28,7 +25,6 @@ from starlette.testclient import TestClient
 from lychee.health import HealthChecker, HealthStatus, Metrics, MetricsCollector
 from lychee.queue import ReviewQueue, WorkerPool
 from lychee.state_store import StateStore
-
 
 # ---------------------------------------------------------------------------
 # Helpers & fixtures
@@ -336,7 +332,6 @@ class TestMetricsUnit:
     def test_metrics_default_start_time(self) -> None:
         """MetricsCollector defaults start_time to current time."""
         # P5-R5
-        before = time.time()
         collector = _make_metrics_collector(start_time=None)
         m = collector.collect()
         # Uptime should be very small since we just created it
@@ -642,7 +637,7 @@ class TestAcceptance:
 
     @pytest.mark.asyncio
     async def test_accept_restart_safe(self) -> None:
-        """Start service, process a job (write state), stop, restart with same state, assert preserved."""
+        """State persists across re-initialization (restart-safe)."""
         # P5-R5
         from lychee.state_store import ReviewState, SqliteStateStore
 
