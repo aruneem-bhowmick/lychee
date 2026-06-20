@@ -16,6 +16,7 @@ import pydantic
 import pytest
 
 from lychee.config import (
+    AppConfig,
     AuthorizationConfig,
     FeaturesConfig,
     LycheeConfig,
@@ -36,6 +37,7 @@ FIXTURES_DIR = Path(__file__).parent / "fixtures"
 def test_config_module_imports() -> None:
     """All public names import cleanly from lychee.config."""
     from lychee.config import (
+        AppConfig,
         AuthorizationConfig,
         FeaturesConfig,
         LycheeConfig,
@@ -56,6 +58,7 @@ def test_config_module_imports() -> None:
             FeaturesConfig,
             ScopeRule,
             AuthorizationConfig,
+            AppConfig,
         ]
     )
 
@@ -529,3 +532,65 @@ def test_authorization_default() -> None:
     config = LycheeConfig()
     assert config.authorization == AuthorizationConfig()
     assert config.authorization.allowed_users == []
+
+
+# ---------------------------------------------------------------------------
+# Unit tests -- AppConfig
+# ---------------------------------------------------------------------------
+
+
+def test_app_config_defaults() -> None:
+    """AppConfig optional fields use documented defaults when only required fields given."""
+    cfg = AppConfig(webhook_secret="secret", app_id=12345, private_key_path="/key.pem")
+
+    assert cfg.queue_workers == 4
+    assert cfg.queue_max_size == 100
+    assert cfg.state_backend == "sqlite"
+    assert cfg.state_dsn == "lychee_state.db"
+    assert cfg.host == "0.0.0.0"
+    assert cfg.port == 8000
+
+
+def test_app_config_frozen() -> None:
+    """AppConfig is immutable; attempting to set a field raises ValidationError."""
+    cfg = AppConfig(webhook_secret="secret", app_id=12345, private_key_path="/key.pem")
+    with pytest.raises(pydantic.ValidationError):
+        cfg.port = 9999  # type: ignore[misc]
+
+
+def test_app_config_in_lychee_config() -> None:
+    """LycheeConfig.app accepts an AppConfig instance or None."""
+    # Default: None
+    config = LycheeConfig()
+    assert config.app is None
+
+    # Explicit AppConfig
+    app_cfg = AppConfig(webhook_secret="s", app_id=1, private_key_path="/k.pem")
+    config_with_app = LycheeConfig(app=app_cfg)
+    assert config_with_app.app is not None
+    assert config_with_app.app.webhook_secret == "s"
+    assert config_with_app.app.app_id == 1
+
+
+def test_config_still_loads_without_app(tmp_path: Path) -> None:
+    """Existing load_config() works when no 'app' key is present (backward compat)."""
+    cfg = tmp_path / ".lychee.yml"
+    cfg.write_text("review:\n  max_files: 30\n", encoding="utf-8")
+    config = load_config(cfg)
+    assert config.app is None
+    assert config.review.max_files == 30
+
+
+def test_app_unknown_key_rejected(tmp_path: Path) -> None:
+    """Unknown keys under app.* in .lychee.yml raise LycheeConfigError."""
+    bad = tmp_path / ".lychee.yml"
+    bad.write_text(
+        "app:\n"
+        "  webhook_secret: s\n"
+        "  app_id: 1\n"
+        "  private_key_path: /k.pem\n"
+        "  nonexistent_setting: true\n",
+        encoding="utf-8",
+    )
+    with pytest.raises(LycheeConfigError, match=r"[Uu]nknown"):
+        load_config(bad)

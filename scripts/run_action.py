@@ -10,8 +10,11 @@ import time
 from pathlib import Path
 from typing import Any
 
+from lychee.authorization import format_refusal, is_authorized
 from lychee.claude import ClaudeClient
-from lychee.config import load_config
+from lychee.command_render import COMMAND_RENDERERS
+from lychee.commands import HELP_TEXT, Command, ParsedCommand, UnknownCommand, parse_command
+from lychee.config import LycheeConfig, load_config
 from lychee.cost import BudgetExceededError, compute_cost, format_cost_line
 from lychee.dedup import build_inline_state
 from lychee.github_client import GitHubClient, PullRequestRef
@@ -40,21 +43,17 @@ _logger = logging.getLogger("lychee.action")
 # Supported pull_request event actions
 _SUPPORTED_ACTIONS: set[str] = {"opened", "synchronize", "reopened"}
 
+# Supported issue_comment event actions for command dispatch
+_COMMAND_ACTIONS: set[str] = {"created"}
+
 
 def main() -> None:
     """Entry point for the GitHub Action.
 
-    1. Read GITHUB_EVENT_PATH to get the event payload.
-    2. Validate the event action is supported; exit 0 if not.
-    3. Extract PR number, repo, and head SHA.
-    4. Load config.
-    5. Construct GitHubClient and ClaudeClient.
-    6. Run the review engine.
-    7. Branch on ``features.inline_comments``:
-       - True: post inline comments + summary with fallback findings.
-       - False: post summary comment only (existing behavior).
-    8. Post/upsert the summary comment with state.
-    9. Exit 0 on success; exit 1 on failure (after logging).
+    Handles two event types:
+    - ``pull_request``: runs the automatic review flow.
+    - ``issue_comment``: routes @lychee commands through authorization
+      to the review engine and posts command-specific responses.
 
     Reads from environment:
     - GITHUB_TOKEN: GitHub API token (Actions-provided)
@@ -82,6 +81,20 @@ def main() -> None:
         event_path = os.environ.get("GITHUB_EVENT_PATH", "")
         event = _parse_event(event_path)
 
+        config = load_config()
+
+        # Route to command handler if this is an issue_comment event on a PR.
+        if _is_command_event(event):
+            if not config.features.commands:
+                _logger.info("Command events disabled (features.commands=False); skipping")
+                sys.exit(0)
+
+            github_client = GitHubClient(token=github_token)
+            claude_client = ClaudeClient(api_key=anthropic_key, model=config.model.default)
+            _handle_command_event(event, config, github_client, claude_client)
+            return  # _handle_command_event calls sys.exit internally
+
+        # Existing pull_request review flow.
         if not _is_applicable_event(event):
             action = event.get("action", "<missing>")
             _logger.info("Skipping non-applicable event action: %s", action)
@@ -94,7 +107,6 @@ def main() -> None:
 
         _logger.info("Starting review for %s (sha=%s)", pr_ref, head_sha)
 
-        config = load_config()
         github_client = GitHubClient(token=github_token)
         claude_client = ClaudeClient(api_key=anthropic_key, model=config.model.default)
 
@@ -184,6 +196,109 @@ def main() -> None:
             }
         )
         sys.exit(1)
+
+
+def _handle_command_event(
+    event: dict[str, Any],
+    config: LycheeConfig,
+    github_client: GitHubClient,
+    claude_client: ClaudeClient,
+) -> None:
+    """Handle an issue_comment event containing an @lychee command.
+
+    Steps:
+    1. Extract comment body, author, PR number from the event.
+    2. Parse the command via parse_command().
+    3. If not a command (None), return silently.
+    4. If unknown command, post help text and return.
+    5. Check authorization via is_authorized().
+    6. If unauthorized, post refusal and return.
+    7. Run the review engine.
+    8. Render the command-specific response.
+    9. Post as an issue comment reply.
+
+    Raises SystemExit(0) on success, SystemExit(1) on failure.
+    """
+    comment_body: str = event["comment"]["body"]
+    user: str = event["comment"]["user"]["login"]
+    pr_number: int = event["issue"]["number"]
+    repo: str = os.environ["GITHUB_REPOSITORY"]
+    pr_ref = f"{repo}#{pr_number}"
+
+    _logger.info("Processing command event from %s on %s", user, pr_ref)
+
+    # Parse the command from the comment body.
+    parsed = parse_command(comment_body)
+
+    if parsed is None:
+        _logger.info("No @lychee mention in comment; skipping")
+        sys.exit(0)
+
+    parsed_ref = PullRequestRef.parse(pr_ref)
+    pr_obj = github_client.get_pull_request(parsed_ref)
+
+    if isinstance(parsed, UnknownCommand):
+        _logger.info("Unknown command %r from %s; posting help", parsed.raw_text, user)
+        pr_obj.create_issue_comment(body=HELP_TEXT)
+        sys.exit(0)
+
+    assert isinstance(parsed, ParsedCommand)
+    command = parsed.command
+    _logger.info("Command: %s from user: %s on %s", command.value, user, pr_ref)
+
+    # Authorization check.
+    if not is_authorized(user, config):
+        _logger.info("User %s unauthorized for command %s", user, command.value)
+        pr_obj.create_issue_comment(body=format_refusal(user))
+        sys.exit(0)
+
+    # Run the review engine (same as automatic review path).
+    start = time.monotonic()
+    result = run_review(pr_ref, config, github_client, claude_client)
+    duration = time.monotonic() - start
+
+    cost_usd = compute_cost(result.usage, result.model)
+    cost_line: str | None = None
+    if config.features.cost_footer:
+        cost_line = format_cost_line(cost_usd, result.usage)
+    _logger.info("Command review cost: $%.4f", cost_usd)
+
+    run_record = build_run_record(
+        repo=repo,
+        pr_number=pr_number,
+        head_sha="command",
+        model=result.model,
+        usage=result.usage,
+        cost_usd=cost_usd,
+        ripeness=result.ripeness.value,
+        finding_counts=compute_finding_counts(result.findings),
+        duration_seconds=duration,
+        review_strategy=get_review_strategy(),
+        triage_verdict=get_triage_verdict(),
+    )
+    run_record["command"] = command.value
+    emit_run_record(run_record)
+
+    # Render the command-specific response.
+    renderer = COMMAND_RENDERERS[command.value]
+    response = renderer(result, cost_line) if command == Command.peel else renderer(result)
+
+    # Post the response as an issue comment.
+    pr_obj.create_issue_comment(body=response)
+
+    _logger.info("Command %s response posted for %s", command.value, pr_ref)
+    sys.exit(0)
+
+
+def _is_command_event(event: dict[str, Any]) -> bool:
+    """Return True if the event is an issue_comment on a PR with action 'created'."""
+    if event.get("action") not in _COMMAND_ACTIONS:
+        return False
+    issue = event.get("issue")
+    if issue is None:
+        return False
+    # GitHub issue_comment events on PRs have issue.pull_request set.
+    return "pull_request" in issue
 
 
 def _post_inline_and_render(

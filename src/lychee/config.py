@@ -126,6 +126,27 @@ class FeaturesConfig(pydantic.BaseModel):
     triage_pass: bool = False
 
 
+class AppConfig(pydantic.BaseModel):
+    """Configuration for the GitHub App server mode.
+
+    Required fields (webhook_secret, app_id, private_key_path) are sourced
+    from environment variables by the server entrypoint; they are never stored
+    in ``.lychee.yml``.  Optional fields carry sensible defaults.
+    """
+
+    model_config = pydantic.ConfigDict(frozen=True, extra="forbid")
+
+    webhook_secret: str
+    app_id: int
+    private_key_path: str
+    queue_workers: int = 4
+    queue_max_size: int = 100
+    state_backend: str = "sqlite"
+    state_dsn: str = "lychee_state.db"
+    host: str = "0.0.0.0"
+    port: int = 8000
+
+
 class LycheeConfig(pydantic.BaseModel):
     """Top-level validated configuration object.
 
@@ -141,6 +162,7 @@ class LycheeConfig(pydantic.BaseModel):
     features: FeaturesConfig = pydantic.Field(default_factory=FeaturesConfig)
     conventions_file: str | None = None
     authorization: AuthorizationConfig = pydantic.Field(default_factory=AuthorizationConfig)
+    app: AppConfig | None = None
 
 
 def _format_validation_error(e: pydantic.ValidationError, path: Path | None) -> str:
