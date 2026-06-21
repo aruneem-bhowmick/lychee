@@ -110,6 +110,132 @@ Claude, and upserts a formatted summary comment on the PR.
 
 ---
 
+## [0.1.5] — GitHub App
+
+Lychee can now run as a centralized GitHub App, reviewing PRs across multiple
+repositories under its own identity. The server receives webhook events,
+authenticates per-installation, queues jobs for async processing, and persists
+state in SQLite. A full deployment stack (Dockerfile, health checks, CI gate)
+ships alongside the server code.
+
+### Webhook Server (#35)
+
+- Added `src/lychee/webhook.py`: async HTTP server built on Starlette that
+  receives GitHub webhook POST requests, verifies HMAC-SHA256 signatures against
+  a configured secret, and filters for events lychee acts on (`pull_request` and
+  `issue_comment`)
+- The server returns fast acknowledgments within GitHub's 10-second timeout and
+  delegates event processing to an async callback
+- Invalid signatures return HTTP 403; unrecognized events return 200 and are
+  discarded; callback errors return 500 without crashing the server
+- Added `scripts/run_server.py` entrypoint: reads required env vars
+  (`LYCHEE_WEBHOOK_SECRET`, `LYCHEE_APP_ID`, `LYCHEE_PRIVATE_KEY_PATH`,
+  `ANTHROPIC_API_KEY`), builds the ASGI app, and runs it under uvicorn
+- Extended `src/lychee/config.py` with `AppConfig` (frozen Pydantic model):
+  `webhook_secret`, `app_id`, `private_key_path` (required), plus
+  `queue_workers`, `queue_max_size`, `state_backend`, `state_dsn`, `host`,
+  `port` (optional with defaults). Unknown keys under `app.*` are rejected.
+- Added `starlette`, `uvicorn`, and `pytest-asyncio` as dependencies
+- 44 new tests in `tests/test_webhook.py` covering signature verification,
+  event filtering, integration via `TestClient`, system tests, and parametrized
+  regression snapshots
+- 5 new tests in `tests/test_config.py` for `AppConfig`
+
+### GitHub App JWT Auth (#36)
+
+- Added `src/lychee/app_auth.py` with `AppAuthenticator`: loads a PEM private
+  key at construction, generates 10-minute RS256-signed JWTs with a 60-second
+  `iat` backdate for clock-skew tolerance, and exchanges them for short-lived
+  installation access tokens via the GitHub API
+- `InstallationToken` frozen dataclass holds the token, its Unix-timestamp
+  expiry, and the installation ID; the `is_expired` property accounts for a
+  5-minute refresh buffer
+- Tokens are cached in-memory keyed by installation ID; subsequent calls for
+  the same installation skip the HTTP mint when the cached token is still valid
+- `AppAuthError` exception carries a message and an optional HTTP status code
+- Added `from_installation_token()` classmethod on `GitHubClient` to create
+  clients authenticated via `github.Auth.Token`
+- Added `PyJWT` and `cryptography` as dependencies
+- 28 tests in `tests/test_app_auth.py` (unit, regression, integration,
+  acceptance, smoke); 2 new tests in `tests/test_github_client.py`
+
+### Durable State Store (#37)
+
+- Added `src/lychee/state_store.py` with `SqliteStateStore` backed by
+  `aiosqlite`: stores per-PR state (`ReviewState`) and per-installation
+  metadata (`InstallationState`)
+- Composite primary key `(repo_full_name, pr_number)` for reviews;
+  `installation_id` PK for installations
+- `INSERT ... ON CONFLICT DO UPDATE` upserts that preserve `created_at`
+  timestamps; timestamps stored as ISO 8601 UTC strings
+- `list_reviews()` supports dynamic filtering by `repo_full_name`,
+  `installation_id`, and `review_status`
+- `StateStore` ABC defines the async CRUD interface; `create_state_store()`
+  factory returns `SqliteStateStore` for `"sqlite"` and raises `ValueError`
+  for anything else
+- Idempotent `initialize()` and `close()` (safe to call multiple times)
+- Added `aiosqlite` as a dependency
+- 33 tests covering unit, integration (`:memory:` DSN), system
+  (file-backed persistence, concurrent upserts), acceptance, smoke, sanity,
+  and regression categories
+
+### Async Job Queue and Worker Pool (#38)
+
+- Added `src/lychee/queue.py`: `ReviewQueue` wraps `asyncio.Queue` with a
+  configurable max size; `enqueue()` raises `QueueFullError` immediately when
+  full instead of blocking the webhook handler
+- `WorkerPool` spawns N async worker tasks (configurable via
+  `AppConfig.queue_workers`, default 4); each worker loops: dequeue a job,
+  obtain an installation token, construct an authenticated `GitHubClient`,
+  run the review engine or command dispatcher, post results, and update the
+  state store with status transitions
+- Workers catch all exceptions so a single failure does not take down the pool
+- `event_to_job()` extracts installation ID, repo name, and PR number from
+  webhook payloads and returns a `Job` ready for enqueuing
+- Updated `webhook.py` to return HTTP 503 (`{"status": "queue_full"}`) on
+  `QueueFullError` so GitHub backs off and retries
+- Rewrote `scripts/run_server.py` to construct the full stack: queue, auth,
+  state store, worker pool, and webhook server with Starlette lifecycle hooks
+- 48 tests in `tests/test_queue.py`; 1 new test in `tests/test_webhook.py`
+
+### Health Checks, Dockerfile, and Deployment Workflow (#39)
+
+- Added `src/lychee/health.py` with `HealthChecker` and `MetricsCollector`:
+  - `HealthChecker` checks state store connectivity and worker pool liveness;
+    returns a `HealthStatus` dataclass with `healthy`, `server_up`,
+    `state_store_connected`, `workers_alive`, and `details`
+  - `MetricsCollector` tracks uptime, queue depth, queue capacity,
+    active/total workers, and cumulative job processed/failed counters
+- Two new HTTP routes: `GET /health` (200 if healthy, 503 if not) and
+  `GET /metrics` (JSON snapshot of all runtime metrics)
+- Graceful shutdown via a module-level `_draining` flag set when the lifespan
+  context exits; workers are drained with a 30-second timeout before the state
+  store is closed
+- Added `Dockerfile` based on `python:3.11-slim` with a `HEALTHCHECK`
+  directive probing `/health` every 30 seconds; no secrets baked into the image
+- Added `.github/workflows/deploy.yml`: template deployment workflow triggered
+  by manual dispatch or semantic version tag pushes; builds the Docker image
+  with Buildx caching and pushes to `ghcr.io`
+- 37 tests in `tests/test_health.py`
+
+### Engine Integrity Verification (#40)
+
+- Added `tests/fixtures/engine_hashes_phase4.json` and
+  `tests/fixtures/engine_api_phase4.json`: SHA-256 hashes for 16 strict engine
+  module source files and public API baselines for all 18 engine modules
+- Rewrote `tests/test_engine_unchanged.py` (13 tests): hash-based verification,
+  public API surface checks (additive extensions allowed, removals caught),
+  import graph validation confirming both `run_action` and `lychee.queue`
+  resolve to the same engine module objects, module list completeness check,
+  baseline fixture validation
+- Added `tests/test_app_integration.py` (8 tests): multi-repo review,
+  cross-repo commands, dedup across pushes, engine call tracing, import
+  identity sanity checks
+- New `engine-unchanged` CI job in `.github/workflows/ci.yml` runs the
+  engine integrity tests as a standalone gate
+
+---
+
 ## [0.1.4] — Command Interface
 
 Users can now interact with lychee by commenting `@lychee` commands on pull
