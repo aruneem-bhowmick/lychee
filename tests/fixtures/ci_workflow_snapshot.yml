@@ -58,7 +58,7 @@ jobs:
         run: pip install -e ".[dev]"
 
       - name: Engine-unchanged check
-        run: pytest tests/test_engine_unchanged.py -v
+        run: pytest tests/test_engine_unchanged.py -v --no-cov
 
   test:
     runs-on: ubuntu-latest
