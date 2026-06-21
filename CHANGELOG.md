@@ -110,6 +110,124 @@ Claude, and upserts a formatted summary comment on the PR.
 
 ---
 
+## [0.1.2] — Robustness, Scale & Cost
+
+Reviews are now cheaper, resilient to transient failures, and can handle large
+PRs and concurrent workloads. Cost tracking, budget caps, rate limiting,
+optional triage, and structured logging all ship in this version.
+
+### Prompt Caching (#17)
+
+- Added `build_system_prompt_blocks()` to `prompt.py`: wraps the system prompt
+  in a content block with `cache_control: {"type": "ephemeral"}` for the
+  Anthropic Messages API, reducing input token costs by about 90% on cache hits
+- `ClaudeClient.review()` now accepts a plain string or a list of content
+  blocks as its `system` parameter
+- `run_review()` uses the block variant by default
+- `build_system_prompt()` is unchanged and still available for callers that
+  need a plain string
+- 24 new tests across `test_prompt.py`, `test_claude.py`, and `test_review.py`
+
+### Config-Driven Behavior (#18)
+
+- Wired `tone`, `language`, `severity_threshold`, and model tiering through
+  the review pipeline:
+  - `build_system_prompt()` appends `## Tone` and `## Language` sections when
+    values differ from defaults
+  - `render_comment()` takes a `severity_threshold` parameter and filters
+    findings below the threshold from the Pits section
+  - `select_model()` in `review.py` returns `config.model.large_pr` when
+    context exceeds 100k characters, `config.model.default` otherwise
+  - `ClaudeClient.review()` takes a `model_override` parameter for per-call
+    model selection
+- All new parameters default to prior behavior; existing golden snapshots pass
+  unchanged
+- 30 new tests across 5 test files
+
+### Map-Reduce for Large PRs (#19)
+
+- When a PR exceeds `config.review.max_files` (default 50), files are
+  partitioned into groups of 10, each reviewed individually (map phase), then
+  partial results are merged into one `ReviewResult` (reduce phase)
+- Small PRs still take the single-pass path, unchanged
+- Sequential map calls (no parallelism): a 62-file PR produces 7 map groups +
+  1 reduce call
+- Partial failure tolerance: if some map groups fail, the pipeline continues
+  with successful partials; if all groups fail, `ClaudeReviewError` is raised
+- Usage aggregation sums all token fields across map partials and the reduce
+  result
+- Added `build_map_user_message()` and `build_reduce_user_message()` to
+  `prompt.py`
+- 38 new tests across `test_review.py` and `test_prompt.py`; new 62-file PR
+  fixture
+
+### Rate Limiting and Retries (#20)
+
+- Added `src/lychee/rate_limiter.py` with a thread-safe token-bucket rate
+  limiter and an exponential-backoff retry wrapper
+- Pre-configured tiers: tier1 (5 capacity, 1/s refill) through tier4
+  (50 capacity, 10/s refill)
+- Retry logic respects `Retry-After` headers from `anthropic.RateLimitError`;
+  optional jitter prevents thundering herd
+- Retryable errors: 429, 500/529, connection errors. Non-retryable: 401, 400
+  (propagate immediately)
+- Two new optional parameters on `ClaudeClient.__init__`: `rate_limiter` and
+  `retry_config`; both default to `None` so existing call sites are unchanged
+- 31 new tests across `test_rate_limiter.py` and `test_claude.py`
+
+### Cost Accounting and Budget Cap (#21)
+
+- Added `src/lychee/cost.py` with `compute_cost()`, `compute_total_cost()`,
+  `format_cost_line()`, and `check_budget()`
+- `MODEL_PRICING` dict maps model IDs to per-million-token rates (input,
+  output, cached-input); unknown models fall back to Sonnet pricing with a
+  logged warning
+- `budget_cap_usd` config field (optional, must be > 0 when set): the review
+  engine checks cumulative spend after each Claude API call; if exceeded,
+  `BudgetExceededError` is raised and the action posts an abort comment to the
+  PR
+- In map-reduce mode, budget checks run after each map group and after the
+  reduce call
+- Cost footer in PR comments shows dollar amount, input/output token counts,
+  and cached-token count when present; controlled by
+  `features.cost_footer` (default `true`)
+- 45 new tests across 4 test files
+
+### Optional Haiku Triage Pre-Pass (#22)
+
+- Added `src/lychee/triage.py`: when `features.triage_pass` is enabled, a
+  Haiku call classifies incoming PRs as **trivial** (typo fixes, dependency
+  bumps, config-only changes, formatting) or **substantive** (new features,
+  bug fixes, refactoring, security changes)
+- Trivial PRs get a complete review from Haiku alone, skipping the more
+  expensive Sonnet/Opus pipeline; substantive PRs proceed through normal model
+  tiering
+- Fail-safe: any triage error defaults to `substantive`, so a broken triage
+  pass never silently downgrades review quality
+- The triage prompt sends only file names, truncated body/diff, and a short
+  classification instruction (no full rubric or persona)
+- 29 tests in `tests/test_triage.py`
+
+### Structured Observability (#23)
+
+- Added `src/lychee/observability.py`: `ContextVar`-based correlation IDs tag
+  every log record without passing IDs through function signatures
+- `setup_structured_logging()` replaces root logger handlers with a JSON
+  formatter (timestamp, logger name, level, correlation ID, message)
+- `build_run_record()` / `emit_run_record()` produce a structured JSON record
+  per review run: repo, PR number, head SHA, model, token usage, cost,
+  ripeness, per-severity finding counts, duration, review strategy, triage
+  verdict
+- Run records never include PR content (title, body, diff); they identify the
+  PR by repo + number + SHA only
+- `run_review()` now measures wall-clock time with `time.monotonic()`
+- `run_action.py` emits `review_complete` or `review_failed` run records with
+  correlation IDs
+- 30 new tests across `test_observability.py`, `test_action.py`, and
+  `test_review.py`
+
+---
+
 ## [0.1.0] — Initial Package Scaffold
 
 Initial repository layout: installable `lychee` package with all module stubs,
