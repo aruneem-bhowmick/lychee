@@ -110,6 +110,82 @@ Claude, and upserts a formatted summary comment on the PR.
 
 ---
 
+## [0.1.4] — Command Interface
+
+Users can now interact with lychee by commenting `@lychee` commands on pull
+requests. Four commands are supported: `peel` (full review), `juice` (summary
+only), `pit` (highest-severity finding), and `ripe?` (merge-readiness verdict).
+Commands are authorized against a configurable allowed-users list. Repository
+owners can also scope review behavior by file path and PR label.
+
+### Command Parser (#30)
+
+- Added `src/lychee/commands.py` with `parse_command()`: extracts the first
+  `@lychee` command from a GitHub issue comment body and returns a typed
+  `ParsedCommand`, `UnknownCommand`, or `None`
+- `Command` StrEnum with four members: `peel`, `juice`, `pit`, `ripe?`
+- Case-insensitive mention detection with negative lookaround to prevent false
+  matches on `@lychee-bot` or similar
+- Trailing punctuation is stripped from the command token, but `?` is preserved
+  for `ripe?`
+- Multiple mentions in one comment: first one wins
+- `HELP_TEXT` constant listing all commands with one-line descriptions
+- 47 tests in `tests/test_commands.py` (100% coverage on `commands.py`)
+
+### Scoped Behavior Overrides (#31)
+
+- Added `ScopeRule` (frozen Pydantic model) to `config.py`: per-path or
+  per-label overrides specifying glob patterns, label names, and optional
+  overrides for `model`, `severity_threshold`, `tone`, or an `ignore` flag
+  to skip matched files
+- Added `AuthorizationConfig` with an `allowed_users` list; empty list means
+  open access
+- `should_ignore_file()` checks whether a file should be excluded from review
+  context by matching against scope rules with `ignore=True`; first-match-wins
+  semantics
+- `resolve_scope_overrides()` returns effective config overrides from the first
+  matching scope rule
+- `build_context()` gains an optional `pr_labels` parameter; files matching
+  `ignore=True` rules are filtered out before context assembly
+- 40+ tests in `tests/test_scoped_behavior.py`; 6 new tests in
+  `tests/test_config.py`; 4 new tests in `tests/test_context.py`
+
+### Tone Tuning (#32)
+
+- Strengthened the `concise` and `detailed` tone instruction strings in
+  `prompt.py` so each produces reliably distinct system prompts:
+  - **Concise**: bullet-list walkthroughs, one-sentence findings, skip
+    walkthrough for straightforward PRs
+  - **Detailed**: multi-paragraph walkthroughs, findings with rationale and
+    examples, suggestion blocks with ready-to-apply code
+- Balanced tone remains unchanged (empty string; default persona applies)
+- Updated golden snapshot fixtures for concise and detailed
+- 21 new tests in `tests/test_tone.py`
+
+### Command Dispatch and Authorization (#34)
+
+- Added `src/lychee/authorization.py` with `is_authorized()` and
+  `format_refusal()`: checks the commenter against the allowed-users list
+  (case-insensitive); refusal messages name the user but do not reveal the
+  allowed list
+- Added `src/lychee/command_render.py` with four render functions:
+  - `render_peel_response`: full review (delegates to `render_comment`)
+  - `render_juice_response`: Nectar/summary section only
+  - `render_pit_response`: single highest-severity finding
+  - `render_ripe_response`: ripeness badge + one-line merge-readiness verdict
+- Extended `scripts/run_action.py` to handle `issue_comment` events: parse,
+  auth check, review, render, post via `create_issue_comment`
+- Auth runs after parsing but before the engine, so unauthorized users never
+  trigger API calls
+- `features.commands` gates command processing; when disabled, command events
+  exit immediately with no API calls
+- Updated `.github/workflows/review.yml` with `issue_comment: types: [created]`
+  trigger
+- 31 tests in `test_command_render.py`; 38 tests in `test_command_dispatch.py`;
+  3 tests in `test_action.py`; full `test_authorization.py` suite
+
+---
+
 ## [0.1.3] — Inline Commenting
 
 Findings can now be posted as inline review comments pinned to specific diff
