@@ -110,6 +110,103 @@ Claude, and upserts a formatted summary comment on the PR.
 
 ---
 
+## [0.1.3] — Inline Commenting
+
+Findings can now be posted as inline review comments pinned to specific diff
+lines, in addition to the summary comment. When a finding maps to a line in
+the diff, it goes inline; when it does not (file-level findings, lines outside
+the changed hunks), it falls back to a visible section in the summary. One
+`create_review` API call per review, not N individual comments.
+
+### Inline Review Comment Posting (#24)
+
+- Added `src/lychee/diff_mapping.py`: parses unified diffs and builds a
+  `{file: {line: position}}` map for GitHub's pull request review API, which
+  requires a 1-based position offset within the diff rather than a line number
+- Added `src/lychee/inline_render.py`: formats a `Finding` as a GitHub review
+  comment body with severity emoji, severity label, category tag, and message;
+  appends a ` ```suggestion ` block when the finding carries a suggestion
+- Extended `src/lychee/render.py` with an optional `fallback_findings`
+  parameter on `render_comment()`; non-empty fallback renders a collapsible
+  `<details>` block after the Pits section
+- Added `InlineReviewPoster` to `src/lychee/poster.py`: splits findings into
+  inline-eligible and fallback buckets, renders each inline finding, and
+  submits them through `pr.create_review(event="COMMENT", comments=[...])`
+- 76 new tests across 4 files
+
+### Diff Position Mapping Fix (#25)
+
+- Fixed an off-by-one error in position counting: the first `@@` hunk header
+  was previously counted as position 1, shifting every subsequent line by one
+- `build_position_map()` now returns `dict[str, dict[int, DiffPosition]]`
+  (frozen dataclass with `head_line` and `position`) instead of bare integers
+- `map_finding_to_position()` now takes `(file, line, position_map)` instead
+  of `(finding, position_map)`, decoupling the mapping layer from the `Finding`
+  model
+- Path extraction uses `+++ b/...` headers instead of `diff --git` lines,
+  correctly handling deleted files, added files, and renames
+- Binary file markers and `\ No newline at end of file` markers are now
+  skipped instead of incrementing the position counter
+- 38 tests in `tests/test_diff_mapping.py` with three new `.patch` fixture
+  files
+
+### Cross-Push Deduplication (#26)
+
+- Added `src/lychee/dedup.py`: fingerprint-based identity tracking so that
+  only new or changed findings produce inline comments on re-push
+- Each posted finding is reduced to a fingerprint (file path, line number,
+  severity, 12-char SHA-256 prefix of the message text) and stored in the
+  summary comment's state marker
+- On the next review cycle, the poster extracts previous fingerprints and
+  filters out any finding whose fingerprint already exists in state
+- If state is absent or malformed, dedup is skipped and all findings are
+  posted fresh
+- 34 tests in `tests/test_dedup.py`; 4 new tests in `tests/test_poster.py`
+
+### Suggestion Block Formatting (#27)
+
+- Revised inline comment format to `{emoji} **[{Severity}]** (*{category}*):
+  {message}` for better visual distinction between severity and category
+- Added whitespace normalization to `render_suggestion_block()`: strips
+  trailing whitespace from each line and removes leading/trailing blank lines
+  inside the fence, preventing unwanted empty lines in GitHub's rendered
+  suggestion diff
+- 18 new tests in `tests/test_inline_render.py` (total: 38, 100% coverage)
+
+### Unmappable Fallback Rendering (#28)
+
+- Moved the fallback section from after Pits to between Nectar and The Peel
+  so authors see unmappable findings before the code walkthrough
+- Replaced the `<details>` block (hidden behind a click) with a
+  `### Findings not on changed lines` heading, making findings always visible
+- Each fallback finding uses a dedicated format with severity leading,
+  colon-notation location, italic category, and a text label explaining why
+  the finding appears in the summary
+- Suggestions in fallback findings render in plain fenced code blocks, not
+  ` ```suggestion ` blocks (GitHub's one-click-apply only works on inline
+  review comments)
+- `severity_threshold` now filters fallback findings; if all are below the
+  threshold, the section is omitted
+- 14 new tests in `tests/test_render.py` (total: 69)
+
+### Feature Flag Wiring (#29)
+
+- Connected the `features.inline_comments` config flag to the posting logic
+  in `run_action.py`
+- When the flag is on, the action fetches the PR diff, posts inline review
+  comments via `InlineReviewPoster`, and folds unmappable findings into a
+  fallback section in the summary; cross-push deduplication uses the state
+  marker from the previous summary comment
+- When the flag is off (default), behavior is unchanged
+- Inline failures (`PosterError`) are caught and logged; the summary comment
+  still posts
+- Added `tests/test_engine_unchanged.py` with three regression tests
+  confirming `src/lychee/review.py` was not modified (SHA-256 hash comparison
+  and `git diff` check)
+- 20 new tests in `tests/test_action.py`
+
+---
+
 ## [0.1.2] — Robustness, Scale & Cost
 
 Reviews are now cheaper, resilient to transient failures, and can handle large
