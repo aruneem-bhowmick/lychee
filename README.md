@@ -35,26 +35,26 @@ Below is the directory of public-facing documentation files across the Lychee co
 ### 1. Getting Started & Configuration
 | Document | Path | Description |
 | :--- | :--- | :--- |
-| **Getting Started** | [GETTING-STARTED.md](file:///C:/Users/arune/Projects/lychee/docs/GETTING-STARTED.md) | Setup instructions for CLI mode and GitHub App mode. |
-| **Configuration Schema** | [CONFIGURATION.md](file:///C:/Users/arune/Projects/lychee/docs/CONFIGURATION.md) | Reference for `.lychee.yml` settings, model routing, and scope rules. |
-| **Interactive Commands** | [COMMANDS.md](file:///C:/Users/arune/Projects/lychee/docs/COMMANDS.md) | Guide to triggering reviews via `@lychee` comments in pull requests. |
+| **Getting Started** | [docs/GETTING-STARTED.md](docs/GETTING-STARTED.md) | Setup instructions for CLI mode and GitHub App mode. |
+| **Configuration Schema** | [docs/CONFIGURATION.md](docs/CONFIGURATION.md) | Reference for `.lychee.yml` settings, model routing, and scope rules. |
+| **Interactive Commands** | [docs/COMMANDS.md](docs/COMMANDS.md) | Guide to triggering reviews via `@lychee` comments in pull requests. |
 
 ### 2. Architecture & Design Specifications
 | Document | Path | Description |
 | :--- | :--- | :--- |
-| **Lychee Specification** | [LYCHEE-SPEC.md](file:///C:/Users/arune/Projects/lychee/docs-lychee/LYCHEE-SPEC.md) | Authoritative product specification, domain contracts, and Agile delivery phases. |
-| **Architecture Design** | [ARCHITECTURE.md](file:///C:/Users/arune/Projects/lychee/docs/ARCHITECTURE.md) | Detailed technical architecture, module layouts, and data flows. |
-| **Glossary** | [GLOSSARY.md](file:///C:/Users/arune/Projects/lychee/docs/GLOSSARY.md) | Technical concepts and branded terminologies mapped to code elements. |
+| **Lychee Specification** | [docs-lychee/LYCHEE-SPEC.md](docs-lychee/LYCHEE-SPEC.md) | Authoritative product specification, domain contracts, and Agile delivery phases. |
+| **Architecture Design** | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Detailed technical architecture, module layouts, and data flows. |
+| **Glossary** | [docs/GLOSSARY.md](docs/GLOSSARY.md) | Technical concepts and branded terminologies mapped to code elements. |
 
 ### 3. Operations, Deployment & Security
 | Document | Path | Description |
 | :--- | :--- | :--- |
-| **Production Deployment** | [DEPLOYMENT.md](file:///C:/Users/arune/Projects/lychee/docs/DEPLOYMENT.md) | Operational guidelines for hosting Lychee as a persistent GitHub App. |
-| **Security & Credentials** | [SECURITY.md](file:///C:/Users/arune/Projects/lychee/docs/SECURITY.md) | Authentication flows, webhook signature validation, and secrets handling. |
-| **Canary Setup** | [CANARY-SETUP.md](file:///C:/Users/arune/Projects/lychee/docs/CANARY-SETUP.md) | How to set up a throwaway repository for running end-to-end integration tests. |
+| **Production Deployment** | [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) | Operational guidelines for hosting Lychee as a persistent GitHub App. |
+| **Security & Credentials** | [docs/SECURITY.md](docs/SECURITY.md) | Authentication flows, webhook signature validation, and secrets handling. |
+| **Canary Setup** | [docs/CANARY-SETUP.md](docs/CANARY-SETUP.md) | How to set up a throwaway repository for running end-to-end integration tests. |
 
 ### 4. Development & Project Trajectory
 | Document | Path | Description |
 | :--- | :--- | :--- |
-| **Development Guidelines** | [DEVELOPMENT.md](file:///C:/Users/arune/Projects/lychee/docs/DEVELOPMENT.md) | Guidelines for local setup, testing workflows, linting, and type check checks. |
-| **Roadmap** | [ROADMAP.md](file:///C:/Users/arune/Projects/lychee/docs/ROADMAP.md) | Current project milestones, core design principles, and boundaries. |
+| **Development Guidelines** | [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) | Guidelines for local setup, testing workflows, linting, and type check checks. |
+| **Roadmap** | [docs/ROADMAP.md](docs/ROADMAP.md) | Current project milestones, core design principles, and boundaries. |
