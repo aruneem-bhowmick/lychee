@@ -1,0 +1,183 @@
+:root {
+  /* color */
+  --color-bg: #0d1117;
+  --color-surface: #161b22;
+  --color-surface-raised: #1c2128;
+  --color-border: #30363d;
+  --color-text: #e6edf3;
+  --color-text-muted: #7d8590;
+  --color-accent-red: #e03a3e;
+  --color-accent-pink: #e94b8a;
+  --color-success: #3a7d44;
+  --color-warning: #9a6700;
+  --color-danger: #da3633;
+  --color-info: #388bfd;
+  --color-stem: #73a942;
+  --color-near-white: #fdfefd;
+
+  /* gradient */
+  --gradient-primary: linear-gradient(90deg, #e03a3e 0%, #e94b8a 100%);
+
+  /* typography */
+  --font-sans: var(--font-inter), system-ui, -apple-system, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, "JetBrains Mono", monospace;
+  --font-size-display: clamp(2rem, 5vw, 4rem);
+  --font-size-heading: 1.75rem;
+  --font-size-card-title: 1.125rem;
+  --font-size-body: 1rem;
+  --font-size-code: 0.875rem;
+  --font-size-nav: 0.9375rem;
+  --font-weight-display: 800;
+  --font-weight-heading: 700;
+  --font-weight-card-title: 600;
+  --font-weight-nav: 500;
+  --font-weight-body: 400;
+
+  /* spacing & radius */
+  --space-unit: 8px;
+  --space-1: 8px;
+  --space-2: 16px;
+  --space-3: 24px;
+  --space-4: 32px;
+  --space-6: 48px;
+  --space-8: 64px;
+  --space-12: 96px;
+  --section-pad-desktop: 96px;
+  --section-pad-mobile: 64px;
+  --radius-card: 12px;
+  --radius-button: 8px;
+  --radius-code: 8px;
+
+  /* layout */
+  --content-max-width: 1100px;
+  --nav-height: 64px;
+
+  /* motion */
+  --ease-standard: ease;
+  --dur-fast: 150ms;
+  --dur-base: 200ms;
+  --dur-slow: 400ms;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
+  scroll-padding-top: var(--nav-height);
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  font-size: var(--font-size-body);
+  font-weight: var(--font-weight-body);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--font-sans);
+  line-height: 1.2;
+  color: var(--color-text);
+}
+
+h2 {
+  font-size: var(--font-size-heading);
+  font-weight: var(--font-weight-heading);
+}
+
+h3 {
+  font-size: var(--font-size-card-title);
+  font-weight: var(--font-weight-card-title);
+}
+
+a {
+  color: var(--color-accent-pink);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-info);
+  outline-offset: 2px;
+}
+
+code, pre {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-code);
+}
+
+code:not(pre code) {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  padding: 0.1em 0.35em;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+th, td {
+  border: 1px solid var(--color-border);
+  padding: var(--space-1) var(--space-2);
+  text-align: left;
+}
+
+th {
+  background: var(--color-surface-raised);
+}
+
+::selection {
+  background: var(--color-accent-red);
+  color: var(--color-near-white);
+}
+
+.container {
+  max-width: var(--content-max-width);
+  margin-inline: auto;
+  padding-inline: var(--space-3);
+}
+
+.section {
+  padding-block: var(--section-pad-mobile);
+}
+
+@media (min-width: 768px) {
+  .section {
+    padding-block: var(--section-pad-desktop);
+  }
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
