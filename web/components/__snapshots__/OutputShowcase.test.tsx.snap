@@ -1,0 +1,399 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`OutputShowcase > Visual/Snapshot tests > matches the snapshot to lock the mock and annotations 1`] = `
+<div>
+  <section
+    class="section _section_46890d"
+    id="output"
+  >
+    <div
+      class="container"
+    >
+      <h2
+        class="_title_46890d"
+      >
+        What you'll see in your PR
+      </h2>
+      <div
+        class="_showcaseWrapper_46890d"
+      >
+        <div
+          class="_prContext_46890d"
+        >
+          Repository: 
+          <code
+            class="_inlineCode_46890d"
+          >
+            acme-corp/billing-service
+          </code>
+          <br />
+          PR title: 
+          <code
+            class="_inlineCode_46890d"
+          >
+            feat: add Stripe webhook handler for payment events
+          </code>
+          <br />
+          Author: 
+          <code
+            class="_inlineCode_46890d"
+          >
+            @dev
+          </code>
+        </div>
+        <div
+          class="_commentFrame_46890d"
+        >
+          <div
+            class="_headerStrip_46890d"
+          >
+            <div
+              class="_avatar_46890d"
+            />
+            <span
+              class="_author_46890d"
+            >
+              lychee-bot
+            </span>
+          </div>
+          <div
+            class="_commentBody_46890d"
+          >
+            <div>
+              <div
+                class="_monospaceText_46890d"
+              >
+                &lt;!-- lychee:review --&gt;
+              </div>
+              <div
+                class="_headerTitle_46890d"
+              >
+                🌴 Lychee peeled this PR · claude-sonnet-4-6
+              </div>
+            </div>
+            <div
+              class="_annotatable_46890d"
+              data-annotate="ripeness"
+            >
+              <div
+                class="_badge_46890d"
+              >
+                🟡 Unripe
+              </div>
+              <span
+                class="_annotation_46890d"
+              >
+                Ripeness verdict: Ripe / Unripe / Sour
+              </span>
+            </div>
+            <div
+              class="_nectarBlock_46890d _annotatable_46890d"
+              data-annotate="nectar"
+            >
+              <p>
+                This PR adds a Stripe webhook handler to process 
+                <code
+                  class="_inlineCode_46890d"
+                >
+                  payment_intent.succeeded
+                </code>
+                 and 
+                <code
+                  class="_inlineCode_46890d"
+                >
+                  charge.failed
+                </code>
+                 events, updating order status in the database. The implementation is functional but has a critical security gap in webhook signature verification and two correctness issues in the error-handling path that should be addressed before merging.
+              </p>
+              <span
+                class="_annotation_46890d"
+              >
+                Nectar — the distilled summary
+              </span>
+            </div>
+            <div
+              class="_annotatable_46890d"
+              data-annotate="peel"
+            >
+              <ul
+                class="_peelList_46890d"
+              >
+                <li>
+                  <code
+                    class="_inlineCode_46890d"
+                  >
+                    src/webhooks/stripe.py
+                  </code>
+                   — New handler module. Core logic is sound but the signature verification step is absent.
+                </li>
+                <li>
+                  <code
+                    class="_inlineCode_46890d"
+                  >
+                    src/models/order.py
+                  </code>
+                   — Adds 
+                  <code
+                    class="_inlineCode_46890d"
+                  >
+                    update_status()
+                  </code>
+                  . The method does not validate the transition (e.g., 
+                  <code
+                    class="_inlineCode_46890d"
+                  >
+                    completed → pending
+                  </code>
+                   should be rejected).
+                </li>
+                <li>
+                  <code
+                    class="_inlineCode_46890d"
+                  >
+                    tests/test_stripe_webhook.py
+                  </code>
+                   — Covers the happy path but lacks tests for invalid signatures and malformed payloads.
+                </li>
+              </ul>
+              <span
+                class="_annotation_46890d"
+              >
+                The Peel — file-by-file walkthrough
+              </span>
+            </div>
+            <div
+              class="_annotatable_46890d"
+              data-annotate="pits"
+            >
+              <div
+                class="_pitsTableWrapper_46890d"
+              >
+                <table
+                  class="_pitsTable_46890d"
+                >
+                  <thead>
+                    <tr>
+                      <th>
+                        Severity
+                      </th>
+                      <th>
+                        Category
+                      </th>
+                      <th>
+                        Finding
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td
+                        class="_severityCell_46890d _severitycritical_46890d"
+                      >
+                        🔴
+                         
+                        critical
+                      </td>
+                      <td>
+                        security
+                      </td>
+                      <td>
+                        <code
+                          class="_inlineCode_46890d"
+                        >
+                          stripe.py:47
+                        </code>
+                         — Webhook payload is processed without verifying the 
+                        <code
+                          class="_inlineCode_46890d"
+                        >
+                          Stripe-Signature
+                        </code>
+                         header. An attacker can POST arbitrary payloads and trigger order status changes. Use 
+                        <code
+                          class="_inlineCode_46890d"
+                        >
+                          stripe.Webhook.construct_event()
+                        </code>
+                         with your webhook secret.
+                      </td>
+                    </tr>
+                    <tr>
+                      <td
+                        class="_severityCell_46890d _severitymajor_46890d"
+                      >
+                        🟠
+                         
+                        major
+                      </td>
+                      <td>
+                        correctness
+                      </td>
+                      <td>
+                        <code
+                          class="_inlineCode_46890d"
+                        >
+                          order.py:83
+                        </code>
+                         — 
+                        <code
+                          class="_inlineCode_46890d"
+                        >
+                          update_status()
+                        </code>
+                         accepts any target status without validating the transition. A 
+                        <code
+                          class="_inlineCode_46890d"
+                        >
+                          completed
+                        </code>
+                         order can be moved back to 
+                        <code
+                          class="_inlineCode_46890d"
+                        >
+                          pending
+                        </code>
+                        , which may cause double-fulfillment.
+                      </td>
+                    </tr>
+                    <tr>
+                      <td
+                        class="_severityCell_46890d _severityminor_46890d"
+                      >
+                        🟡
+                         
+                        minor
+                      </td>
+                      <td>
+                        tests
+                      </td>
+                      <td>
+                        <code
+                          class="_inlineCode_46890d"
+                        >
+                          test_stripe_webhook.py
+                        </code>
+                         — No test for an invalid or missing 
+                        <code
+                          class="_inlineCode_46890d"
+                        >
+                          Stripe-Signature
+                        </code>
+                         header. Add a test confirming a 
+                        <code
+                          class="_inlineCode_46890d"
+                        >
+                          400
+                        </code>
+                         response and no database write on bad signatures.
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <span
+                class="_annotation_46890d"
+              >
+                Pits — findings with severity & category
+              </span>
+            </div>
+            <div
+              class="_annotatable_46890d"
+              data-annotate="footer"
+            >
+              <div
+                class="_monospaceText_46890d"
+              >
+                Tokens: 4,821 in · 612 out · $0.023  ·  Reviewed to the core by Lychee 🌴
+                <br />
+                &lt;!-- lychee:state {"last_reviewed_sha": "a3f9c12"} --&gt;
+              </div>
+              <span
+                class="_annotation_46890d"
+              >
+                Cost footer — exact token usage and USD cost
+              </span>
+            </div>
+          </div>
+        </div>
+        <p
+          class="_closingParagraph_46890d"
+        >
+          Every Lychee review follows this structure — always one comment, always updated in place, always the same shape regardless of PR size. Severity levels: 
+          <code
+            class="_inlineCode_46890d"
+          >
+            info
+          </code>
+          , 
+          <code
+            class="_inlineCode_46890d"
+          >
+            minor
+          </code>
+          , 
+          <code
+            class="_inlineCode_46890d"
+          >
+            major
+          </code>
+          , 
+          <code
+            class="_inlineCode_46890d"
+          >
+            critical
+          </code>
+          . Categories: 
+          <code
+            class="_inlineCode_46890d"
+          >
+            correctness
+          </code>
+          , 
+          <code
+            class="_inlineCode_46890d"
+          >
+            security
+          </code>
+          , 
+          <code
+            class="_inlineCode_46890d"
+          >
+            performance
+          </code>
+          , 
+          <code
+            class="_inlineCode_46890d"
+          >
+            tests
+          </code>
+          , 
+          <code
+            class="_inlineCode_46890d"
+          >
+            style
+          </code>
+          , 
+          <code
+            class="_inlineCode_46890d"
+          >
+            docs
+          </code>
+          , 
+          <code
+            class="_inlineCode_46890d"
+          >
+            other
+          </code>
+          . See the 
+          <a
+            href="/docs/glossary"
+          >
+            Glossary
+          </a>
+           for the full vocabulary.
+        </p>
+      </div>
+    </div>
+  </section>
+</div>
+`;
