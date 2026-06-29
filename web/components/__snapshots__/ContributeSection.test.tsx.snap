@@ -1,0 +1,231 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`ContributeSection Component > Regression Test > matches snapshot 1`] = `
+<div>
+  <section
+    class="section"
+    id="contribute"
+  >
+    <div
+      class="container"
+    >
+      <h2>
+        Contribute
+      </h2>
+      <div
+        class="_content_ea6bce"
+      >
+        <div
+          class="_setup_ea6bce"
+        >
+          <h3>
+            1. Clone and install
+          </h3>
+          <div
+            data-lang="bash"
+            data-testid="code-block"
+          >
+            git clone https://github.com/aspect-analytics/lychee.git
+cd lychee
+python -m venv .venv
+source .venv/bin/activate   # Windows: .venv\\Scripts\\activate
+pip install -e ".[dev]"
+pre-commit install
+          </div>
+        </div>
+        <div
+          class="_setup_ea6bce"
+        >
+          <h3>
+            2. Run the test suite
+          </h3>
+          <div
+            data-lang="bash"
+            data-testid="code-block"
+          >
+            pytest
+          </div>
+          <blockquote
+            class="_callout_ea6bce"
+          >
+            Coverage is enforced at 80% (branch coverage). The default invocation excludes 
+            <code>
+              e2e
+            </code>
+             tests, which require live GitHub and Claude API access. See 
+            <a
+              href="/docs/canary-setup"
+            >
+              Canary Setup
+            </a>
+             to configure those.
+          </blockquote>
+          <div
+            data-lang="bash"
+            data-testid="code-block"
+          >
+            # Update golden snapshots after intentional render changes
+pytest --snapshot-update
+          </div>
+        </div>
+        <div
+          class="_setup_ea6bce"
+        >
+          <h3>
+            3. Code standards at a glance
+          </h3>
+          <div
+            class="_tableWrapper_ea6bce"
+          >
+            <table
+              class="_table_ea6bce"
+            >
+              <thead>
+                <tr>
+                  <th
+                    scope="col"
+                  >
+                    Standard
+                  </th>
+                  <th
+                    scope="col"
+                  >
+                    Enforced by
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>
+                    Type annotations (strict)
+                  </td>
+                  <td>
+                    <code>
+                      mypy --strict
+                    </code>
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    Linting
+                  </td>
+                  <td>
+                    <code>
+                      ruff
+                    </code>
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    Formatting
+                  </td>
+                  <td>
+                    <code>
+                      black
+                    </code>
+                     (100-char line length)
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    Immutable models
+                  </td>
+                  <td>
+                    Pydantic 
+                    <code>
+                      frozen=True
+                    </code>
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    Pure functions for prompt & render
+                  </td>
+                  <td>
+                    Asserted by unit tests
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    No global state
+                  </td>
+                  <td>
+                    Code review
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            CI runs lint → type-check → engine integrity hash → test on every PR. All gates must be green before merge.
+          </p>
+        </div>
+      </div>
+      <div
+        class="_workflow_ea6bce"
+      >
+        <h3>
+          Contribution Workflow
+        </h3>
+        <ol>
+          <li>
+            Fork the repository and create a feature branch.
+          </li>
+          <li>
+            Make your changes; ensure 
+            <code>
+              pytest
+            </code>
+             and 
+            <code>
+              mypy
+            </code>
+             pass locally.
+          </li>
+          <li>
+            Use 
+            <code>
+              lychee review --dry-run --fixture tests/fixtures/pr_payload.json
+            </code>
+             to preview rendering changes without API calls.
+          </li>
+          <li>
+            Open a PR — Lychee will review it automatically.
+          </li>
+        </ol>
+      </div>
+      <aside
+        aria-label="Security reporting"
+        class="_securityNotice_ea6bce"
+      >
+        <p>
+          <strong>
+            Found a security issue?
+          </strong>
+           Do not open a public GitHub issue. Email the maintainers directly or use GitHub's private vulnerability reporting (
+          <strong>
+            Security tab → Report a vulnerability
+          </strong>
+          ). We acknowledge within 48 hours and provide a fix timeline within 7 days.
+        </p>
+      </aside>
+      <div
+        class="_ctas_ea6bce"
+      >
+        <a
+          class="_ctaLink_ea6bce"
+          href="/docs/development"
+        >
+          Development guide →
+        </a>
+        <a
+          class="_ctaLink_ea6bce"
+          href="/docs/roadmap"
+        >
+          Roadmap →
+        </a>
+      </div>
+    </div>
+  </section>
+</div>
+`;
