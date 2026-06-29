@@ -2,6 +2,7 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { axe, toHaveNoViolations } from 'jest-axe';
+import { vi, describe, it, expect } from 'vitest';
 
 import SetupTabs, { WORKFLOW_YAML, DOCKER_BASH, LYCHEE_YML, PREREQS_TEXT, APP_REGISTER_TEXT, DIRECT_BASH } from './SetupTabs';
 import SetupTabsClient from './SetupTabsClient';
@@ -9,13 +10,15 @@ import SetupTabsClient from './SetupTabsClient';
 expect.extend(toHaveNoViolations);
 
 // Mock CodeBlock as it's an async server component
-jest.mock('./CodeBlock', () => {
-  return function MockCodeBlock({ code, filename, lang }: any) {
-    return (
-      <div data-testid="code-block" data-filename={filename} data-lang={lang}>
-        {code}
-      </div>
-    );
+vi.mock('./CodeBlock', () => {
+  return {
+    default: function MockCodeBlock({ code, filename, lang }: any) {
+      return (
+        <div data-testid="code-block" data-filename={filename} data-lang={lang}>
+          {code}
+        </div>
+      );
+    }
   };
 });
 
@@ -98,7 +101,7 @@ describe('SetupTabs Component & Constants', () => {
       render(<SetupTabs />);
       
       // Step 3 secret name
-      expect(screen.getByText('ANTHROPIC_API_KEY')).toBeInTheDocument();
+      expect(screen.getAllByText('ANTHROPIC_API_KEY')[0]).toBeInTheDocument();
       
       // Health-check note
       expect(screen.getByText(/GET \/health/)).toBeInTheDocument();
@@ -111,7 +114,7 @@ describe('SetupTabs Component & Constants', () => {
       expect(configLink).toHaveAttribute('href', '/docs/configuration');
       
       // Deployment CTA
-      const deployLink = screen.getByRole('link', { name: /Full deployment guide/i });
+      const deployLink = screen.getByRole('link', { name: /Full deployment guide/i, hidden: true });
       expect(deployLink).toHaveAttribute('href', '/docs/deployment');
       
       // Output CTA
