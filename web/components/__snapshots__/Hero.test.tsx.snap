@@ -1,0 +1,74 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`Hero Component > matches the snapshot for regression locking 1`] = `
+<div>
+  <section
+    aria-labelledby="hero-tagline"
+    class="_hero_bd43d2"
+    id="hero"
+  >
+    <img
+      alt="Lychee"
+      class="_logo_bd43d2"
+      src="/lychee-banner.svg"
+    />
+    <h1
+      class="_tagline_bd43d2"
+      id="hero-tagline"
+    >
+      Peel back your pull requests.
+    </h1>
+    <p
+      class="_valueProp_bd43d2"
+    >
+      Self-hosted, Claude-powered PR reviews that run concurrently, report cost to the cent, and never post twice.
+    </p>
+    <div
+      class="_badges_bd43d2"
+    >
+      <span
+        class="_badge_bd43d2"
+        data-variant="ripe"
+      >
+        🟢
+         
+        Ripe
+      </span>
+      <span
+        class="_badge_bd43d2"
+        data-variant="unripe"
+      >
+        🟡
+         
+        Unripe
+      </span>
+      <span
+        class="_badge_bd43d2"
+        data-variant="sour"
+      >
+        🔴
+         
+        Sour
+      </span>
+    </div>
+    <div
+      class="_actions_bd43d2"
+    >
+      <a
+        class="_ctaPrimary_bd43d2"
+        href="/#setup"
+      >
+        Get Started
+      </a>
+      <a
+        class="_ctaSecondary_bd43d2"
+        href="https://github.com/aspect-analytics/lychee"
+        rel="noopener noreferrer"
+        target="_blank"
+      >
+        View on GitHub
+      </a>
+    </div>
+  </section>
+</div>
+`;
