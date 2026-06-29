@@ -1,0 +1,116 @@
+.hero {
+  min-height: 100vh;
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  background: var(--color-bg);
+  padding: 2rem 1rem;
+}
+
+.logo {
+  max-width: clamp(180px, 30vw, 320px);
+  margin-bottom: 2rem;
+}
+
+.tagline {
+  font-size: var(--font-size-display);
+  font-weight: var(--font-weight-display, 800);
+  margin: 0 0 1.5rem 0;
+  color: var(--color-text);
+  line-height: 1.1;
+}
+
+.valueProp {
+  color: var(--color-text);
+  max-width: 60ch;
+  margin: 0 auto 2.5rem auto;
+  line-height: 1.5;
+  font-size: 1.125rem;
+}
+
+.badges {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 3rem;
+  flex-wrap: wrap;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 999px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  padding: 0.375rem 0.875rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-text);
+}
+
+.badge[data-variant="ripe"] {
+  border-color: var(--color-success);
+}
+
+.badge[data-variant="unripe"] {
+  border-color: var(--color-warning);
+}
+
+.badge[data-variant="sour"] {
+  border-color: var(--color-danger);
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  width: 100%;
+  max-width: 320px;
+}
+
+.ctaPrimary,
+.ctaSecondary {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0.875rem 1.5rem;
+  border-radius: var(--radius-button);
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 150ms ease;
+}
+
+.ctaPrimary {
+  background: var(--gradient-primary);
+  color: #fff;
+  border: none;
+}
+
+.ctaPrimary:hover {
+  filter: brightness(0.9);
+}
+
+.ctaSecondary {
+  background: transparent;
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+}
+
+.ctaSecondary:hover {
+  background: var(--color-surface);
+  border-color: var(--color-text);
+}
+
+@media (min-width: 768px) {
+  .actions {
+    flex-direction: row;
+    max-width: none;
+    justify-content: center;
+  }
+}
