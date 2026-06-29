@@ -13,147 +13,147 @@ exports[`HowItWorks > matches snapshot for regression locking 1`] = `
         How It Works
       </h2>
       <ol
-        class="_pipeline_936b6f"
+        class="_pipeline_7dd205"
       >
         <li
-          class="_stageItem_936b6f"
+          class="_stageItem_7dd205"
         >
           <div
-            class="_stageCard_936b6f stage"
+            class="_stageCard_7dd205 stage"
             data-stage-index="0"
           >
             <div
-              class="_stageLabel_936b6f"
+              class="_stageLabel_7dd205"
             >
               PR Event
             </div>
           </div>
           <span
             aria-hidden="true"
-            class="_arrow_936b6f"
+            class="_arrow_7dd205"
           >
             ↓
           </span>
         </li>
         <li
-          class="_stageItem_936b6f"
+          class="_stageItem_7dd205"
         >
           <div
-            class="_stageCard_936b6f stage"
+            class="_stageCard_7dd205 stage"
             data-stage-index="1"
           >
             <div
-              class="_stageLabel_936b6f"
+              class="_stageLabel_7dd205"
             >
               Context Assembly (diff, files, commits, metadata)
             </div>
           </div>
           <span
             aria-hidden="true"
-            class="_arrow_936b6f"
+            class="_arrow_7dd205"
           >
             ↓
           </span>
         </li>
         <li
-          class="_stageItem_936b6f"
+          class="_stageItem_7dd205"
         >
           <div
-            class="_stageCard_936b6f stage"
+            class="_stageCard_7dd205 stage"
             data-stage-index="2"
           >
             <span
-              class="_optionalBadge_936b6f"
+              class="_optionalBadge_7dd205"
             >
               Optional
             </span>
             <div
-              class="_stageLabel_936b6f"
+              class="_stageLabel_7dd205"
             >
               Triage Pass
             </div>
             <div
-              class="_stageDetail_936b6f"
+              class="_stageDetail_7dd205"
             >
               Haiku classifies trivial vs. substantive
             </div>
           </div>
           <span
             aria-hidden="true"
-            class="_arrow_936b6f"
+            class="_arrow_7dd205"
           >
             ↓
           </span>
         </li>
         <li
-          class="_stageItem_936b6f"
+          class="_stageItem_7dd205"
         >
           <div
-            class="_stageCard_936b6f stage"
+            class="_stageCard_7dd205 stage"
             data-stage-index="3"
           >
             <div
-              class="_stageLabel_936b6f"
+              class="_stageLabel_7dd205"
             >
               Model Selection (Haiku / Sonnet / Opus based on size + scope rules)
             </div>
           </div>
           <span
             aria-hidden="true"
-            class="_arrow_936b6f"
+            class="_arrow_7dd205"
           >
             ↓
           </span>
         </li>
         <li
-          class="_stageItem_936b6f"
+          class="_stageItem_7dd205"
         >
           <div
-            class="_stageCard_936b6f stage"
+            class="_stageCard_7dd205 stage"
             data-stage-index="4"
           >
             <div
-              class="_stageLabel_936b6f"
+              class="_stageLabel_7dd205"
             >
               Prompt Construction (persona + rubric + PR context + conventions)
             </div>
           </div>
           <span
             aria-hidden="true"
-            class="_arrow_936b6f"
+            class="_arrow_7dd205"
           >
             ↓
           </span>
         </li>
         <li
-          class="_stageItem_936b6f"
+          class="_stageItem_7dd205"
         >
           <div
-            class="_stageCard_936b6f stage"
+            class="_stageCard_7dd205 stage"
             data-stage-index="5"
           >
             <div
-              class="_stageLabel_936b6f"
+              class="_stageLabel_7dd205"
             >
               Claude API (structured tool call → ReviewResult)
             </div>
           </div>
           <span
             aria-hidden="true"
-            class="_arrow_936b6f"
+            class="_arrow_7dd205"
           >
             ↓
           </span>
         </li>
         <li
-          class="_stageItem_936b6f"
+          class="_stageItem_7dd205"
         >
           <div
-            class="_stageCard_936b6f stage"
+            class="_stageCard_7dd205 stage"
             data-stage-index="6"
           >
             <div
-              class="_stageLabel_936b6f"
+              class="_stageLabel_7dd205"
             >
               Render + Post (Nectar → The Peel → Pits → upsert comment)
             </div>
@@ -161,10 +161,10 @@ exports[`HowItWorks > matches snapshot for regression locking 1`] = `
         </li>
       </ol>
       <div
-        class="_tableWrapper_d4f43d"
+        class="_tableWrapper_181ad6"
       >
         <table
-          class="_comparisonTable_d4f43d"
+          class="_comparisonTable_181ad6"
         >
           <thead>
             <tr>
@@ -272,17 +272,17 @@ exports[`HowItWorks > matches snapshot for regression locking 1`] = `
         </table>
       </div>
       <p
-        class="_tableNote_d4f43d"
+        class="_tableNote_181ad6"
       >
         <em>
           Both modes run the same review engine and produce identical output.
         </em>
       </p>
       <div
-        class="_ctaWrapper_d4f43d"
+        class="_ctaWrapper_181ad6"
       >
         <a
-          class="_ctaLink_d4f43d"
+          class="_ctaLink_181ad6"
           href="/docs/architecture"
         >
           See the full architecture →

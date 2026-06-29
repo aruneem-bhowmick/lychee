@@ -94,24 +94,24 @@ Webhook URL: https://<your-host>:8000/webhook"
 exports[`SetupTabs Component & Constants > Visual/Snapshot > matches snapshot for panels output 1`] = `
 <div>
   <section
-    class="_section_76a1a1"
+    class="_section_3c3d5c"
     id="setup"
   >
     <div
-      class="_container_76a1a1"
+      class="_container_3c3d5c"
     >
       <h2>
         Setup
       </h2>
       <div
         aria-label="Setup mode"
-        class="_tablist_76a1a1"
+        class="_tablist_3c3d5c"
         role="tablist"
       >
         <button
           aria-controls="panel-github-actions"
           aria-selected="true"
-          class="_tab_76a1a1 _activeTab_76a1a1"
+          class="_tab_3c3d5c _activeTab_3c3d5c"
           id="tab-github-actions"
           role="tab"
           tabindex="0"
@@ -121,7 +121,7 @@ exports[`SetupTabs Component & Constants > Visual/Snapshot > matches snapshot fo
         <button
           aria-controls="panel-github-app"
           aria-selected="false"
-          class="_tab_76a1a1 "
+          class="_tab_3c3d5c "
           id="tab-github-app"
           role="tab"
           tabindex="-1"
@@ -130,19 +130,19 @@ exports[`SetupTabs Component & Constants > Visual/Snapshot > matches snapshot fo
         </button>
       </div>
       <div
-        class="_panelsContainer_76a1a1"
+        class="_panelsContainer_3c3d5c"
       >
         <div
           aria-labelledby="tab-github-actions"
-          class="_panel_76a1a1 _activePanel_76a1a1"
+          class="_panel_3c3d5c _activePanel_3c3d5c"
           id="panel-github-actions"
           role="tabpanel"
         >
           <div
-            class="_steps_76a1a1"
+            class="_steps_3c3d5c"
           >
             <div
-              class="_step_76a1a1"
+              class="_step_3c3d5c"
             >
               <h3>
                 Step 1: Prerequisites
@@ -155,7 +155,7 @@ exports[`SetupTabs Component & Constants > Visual/Snapshot > matches snapshot fo
 - An Anthropic API key  →  console.anthropic.com
               </div>
               <p
-                class="_note_76a1a1"
+                class="_note_3c3d5c"
               >
                 Get your key at
                  
@@ -169,7 +169,7 @@ exports[`SetupTabs Component & Constants > Visual/Snapshot > matches snapshot fo
               </p>
             </div>
             <div
-              class="_step_76a1a1"
+              class="_step_3c3d5c"
             >
               <h3>
                 Step 2: Add the workflow file
@@ -221,19 +221,19 @@ jobs:
           ANTHROPIC_API_KEY: \${{ secrets.ANTHROPIC_API_KEY }}
               </div>
               <p
-                class="_note_76a1a1"
+                class="_note_3c3d5c"
               >
                 GITHUB_TOKEN is provided automatically; ANTHROPIC_API_KEY is the only secret to configure.
               </p>
             </div>
             <div
-              class="_step_76a1a1"
+              class="_step_3c3d5c"
             >
               <h3>
                 Step 3: Add the repository secret
               </h3>
               <blockquote
-                class="_callout_76a1a1"
+                class="_callout_3c3d5c"
               >
                 In your GitHub repository: 
                 <strong>
@@ -248,19 +248,19 @@ jobs:
               </blockquote>
             </div>
             <div
-              class="_step_76a1a1"
+              class="_step_3c3d5c"
             >
               <h3>
                 Step 4: Optional — add a .lychee.yml
               </h3>
               <details
-                class="_details_76a1a1"
+                class="_details_3c3d5c"
               >
                 <summary>
                   Optional — add a .lychee.yml
                 </summary>
                 <div
-                  class="_detailsContent_76a1a1"
+                  class="_detailsContent_3c3d5c"
                 >
                   <div
                     data-filename=".lychee.yml"
@@ -279,7 +279,7 @@ features:
   cost_footer: true
                   </div>
                   <p
-                    class="_note_76a1a1"
+                    class="_note_3c3d5c"
                   >
                     Lychee runs with all defaults if this file is absent. See the full
                      
@@ -294,18 +294,18 @@ features:
               </details>
             </div>
             <div
-              class="_step_76a1a1"
+              class="_step_3c3d5c"
             >
               <h3>
                 Step 5: Open a pull request
               </h3>
               <blockquote
-                class="_callout_76a1a1"
+                class="_callout_3c3d5c"
               >
                 Open or push to any PR in your repository. Lychee will post a review comment automatically.
               </blockquote>
               <a
-                class="_cta_76a1a1"
+                class="_cta_3c3d5c"
                 href="#output"
               >
                 See what the output looks like →
@@ -315,16 +315,16 @@ features:
         </div>
         <div
           aria-labelledby="tab-github-app"
-          class="_panel_76a1a1 "
+          class="_panel_3c3d5c "
           hidden=""
           id="panel-github-app"
           role="tabpanel"
         >
           <div
-            class="_steps_76a1a1"
+            class="_steps_3c3d5c"
           >
             <div
-              class="_step_76a1a1"
+              class="_step_3c3d5c"
             >
               <h3>
                 Step 1: Register a GitHub App
@@ -347,22 +347,22 @@ Subscribe to events:
 Webhook URL: https://&lt;your-host&gt;:8000/webhook
               </div>
               <p
-                class="_note_76a1a1"
+                class="_note_3c3d5c"
               >
                 Note the App ID and generate a private key (PEM) after creation.
               </p>
             </div>
             <div
-              class="_step_76a1a1"
+              class="_step_3c3d5c"
             >
               <h3>
                 Step 2: Configure environment variables
               </h3>
               <div
-                class="_tableWrapper_76a1a1"
+                class="_tableWrapper_3c3d5c"
               >
                 <table
-                  class="_table_76a1a1"
+                  class="_table_3c3d5c"
                 >
                   <thead>
                     <tr>
@@ -420,7 +420,7 @@ Webhook URL: https://&lt;your-host&gt;:8000/webhook
               </div>
             </div>
             <div
-              class="_step_76a1a1"
+              class="_step_3c3d5c"
             >
               <h3>
                 Step 3: Deploy with Docker
@@ -441,7 +441,7 @@ docker run -d \\
   lychee
               </div>
               <p
-                class="_note_76a1a1"
+                class="_note_3c3d5c"
               >
                 <i>
                   The container exposes port 8000 and includes a built-in health check at GET /health.
@@ -449,7 +449,7 @@ docker run -d \\
               </p>
             </div>
             <div
-              class="_step_76a1a1"
+              class="_step_3c3d5c"
             >
               <h3>
                 Step 4: Or run directly
@@ -467,7 +467,7 @@ python -m scripts.run_server
               </div>
             </div>
             <div
-              class="_step_76a1a1"
+              class="_step_3c3d5c"
             >
               <h3>
                 Step 5: Install the App on your repositories
@@ -476,7 +476,7 @@ python -m scripts.run_server
                 After deploying, install the GitHub App on the repositories you want to review.
               </p>
               <a
-                class="_cta_76a1a1"
+                class="_cta_3c3d5c"
                 href="/docs/deployment"
               >
                 Full deployment guide →

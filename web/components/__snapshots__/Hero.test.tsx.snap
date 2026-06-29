@@ -4,30 +4,30 @@ exports[`Hero Component > matches the snapshot for regression locking 1`] = `
 <div>
   <section
     aria-labelledby="hero-tagline"
-    class="_hero_bd43d2"
+    class="_hero_a105f2"
     id="hero"
   >
     <img
       alt="Lychee"
-      class="_logo_bd43d2"
+      class="_logo_a105f2"
       src="/lychee-banner.svg"
     />
     <h1
-      class="_tagline_bd43d2"
+      class="_tagline_a105f2"
       id="hero-tagline"
     >
       Peel back your pull requests.
     </h1>
     <p
-      class="_valueProp_bd43d2"
+      class="_valueProp_a105f2"
     >
       Self-hosted, Claude-powered PR reviews that run concurrently, report cost to the cent, and never post twice.
     </p>
     <div
-      class="_badges_bd43d2"
+      class="_badges_a105f2"
     >
       <span
-        class="_badge_bd43d2"
+        class="_badge_a105f2"
         data-variant="ripe"
       >
         🟢
@@ -35,7 +35,7 @@ exports[`Hero Component > matches the snapshot for regression locking 1`] = `
         Ripe
       </span>
       <span
-        class="_badge_bd43d2"
+        class="_badge_a105f2"
         data-variant="unripe"
       >
         🟡
@@ -43,7 +43,7 @@ exports[`Hero Component > matches the snapshot for regression locking 1`] = `
         Unripe
       </span>
       <span
-        class="_badge_bd43d2"
+        class="_badge_a105f2"
         data-variant="sour"
       >
         🔴
@@ -52,16 +52,16 @@ exports[`Hero Component > matches the snapshot for regression locking 1`] = `
       </span>
     </div>
     <div
-      class="_actions_bd43d2"
+      class="_actions_a105f2"
     >
       <a
-        class="_ctaPrimary_bd43d2"
+        class="_ctaPrimary_a105f2"
         href="/#setup"
       >
         Get Started
       </a>
       <a
-        class="_ctaSecondary_bd43d2"
+        class="_ctaSecondary_a105f2"
         href="https://github.com/aspect-analytics/lychee"
         rel="noopener noreferrer"
         target="_blank"

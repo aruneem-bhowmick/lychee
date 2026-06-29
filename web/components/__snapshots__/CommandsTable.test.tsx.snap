@@ -3,22 +3,22 @@
 exports[`CommandsTable > Visual/Snapshot > matches the golden snapshot 1`] = `
 <div>
   <section
-    class="_section_bd6289"
+    class="_section_947488"
     id="commands"
   >
     <div
-      class="_container_bd6289"
+      class="_container_947488"
     >
       <h2
-        class="_heading_bd6289"
+        class="_heading_947488"
       >
         Interactive Commands
       </h2>
       <div
-        class="_tableWrapper_bd6289"
+        class="_tableWrapper_947488"
       >
         <table
-          class="_table_bd6289"
+          class="_table_947488"
         >
           <thead>
             <tr>
@@ -38,7 +38,7 @@ exports[`CommandsTable > Visual/Snapshot > matches the golden snapshot 1`] = `
             <tr>
               <td>
                 <code
-                  class="_code_bd6289"
+                  class="_code_947488"
                 >
                   @lychee peel
                 </code>
@@ -50,7 +50,7 @@ exports[`CommandsTable > Visual/Snapshot > matches the golden snapshot 1`] = `
             <tr>
               <td>
                 <code
-                  class="_code_bd6289"
+                  class="_code_947488"
                 >
                   @lychee juice
                 </code>
@@ -62,7 +62,7 @@ exports[`CommandsTable > Visual/Snapshot > matches the golden snapshot 1`] = `
             <tr>
               <td>
                 <code
-                  class="_code_bd6289"
+                  class="_code_947488"
                 >
                   @lychee pit
                 </code>
@@ -74,7 +74,7 @@ exports[`CommandsTable > Visual/Snapshot > matches the golden snapshot 1`] = `
             <tr>
               <td>
                 <code
-                  class="_code_bd6289"
+                  class="_code_947488"
                 >
                   @lychee ripe?
                 </code>
@@ -87,7 +87,7 @@ exports[`CommandsTable > Visual/Snapshot > matches the golden snapshot 1`] = `
         </table>
       </div>
       <p
-        class="_description_bd6289"
+        class="_description_947488"
       >
         Commands respect all the same configuration as automatic reviews: 
         <code>
@@ -120,12 +120,12 @@ exports[`CommandsTable > Visual/Snapshot > matches the golden snapshot 1`] = `
         . Unknown commands receive a help message listing all four.
       </p>
       <p
-        class="_snippetTitle_bd6289"
+        class="_snippetTitle_947488"
       >
         Enable commands by adding to .lychee.yml:
       </p>
       <div
-        class="_codeBlockWrapper_bd6289"
+        class="_codeBlockWrapper_947488"
       >
         <div
           data-filename=".lychee.yml"
@@ -141,7 +141,7 @@ authorization:
         </div>
       </div>
       <a
-        class="_cta_bd6289"
+        class="_cta_947488"
         href="/docs/commands"
       >
         Full command reference →

@@ -68,26 +68,26 @@ exports[`ConfigSampler Component > Regression: Content Snapshots > matches snaps
 exports[`ConfigSampler Component > Regression: Content Snapshots > matches snapshot for general render tree 1`] = `
 <div>
   <section
-    class="_section_c4da4e"
+    class="_section_6b9967"
     id="configure"
   >
     <div
-      class="_container_c4da4e"
+      class="_container_6b9967"
     >
       <h2
-        class="_heading_c4da4e"
+        class="_heading_6b9967"
       >
         Configuration
       </h2>
       <div
         aria-label="Configuration sampler"
-        class="_tablist_c4da4e"
+        class="_tablist_6b9967"
         role="tablist"
       >
         <button
           aria-controls="panel-minimal"
           aria-selected="true"
-          class="_tab_c4da4e _activeTab_c4da4e"
+          class="_tab_6b9967 _activeTab_6b9967"
           id="tab-minimal"
           role="tab"
           tabindex="0"
@@ -97,7 +97,7 @@ exports[`ConfigSampler Component > Regression: Content Snapshots > matches snaps
         <button
           aria-controls="panel-full"
           aria-selected="false"
-          class="_tab_c4da4e "
+          class="_tab_6b9967 "
           id="tab-full"
           role="tab"
           tabindex="-1"
@@ -107,7 +107,7 @@ exports[`ConfigSampler Component > Regression: Content Snapshots > matches snaps
         <button
           aria-controls="panel-monorepo"
           aria-selected="false"
-          class="_tab_c4da4e "
+          class="_tab_6b9967 "
           id="tab-monorepo"
           role="tab"
           tabindex="-1"
@@ -116,11 +116,11 @@ exports[`ConfigSampler Component > Regression: Content Snapshots > matches snaps
         </button>
       </div>
       <div
-        class="_panelsContainer_c4da4e"
+        class="_panelsContainer_6b9967"
       >
         <div
           aria-labelledby="tab-minimal"
-          class="_panel_c4da4e _activePanel_c4da4e"
+          class="_panel_6b9967 _activePanel_6b9967"
           id="panel-minimal"
           role="tabpanel"
         >
@@ -142,7 +142,7 @@ features:
         </div>
         <div
           aria-labelledby="tab-full"
-          class="_panel_c4da4e "
+          class="_panel_6b9967 "
           hidden=""
           id="panel-full"
           role="tabpanel"
@@ -182,7 +182,7 @@ authorization:
         </div>
         <div
           aria-labelledby="tab-monorepo"
-          class="_panel_c4da4e "
+          class="_panel_6b9967 "
           hidden=""
           id="panel-monorepo"
           role="tabpanel"
@@ -215,15 +215,15 @@ authorization:
         </div>
       </div>
       <h3
-        class="_tableSectionTitle_c4da4e"
+        class="_tableSectionTitle_6b9967"
       >
         Key Knobs
       </h3>
       <div
-        class="_tableWrapper_c4da4e"
+        class="_tableWrapper_6b9967"
       >
         <table
-          class="_table_c4da4e"
+          class="_table_6b9967"
         >
           <thead>
             <tr>
@@ -247,14 +247,14 @@ authorization:
           <tbody>
             <tr>
               <td
-                class="_monoCell_c4da4e"
+                class="_monoCell_6b9967"
               >
                 <code>
                   model.default
                 </code>
               </td>
               <td
-                class="_monoCell_c4da4e"
+                class="_monoCell_6b9967"
               >
                 <code>
                   claude-sonnet-4-6
@@ -266,14 +266,14 @@ authorization:
             </tr>
             <tr>
               <td
-                class="_monoCell_c4da4e"
+                class="_monoCell_6b9967"
               >
                 <code>
                   review.severity_threshold
                 </code>
               </td>
               <td
-                class="_monoCell_c4da4e"
+                class="_monoCell_6b9967"
               >
                 <code>
                   info
@@ -285,14 +285,14 @@ authorization:
             </tr>
             <tr>
               <td
-                class="_monoCell_c4da4e"
+                class="_monoCell_6b9967"
               >
                 <code>
                   review.tone
                 </code>
               </td>
               <td
-                class="_monoCell_c4da4e"
+                class="_monoCell_6b9967"
               >
                 <code>
                   balanced
@@ -304,14 +304,14 @@ authorization:
             </tr>
             <tr>
               <td
-                class="_monoCell_c4da4e"
+                class="_monoCell_6b9967"
               >
                 <code>
                   review.budget_cap_usd
                 </code>
               </td>
               <td
-                class="_monoCell_c4da4e"
+                class="_monoCell_6b9967"
               >
                 <code>
                   null
@@ -323,14 +323,14 @@ authorization:
             </tr>
             <tr>
               <td
-                class="_monoCell_c4da4e"
+                class="_monoCell_6b9967"
               >
                 <code>
                   features.inline_comments
                 </code>
               </td>
               <td
-                class="_monoCell_c4da4e"
+                class="_monoCell_6b9967"
               >
                 <code>
                   false
@@ -342,14 +342,14 @@ authorization:
             </tr>
             <tr>
               <td
-                class="_monoCell_c4da4e"
+                class="_monoCell_6b9967"
               >
                 <code>
                   features.triage_pass
                 </code>
               </td>
               <td
-                class="_monoCell_c4da4e"
+                class="_monoCell_6b9967"
               >
                 <code>
                   false
@@ -361,14 +361,14 @@ authorization:
             </tr>
             <tr>
               <td
-                class="_monoCell_c4da4e"
+                class="_monoCell_6b9967"
               >
                 <code>
                   features.commands
                 </code>
               </td>
               <td
-                class="_monoCell_c4da4e"
+                class="_monoCell_6b9967"
               >
                 <code>
                   false
@@ -380,14 +380,14 @@ authorization:
             </tr>
             <tr>
               <td
-                class="_monoCell_c4da4e"
+                class="_monoCell_6b9967"
               >
                 <code>
                   conventions_file
                 </code>
               </td>
               <td
-                class="_monoCell_c4da4e"
+                class="_monoCell_6b9967"
               >
                 <code>
                   null
@@ -401,10 +401,10 @@ authorization:
         </table>
       </div>
       <div
-        class="_ctaWrapper_c4da4e"
+        class="_ctaWrapper_6b9967"
       >
         <a
-          class="_cta_c4da4e"
+          class="_cta_6b9967"
           href="/docs/configuration"
         >
           Full configuration reference →

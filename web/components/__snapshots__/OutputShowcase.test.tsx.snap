@@ -3,124 +3,124 @@
 exports[`OutputShowcase > Visual/Snapshot tests > matches the snapshot to lock the mock and annotations 1`] = `
 <div>
   <section
-    class="section _section_46890d"
+    class="section _section_74f609"
     id="output"
   >
     <div
       class="container"
     >
       <h2
-        class="_title_46890d"
+        class="_title_74f609"
       >
         What you'll see in your PR
       </h2>
       <div
-        class="_showcaseWrapper_46890d"
+        class="_showcaseWrapper_74f609"
       >
         <div
-          class="_prContext_46890d"
+          class="_prContext_74f609"
         >
           Repository: 
           <code
-            class="_inlineCode_46890d"
+            class="_inlineCode_74f609"
           >
             acme-corp/billing-service
           </code>
           <br />
           PR title: 
           <code
-            class="_inlineCode_46890d"
+            class="_inlineCode_74f609"
           >
             feat: add Stripe webhook handler for payment events
           </code>
           <br />
           Author: 
           <code
-            class="_inlineCode_46890d"
+            class="_inlineCode_74f609"
           >
             @dev
           </code>
         </div>
         <div
-          class="_commentFrame_46890d"
+          class="_commentFrame_74f609"
         >
           <div
-            class="_headerStrip_46890d"
+            class="_headerStrip_74f609"
           >
             <div
-              class="_avatar_46890d"
+              class="_avatar_74f609"
             />
             <span
-              class="_author_46890d"
+              class="_author_74f609"
             >
               lychee-bot
             </span>
           </div>
           <div
-            class="_commentBody_46890d"
+            class="_commentBody_74f609"
           >
             <div>
               <div
-                class="_monospaceText_46890d"
+                class="_monospaceText_74f609"
               >
                 &lt;!-- lychee:review --&gt;
               </div>
               <div
-                class="_headerTitle_46890d"
+                class="_headerTitle_74f609"
               >
                 🌴 Lychee peeled this PR · claude-sonnet-4-6
               </div>
             </div>
             <div
-              class="_annotatable_46890d"
+              class="_annotatable_74f609"
               data-annotate="ripeness"
             >
               <div
-                class="_badge_46890d"
+                class="_badge_74f609"
               >
                 🟡 Unripe
               </div>
               <span
-                class="_annotation_46890d"
+                class="_annotation_74f609"
               >
                 Ripeness verdict: Ripe / Unripe / Sour
               </span>
             </div>
             <div
-              class="_nectarBlock_46890d _annotatable_46890d"
+              class="_nectarBlock_74f609 _annotatable_74f609"
               data-annotate="nectar"
             >
               <p>
                 This PR adds a Stripe webhook handler to process 
                 <code
-                  class="_inlineCode_46890d"
+                  class="_inlineCode_74f609"
                 >
                   payment_intent.succeeded
                 </code>
                  and 
                 <code
-                  class="_inlineCode_46890d"
+                  class="_inlineCode_74f609"
                 >
                   charge.failed
                 </code>
                  events, updating order status in the database. The implementation is functional but has a critical security gap in webhook signature verification and two correctness issues in the error-handling path that should be addressed before merging.
               </p>
               <span
-                class="_annotation_46890d"
+                class="_annotation_74f609"
               >
                 Nectar — the distilled summary
               </span>
             </div>
             <div
-              class="_annotatable_46890d"
+              class="_annotatable_74f609"
               data-annotate="peel"
             >
               <ul
-                class="_peelList_46890d"
+                class="_peelList_74f609"
               >
                 <li>
                   <code
-                    class="_inlineCode_46890d"
+                    class="_inlineCode_74f609"
                   >
                     src/webhooks/stripe.py
                   </code>
@@ -128,19 +128,19 @@ exports[`OutputShowcase > Visual/Snapshot tests > matches the snapshot to lock t
                 </li>
                 <li>
                   <code
-                    class="_inlineCode_46890d"
+                    class="_inlineCode_74f609"
                   >
                     src/models/order.py
                   </code>
                    — Adds 
                   <code
-                    class="_inlineCode_46890d"
+                    class="_inlineCode_74f609"
                   >
                     update_status()
                   </code>
                   . The method does not validate the transition (e.g., 
                   <code
-                    class="_inlineCode_46890d"
+                    class="_inlineCode_74f609"
                   >
                     completed → pending
                   </code>
@@ -148,7 +148,7 @@ exports[`OutputShowcase > Visual/Snapshot tests > matches the snapshot to lock t
                 </li>
                 <li>
                   <code
-                    class="_inlineCode_46890d"
+                    class="_inlineCode_74f609"
                   >
                     tests/test_stripe_webhook.py
                   </code>
@@ -156,20 +156,20 @@ exports[`OutputShowcase > Visual/Snapshot tests > matches the snapshot to lock t
                 </li>
               </ul>
               <span
-                class="_annotation_46890d"
+                class="_annotation_74f609"
               >
                 The Peel — file-by-file walkthrough
               </span>
             </div>
             <div
-              class="_annotatable_46890d"
+              class="_annotatable_74f609"
               data-annotate="pits"
             >
               <div
-                class="_pitsTableWrapper_46890d"
+                class="_pitsTableWrapper_74f609"
               >
                 <table
-                  class="_pitsTable_46890d"
+                  class="_pitsTable_74f609"
                 >
                   <thead>
                     <tr>
@@ -187,7 +187,7 @@ exports[`OutputShowcase > Visual/Snapshot tests > matches the snapshot to lock t
                   <tbody>
                     <tr>
                       <td
-                        class="_severityCell_46890d _severitycritical_46890d"
+                        class="_severityCell_74f609 _severitycritical_74f609"
                       >
                         🔴
                          
@@ -198,19 +198,19 @@ exports[`OutputShowcase > Visual/Snapshot tests > matches the snapshot to lock t
                       </td>
                       <td>
                         <code
-                          class="_inlineCode_46890d"
+                          class="_inlineCode_74f609"
                         >
                           stripe.py:47
                         </code>
                          — Webhook payload is processed without verifying the 
                         <code
-                          class="_inlineCode_46890d"
+                          class="_inlineCode_74f609"
                         >
                           Stripe-Signature
                         </code>
                          header. An attacker can POST arbitrary payloads and trigger order status changes. Use 
                         <code
-                          class="_inlineCode_46890d"
+                          class="_inlineCode_74f609"
                         >
                           stripe.Webhook.construct_event()
                         </code>
@@ -219,7 +219,7 @@ exports[`OutputShowcase > Visual/Snapshot tests > matches the snapshot to lock t
                     </tr>
                     <tr>
                       <td
-                        class="_severityCell_46890d _severitymajor_46890d"
+                        class="_severityCell_74f609 _severitymajor_74f609"
                       >
                         🟠
                          
@@ -230,25 +230,25 @@ exports[`OutputShowcase > Visual/Snapshot tests > matches the snapshot to lock t
                       </td>
                       <td>
                         <code
-                          class="_inlineCode_46890d"
+                          class="_inlineCode_74f609"
                         >
                           order.py:83
                         </code>
                          — 
                         <code
-                          class="_inlineCode_46890d"
+                          class="_inlineCode_74f609"
                         >
                           update_status()
                         </code>
                          accepts any target status without validating the transition. A 
                         <code
-                          class="_inlineCode_46890d"
+                          class="_inlineCode_74f609"
                         >
                           completed
                         </code>
                          order can be moved back to 
                         <code
-                          class="_inlineCode_46890d"
+                          class="_inlineCode_74f609"
                         >
                           pending
                         </code>
@@ -257,7 +257,7 @@ exports[`OutputShowcase > Visual/Snapshot tests > matches the snapshot to lock t
                     </tr>
                     <tr>
                       <td
-                        class="_severityCell_46890d _severityminor_46890d"
+                        class="_severityCell_74f609 _severityminor_74f609"
                       >
                         🟡
                          
@@ -268,19 +268,19 @@ exports[`OutputShowcase > Visual/Snapshot tests > matches the snapshot to lock t
                       </td>
                       <td>
                         <code
-                          class="_inlineCode_46890d"
+                          class="_inlineCode_74f609"
                         >
                           test_stripe_webhook.py
                         </code>
                          — No test for an invalid or missing 
                         <code
-                          class="_inlineCode_46890d"
+                          class="_inlineCode_74f609"
                         >
                           Stripe-Signature
                         </code>
                          header. Add a test confirming a 
                         <code
-                          class="_inlineCode_46890d"
+                          class="_inlineCode_74f609"
                         >
                           400
                         </code>
@@ -291,24 +291,24 @@ exports[`OutputShowcase > Visual/Snapshot tests > matches the snapshot to lock t
                 </table>
               </div>
               <span
-                class="_annotation_46890d"
+                class="_annotation_74f609"
               >
                 Pits — findings with severity & category
               </span>
             </div>
             <div
-              class="_annotatable_46890d"
+              class="_annotatable_74f609"
               data-annotate="footer"
             >
               <div
-                class="_monospaceText_46890d"
+                class="_monospaceText_74f609"
               >
                 Tokens: 4,821 in · 612 out · $0.023  ·  Reviewed to the core by Lychee 🌴
                 <br />
                 &lt;!-- lychee:state {"last_reviewed_sha": "a3f9c12"} --&gt;
               </div>
               <span
-                class="_annotation_46890d"
+                class="_annotation_74f609"
               >
                 Cost footer — exact token usage and USD cost
               </span>
@@ -316,71 +316,71 @@ exports[`OutputShowcase > Visual/Snapshot tests > matches the snapshot to lock t
           </div>
         </div>
         <p
-          class="_closingParagraph_46890d"
+          class="_closingParagraph_74f609"
         >
           Every Lychee review follows this structure — always one comment, always updated in place, always the same shape regardless of PR size. Severity levels: 
           <code
-            class="_inlineCode_46890d"
+            class="_inlineCode_74f609"
           >
             info
           </code>
           , 
           <code
-            class="_inlineCode_46890d"
+            class="_inlineCode_74f609"
           >
             minor
           </code>
           , 
           <code
-            class="_inlineCode_46890d"
+            class="_inlineCode_74f609"
           >
             major
           </code>
           , 
           <code
-            class="_inlineCode_46890d"
+            class="_inlineCode_74f609"
           >
             critical
           </code>
           . Categories: 
           <code
-            class="_inlineCode_46890d"
+            class="_inlineCode_74f609"
           >
             correctness
           </code>
           , 
           <code
-            class="_inlineCode_46890d"
+            class="_inlineCode_74f609"
           >
             security
           </code>
           , 
           <code
-            class="_inlineCode_46890d"
+            class="_inlineCode_74f609"
           >
             performance
           </code>
           , 
           <code
-            class="_inlineCode_46890d"
+            class="_inlineCode_74f609"
           >
             tests
           </code>
           , 
           <code
-            class="_inlineCode_46890d"
+            class="_inlineCode_74f609"
           >
             style
           </code>
           , 
           <code
-            class="_inlineCode_46890d"
+            class="_inlineCode_74f609"
           >
             docs
           </code>
           , 
           <code
-            class="_inlineCode_46890d"
+            class="_inlineCode_74f609"
           >
             other
           </code>

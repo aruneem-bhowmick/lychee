@@ -1,0 +1,26 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`FeatureCard Component > matches snapshot for regression 1`] = `
+<div>
+  <article
+    class="_card_c81049"
+  >
+    <span
+      aria-hidden="true"
+      class="_icon_c81049"
+    >
+      🚀
+    </span>
+    <h3
+      class="_title_c81049"
+    >
+      Test Title
+    </h3>
+    <p
+      class="_body_c81049"
+    >
+      This is a test body paragraph.
+    </p>
+  </article>
+</div>
+`;

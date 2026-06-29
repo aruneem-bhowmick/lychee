@@ -1,0 +1,134 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`FeatureHighlights Component > matches snapshot for all card bodies (regression) 1`] = `
+[
+  "Trivial PRs go to Haiku. Standard reviews use Sonnet. Diffs over 100,000 characters escalate automatically to Opus. Scope rules let you pin specific paths or PR labels to a different model — terraform changes can always get Opus, docs PRs can always get Haiku.",
+  "Every PR gets one review comment, identified by a hidden HTML marker. When new commits arrive, Lychee finds and updates that comment in place — no new notifications, no duplicate threads. Inline findings are fingerprinted (SHA-256) so they are never posted twice across pushes.",
+  "Every review reports its exact token usage and USD cost in the comment footer. Set a \`budget_cap_usd\` in \`.lychee.yml\` and Lychee will halt and report a partial result rather than exceeding it. No surprise bills.",
+  "PRs exceeding 50 changed files don't get skipped or truncated. Lychee partitions them into groups of 10, reviews each group separately, then merges the results into one coherent review. The output contract is identical regardless of PR size.",
+  "Drop \`@lychee peel\` in any PR comment for a full on-demand review. \`@lychee juice\` for just the summary. \`@lychee pit\` for the single most critical finding. \`@lychee ripe?\` for the merge-readiness verdict. Commands respect the same config as automatic reviews and support an allow-list for access control.",
+]
+`;
+
+exports[`FeatureHighlights Component > matches snapshot for full render (regression) 1`] = `
+<div>
+  <section
+    class="_section_9bee24 _fadeUp_9bee24"
+    id="features"
+  >
+    <div
+      class="_container_9bee24"
+    >
+      <h2
+        class="_heading_9bee24"
+      >
+        Why Lychee
+      </h2>
+      <div
+        class="_grid_9bee24"
+      >
+        <article
+          class="_card_c81049"
+        >
+          <span
+            aria-hidden="true"
+            class="_icon_c81049"
+          >
+            ⚖️
+          </span>
+          <h3
+            class="_title_c81049"
+          >
+            Smart Model Tiering
+          </h3>
+          <p
+            class="_body_c81049"
+          >
+            Trivial PRs go to Haiku. Standard reviews use Sonnet. Diffs over 100,000 characters escalate automatically to Opus. Scope rules let you pin specific paths or PR labels to a different model — terraform changes can always get Opus, docs PRs can always get Haiku.
+          </p>
+        </article>
+        <article
+          class="_card_c81049"
+        >
+          <span
+            aria-hidden="true"
+            class="_icon_c81049"
+          >
+            🔕
+          </span>
+          <h3
+            class="_title_c81049"
+          >
+            No-Spam Ergonomics
+          </h3>
+          <p
+            class="_body_c81049"
+          >
+            Every PR gets one review comment, identified by a hidden HTML marker. When new commits arrive, Lychee finds and updates that comment in place — no new notifications, no duplicate threads. Inline findings are fingerprinted (SHA-256) so they are never posted twice across pushes.
+          </p>
+        </article>
+        <article
+          class="_card_c81049"
+        >
+          <span
+            aria-hidden="true"
+            class="_icon_c81049"
+          >
+            💰
+          </span>
+          <h3
+            class="_title_c81049"
+          >
+            Predictable Cost
+          </h3>
+          <p
+            class="_body_c81049"
+          >
+            Every review reports its exact token usage and USD cost in the comment footer. Set a \`budget_cap_usd\` in \`.lychee.yml\` and Lychee will halt and report a partial result rather than exceeding it. No surprise bills.
+          </p>
+        </article>
+        <article
+          class="_card_c81049"
+        >
+          <span
+            aria-hidden="true"
+            class="_icon_c81049"
+          >
+            🗂️
+          </span>
+          <h3
+            class="_title_c81049"
+          >
+            Map-Reduce for Large PRs
+          </h3>
+          <p
+            class="_body_c81049"
+          >
+            PRs exceeding 50 changed files don't get skipped or truncated. Lychee partitions them into groups of 10, reviews each group separately, then merges the results into one coherent review. The output contract is identical regardless of PR size.
+          </p>
+        </article>
+        <article
+          class="_card_c81049"
+        >
+          <span
+            aria-hidden="true"
+            class="_icon_c81049"
+          >
+            💬
+          </span>
+          <h3
+            class="_title_c81049"
+          >
+            Interactive Commands
+          </h3>
+          <p
+            class="_body_c81049"
+          >
+            Drop \`@lychee peel\` in any PR comment for a full on-demand review. \`@lychee juice\` for just the summary. \`@lychee pit\` for the single most critical finding. \`@lychee ripe?\` for the merge-readiness verdict. Commands respect the same config as automatic reviews and support an allow-list for access control.
+          </p>
+        </article>
+      </div>
+    </div>
+  </section>
+</div>
+`;

@@ -13,10 +13,10 @@ exports[`ContributeSection Component > Regression Test > matches snapshot 1`] = 
         Contribute
       </h2>
       <div
-        class="_content_ea6bce"
+        class="_content_ae15cf"
       >
         <div
-          class="_setup_ea6bce"
+          class="_setup_ae15cf"
         >
           <h3>
             1. Clone and install
@@ -34,7 +34,7 @@ pre-commit install
           </div>
         </div>
         <div
-          class="_setup_ea6bce"
+          class="_setup_ae15cf"
         >
           <h3>
             2. Run the test suite
@@ -46,7 +46,7 @@ pre-commit install
             pytest
           </div>
           <blockquote
-            class="_callout_ea6bce"
+            class="_callout_ae15cf"
           >
             Coverage is enforced at 80% (branch coverage). The default invocation excludes 
             <code>
@@ -69,16 +69,16 @@ pytest --snapshot-update
           </div>
         </div>
         <div
-          class="_setup_ea6bce"
+          class="_setup_ae15cf"
         >
           <h3>
             3. Code standards at a glance
           </h3>
           <div
-            class="_tableWrapper_ea6bce"
+            class="_tableWrapper_ae15cf"
           >
             <table
-              class="_table_ea6bce"
+              class="_table_ae15cf"
             >
               <thead>
                 <tr>
@@ -162,7 +162,7 @@ pytest --snapshot-update
         </div>
       </div>
       <div
-        class="_workflow_ea6bce"
+        class="_workflow_ae15cf"
       >
         <h3>
           Contribution Workflow
@@ -196,7 +196,7 @@ pytest --snapshot-update
       </div>
       <aside
         aria-label="Security reporting"
-        class="_securityNotice_ea6bce"
+        class="_securityNotice_ae15cf"
       >
         <p>
           <strong>
@@ -210,16 +210,16 @@ pytest --snapshot-update
         </p>
       </aside>
       <div
-        class="_ctas_ea6bce"
+        class="_ctas_ae15cf"
       >
         <a
-          class="_ctaLink_ea6bce"
+          class="_ctaLink_ae15cf"
           href="/docs/development"
         >
           Development guide →
         </a>
         <a
-          class="_ctaLink_ea6bce"
+          class="_ctaLink_ae15cf"
           href="/docs/roadmap"
         >
           Roadmap →
