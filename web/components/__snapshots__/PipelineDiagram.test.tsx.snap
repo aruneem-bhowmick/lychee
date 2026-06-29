@@ -1,0 +1,154 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`PipelineDiagram > matches snapshot 1`] = `
+<div>
+  <ol
+    class="_pipeline_936b6f"
+  >
+    <li
+      class="_stageItem_936b6f"
+    >
+      <div
+        class="_stageCard_936b6f stage"
+        data-stage-index="0"
+      >
+        <div
+          class="_stageLabel_936b6f"
+        >
+          PR Event
+        </div>
+      </div>
+      <span
+        aria-hidden="true"
+        class="_arrow_936b6f"
+      >
+        ↓
+      </span>
+    </li>
+    <li
+      class="_stageItem_936b6f"
+    >
+      <div
+        class="_stageCard_936b6f stage"
+        data-stage-index="1"
+      >
+        <div
+          class="_stageLabel_936b6f"
+        >
+          Context Assembly (diff, files, commits, metadata)
+        </div>
+      </div>
+      <span
+        aria-hidden="true"
+        class="_arrow_936b6f"
+      >
+        ↓
+      </span>
+    </li>
+    <li
+      class="_stageItem_936b6f"
+    >
+      <div
+        class="_stageCard_936b6f stage"
+        data-stage-index="2"
+      >
+        <span
+          class="_optionalBadge_936b6f"
+        >
+          Optional
+        </span>
+        <div
+          class="_stageLabel_936b6f"
+        >
+          Triage Pass
+        </div>
+        <div
+          class="_stageDetail_936b6f"
+        >
+          Haiku classifies trivial vs. substantive
+        </div>
+      </div>
+      <span
+        aria-hidden="true"
+        class="_arrow_936b6f"
+      >
+        ↓
+      </span>
+    </li>
+    <li
+      class="_stageItem_936b6f"
+    >
+      <div
+        class="_stageCard_936b6f stage"
+        data-stage-index="3"
+      >
+        <div
+          class="_stageLabel_936b6f"
+        >
+          Model Selection (Haiku / Sonnet / Opus based on size + scope rules)
+        </div>
+      </div>
+      <span
+        aria-hidden="true"
+        class="_arrow_936b6f"
+      >
+        ↓
+      </span>
+    </li>
+    <li
+      class="_stageItem_936b6f"
+    >
+      <div
+        class="_stageCard_936b6f stage"
+        data-stage-index="4"
+      >
+        <div
+          class="_stageLabel_936b6f"
+        >
+          Prompt Construction (persona + rubric + PR context + conventions)
+        </div>
+      </div>
+      <span
+        aria-hidden="true"
+        class="_arrow_936b6f"
+      >
+        ↓
+      </span>
+    </li>
+    <li
+      class="_stageItem_936b6f"
+    >
+      <div
+        class="_stageCard_936b6f stage"
+        data-stage-index="5"
+      >
+        <div
+          class="_stageLabel_936b6f"
+        >
+          Claude API (structured tool call → ReviewResult)
+        </div>
+      </div>
+      <span
+        aria-hidden="true"
+        class="_arrow_936b6f"
+      >
+        ↓
+      </span>
+    </li>
+    <li
+      class="_stageItem_936b6f"
+    >
+      <div
+        class="_stageCard_936b6f stage"
+        data-stage-index="6"
+      >
+        <div
+          class="_stageLabel_936b6f"
+        >
+          Render + Post (Nectar → The Peel → Pits → upsert comment)
+        </div>
+      </div>
+    </li>
+  </ol>
+</div>
+`;
