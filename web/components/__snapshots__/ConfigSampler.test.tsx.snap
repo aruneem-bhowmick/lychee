@@ -1,0 +1,416 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`ConfigSampler Component > Regression: Content Snapshots > matches snapshot for YAML content constants 1`] = `
+"# .lychee.yml — minimal
+model:
+  default: claude-sonnet-4-6
+
+review:
+  severity_threshold: info
+
+features:
+  cost_footer: true"
+`;
+
+exports[`ConfigSampler Component > Regression: Content Snapshots > matches snapshot for YAML content constants 2`] = `
+"model:
+  default: claude-sonnet-4-6
+  triage: claude-haiku-4-5-20251001
+  large_pr: claude-opus-4-8
+
+review:
+  ignore_globs:
+    - "**/*.lock"
+    - "**/*.min.js"
+    - "vendor/**"
+  severity_threshold: info
+  tone: balanced
+  language: en
+  budget_cap_usd: 0.50
+
+features:
+  inline_comments: true
+  cost_footer: true
+  commands: true
+  triage_pass: true
+
+conventions_file: .github/conventions.md
+
+authorization:
+  allowed_users:
+    - alice
+    - bob"
+`;
+
+exports[`ConfigSampler Component > Regression: Content Snapshots > matches snapshot for YAML content constants 3`] = `
+"review:
+  scope_rules:
+    # Skip generated files entirely
+    - paths: ["**/generated/**", "**/*.gen.ts"]
+      ignore: true
+
+    # Detailed review for security-sensitive code
+    - paths: ["src/auth/**", "src/crypto/**"]
+      tone: detailed
+      severity_threshold: info
+
+    # Use Opus for infrastructure changes
+    - paths: ["terraform/**", "k8s/**"]
+      labels: ["infrastructure"]
+      model: claude-opus-4-8
+
+    # Concise reviews for documentation PRs
+    - labels: ["docs"]
+      tone: concise
+      severity_threshold: major"
+`;
+
+exports[`ConfigSampler Component > Regression: Content Snapshots > matches snapshot for general render tree 1`] = `
+<div>
+  <section
+    class="_section_c4da4e"
+    id="configure"
+  >
+    <div
+      class="_container_c4da4e"
+    >
+      <h2
+        class="_heading_c4da4e"
+      >
+        Configuration
+      </h2>
+      <div
+        aria-label="Configuration sampler"
+        class="_tablist_c4da4e"
+        role="tablist"
+      >
+        <button
+          aria-controls="panel-minimal"
+          aria-selected="true"
+          class="_tab_c4da4e _activeTab_c4da4e"
+          id="tab-minimal"
+          role="tab"
+          tabindex="0"
+        >
+          Minimal
+        </button>
+        <button
+          aria-controls="panel-full"
+          aria-selected="false"
+          class="_tab_c4da4e "
+          id="tab-full"
+          role="tab"
+          tabindex="-1"
+        >
+          Full-featured
+        </button>
+        <button
+          aria-controls="panel-monorepo"
+          aria-selected="false"
+          class="_tab_c4da4e "
+          id="tab-monorepo"
+          role="tab"
+          tabindex="-1"
+        >
+          Monorepo with scope rules
+        </button>
+      </div>
+      <div
+        class="_panelsContainer_c4da4e"
+      >
+        <div
+          aria-labelledby="tab-minimal"
+          class="_panel_c4da4e _activePanel_c4da4e"
+          id="panel-minimal"
+          role="tabpanel"
+        >
+          <div
+            data-filename=".lychee.yml"
+            data-lang="yaml"
+            data-testid="code-block"
+          >
+            # .lychee.yml — minimal
+model:
+  default: claude-sonnet-4-6
+
+review:
+  severity_threshold: info
+
+features:
+  cost_footer: true
+          </div>
+        </div>
+        <div
+          aria-labelledby="tab-full"
+          class="_panel_c4da4e "
+          hidden=""
+          id="panel-full"
+          role="tabpanel"
+        >
+          <div
+            data-lang="yaml"
+            data-testid="code-block"
+          >
+            model:
+  default: claude-sonnet-4-6
+  triage: claude-haiku-4-5-20251001
+  large_pr: claude-opus-4-8
+
+review:
+  ignore_globs:
+    - "**/*.lock"
+    - "**/*.min.js"
+    - "vendor/**"
+  severity_threshold: info
+  tone: balanced
+  language: en
+  budget_cap_usd: 0.50
+
+features:
+  inline_comments: true
+  cost_footer: true
+  commands: true
+  triage_pass: true
+
+conventions_file: .github/conventions.md
+
+authorization:
+  allowed_users:
+    - alice
+    - bob
+          </div>
+        </div>
+        <div
+          aria-labelledby="tab-monorepo"
+          class="_panel_c4da4e "
+          hidden=""
+          id="panel-monorepo"
+          role="tabpanel"
+        >
+          <div
+            data-lang="yaml"
+            data-testid="code-block"
+          >
+            review:
+  scope_rules:
+    # Skip generated files entirely
+    - paths: ["**/generated/**", "**/*.gen.ts"]
+      ignore: true
+
+    # Detailed review for security-sensitive code
+    - paths: ["src/auth/**", "src/crypto/**"]
+      tone: detailed
+      severity_threshold: info
+
+    # Use Opus for infrastructure changes
+    - paths: ["terraform/**", "k8s/**"]
+      labels: ["infrastructure"]
+      model: claude-opus-4-8
+
+    # Concise reviews for documentation PRs
+    - labels: ["docs"]
+      tone: concise
+      severity_threshold: major
+          </div>
+        </div>
+      </div>
+      <h3
+        class="_tableSectionTitle_c4da4e"
+      >
+        Key Knobs
+      </h3>
+      <div
+        class="_tableWrapper_c4da4e"
+      >
+        <table
+          class="_table_c4da4e"
+        >
+          <thead>
+            <tr>
+              <th
+                scope="col"
+              >
+                Key
+              </th>
+              <th
+                scope="col"
+              >
+                Default
+              </th>
+              <th
+                scope="col"
+              >
+                What it controls
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td
+                class="_monoCell_c4da4e"
+              >
+                <code>
+                  model.default
+                </code>
+              </td>
+              <td
+                class="_monoCell_c4da4e"
+              >
+                <code>
+                  claude-sonnet-4-6
+                </code>
+              </td>
+              <td>
+                Model for standard reviews
+              </td>
+            </tr>
+            <tr>
+              <td
+                class="_monoCell_c4da4e"
+              >
+                <code>
+                  review.severity_threshold
+                </code>
+              </td>
+              <td
+                class="_monoCell_c4da4e"
+              >
+                <code>
+                  info
+                </code>
+              </td>
+              <td>
+                Minimum severity shown in output
+              </td>
+            </tr>
+            <tr>
+              <td
+                class="_monoCell_c4da4e"
+              >
+                <code>
+                  review.tone
+                </code>
+              </td>
+              <td
+                class="_monoCell_c4da4e"
+              >
+                <code>
+                  balanced
+                </code>
+              </td>
+              <td>
+                balanced / concise / detailed
+              </td>
+            </tr>
+            <tr>
+              <td
+                class="_monoCell_c4da4e"
+              >
+                <code>
+                  review.budget_cap_usd
+                </code>
+              </td>
+              <td
+                class="_monoCell_c4da4e"
+              >
+                <code>
+                  null
+                </code>
+              </td>
+              <td>
+                Max USD per review; null = no cap
+              </td>
+            </tr>
+            <tr>
+              <td
+                class="_monoCell_c4da4e"
+              >
+                <code>
+                  features.inline_comments
+                </code>
+              </td>
+              <td
+                class="_monoCell_c4da4e"
+              >
+                <code>
+                  false
+                </code>
+              </td>
+              <td>
+                Post findings as inline diff comments
+              </td>
+            </tr>
+            <tr>
+              <td
+                class="_monoCell_c4da4e"
+              >
+                <code>
+                  features.triage_pass
+                </code>
+              </td>
+              <td
+                class="_monoCell_c4da4e"
+              >
+                <code>
+                  false
+                </code>
+              </td>
+              <td>
+                Pre-classify PRs to route trivial ones cheaper
+              </td>
+            </tr>
+            <tr>
+              <td
+                class="_monoCell_c4da4e"
+              >
+                <code>
+                  features.commands
+                </code>
+              </td>
+              <td
+                class="_monoCell_c4da4e"
+              >
+                <code>
+                  false
+                </code>
+              </td>
+              <td>
+                Enable @lychee command handling
+              </td>
+            </tr>
+            <tr>
+              <td
+                class="_monoCell_c4da4e"
+              >
+                <code>
+                  conventions_file
+                </code>
+              </td>
+              <td
+                class="_monoCell_c4da4e"
+              >
+                <code>
+                  null
+                </code>
+              </td>
+              <td>
+                Path to a conventions file appended to the prompt
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div
+        class="_ctaWrapper_c4da4e"
+      >
+        <a
+          class="_cta_c4da4e"
+          href="/docs/configuration"
+        >
+          Full configuration reference →
+        </a>
+      </div>
+    </div>
+  </section>
+</div>
+`;
