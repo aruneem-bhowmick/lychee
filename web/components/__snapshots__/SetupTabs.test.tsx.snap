@@ -1,0 +1,491 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`SetupTabs Component & Constants > Unit: Constants > asserts Regression: exact character sequences are preserved 1`] = `
+"# .lychee.yml (optional — all defaults are sensible)
+model:
+  default: claude-sonnet-4-6
+
+review:
+  severity_threshold: info
+  tone: balanced
+
+features:
+  cost_footer: true"
+`;
+
+exports[`SetupTabs Component & Constants > Unit: Constants > asserts Regression: exact character sequences are preserved 2`] = `
+"name: Lychee PR Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    if: >-
+      (github.event_name == 'pull_request' &&
+       github.event.pull_request.head.repo.full_name == github.repository &&
+       secrets.ANTHROPIC_API_KEY != '') ||
+      (github.event_name == 'issue_comment' &&
+       github.event.issue.pull_request &&
+       contains(github.event.comment.body, '@lychee') &&
+       secrets.ANTHROPIC_API_KEY != '')
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -e .
+      - run: python scripts/run_action.py
+        env:
+          GITHUB_TOKEN: \${{ secrets.GITHUB_TOKEN }}
+          ANTHROPIC_API_KEY: \${{ secrets.ANTHROPIC_API_KEY }}"
+`;
+
+exports[`SetupTabs Component & Constants > Unit: Constants > asserts Regression: exact character sequences are preserved 3`] = `
+"docker build -t lychee .
+docker run -d \\
+  -p 8000:8000 \\
+  -e LYCHEE_WEBHOOK_SECRET="your-secret" \\
+  -e LYCHEE_APP_ID="12345" \\
+  -e LYCHEE_PRIVATE_KEY_PATH="/app/private-key.pem" \\
+  -e ANTHROPIC_API_KEY="sk-ant-..." \\
+  -v /path/to/private-key.pem:/app/private-key.pem:ro \\
+  -v /path/to/data:/app/data \\
+  lychee"
+`;
+
+exports[`SetupTabs Component & Constants > Unit: Constants > asserts Regression: exact character sequences are preserved 4`] = `
+"export LYCHEE_WEBHOOK_SECRET="..."
+export LYCHEE_APP_ID="..."
+export LYCHEE_PRIVATE_KEY_PATH="/path/to/private-key.pem"
+export ANTHROPIC_API_KEY="sk-ant-..."
+
+python -m scripts.run_server"
+`;
+
+exports[`SetupTabs Component & Constants > Unit: Constants > asserts Regression: exact character sequences are preserved 5`] = `
+"- Python 3.11+
+- An Anthropic API key  →  console.anthropic.com"
+`;
+
+exports[`SetupTabs Component & Constants > Unit: Constants > asserts Regression: exact character sequences are preserved 6`] = `
+"github.com/settings/apps/new
+
+Required permissions:
+  Repository → Contents: Read
+  Repository → Pull requests: Read & Write
+  Repository → Issues: Read & Write
+
+Subscribe to events:
+  Pull request
+  Issue comment
+
+Webhook URL: https://<your-host>:8000/webhook"
+`;
+
+exports[`SetupTabs Component & Constants > Visual/Snapshot > matches snapshot for panels output 1`] = `
+<div>
+  <section
+    class="_section_76a1a1"
+    id="setup"
+  >
+    <div
+      class="_container_76a1a1"
+    >
+      <h2>
+        Setup
+      </h2>
+      <div
+        aria-label="Setup mode"
+        class="_tablist_76a1a1"
+        role="tablist"
+      >
+        <button
+          aria-controls="panel-github-actions"
+          aria-selected="true"
+          class="_tab_76a1a1 _activeTab_76a1a1"
+          id="tab-github-actions"
+          role="tab"
+          tabindex="0"
+        >
+          GitHub Actions
+        </button>
+        <button
+          aria-controls="panel-github-app"
+          aria-selected="false"
+          class="_tab_76a1a1 "
+          id="tab-github-app"
+          role="tab"
+          tabindex="-1"
+        >
+          GitHub App
+        </button>
+      </div>
+      <div
+        class="_panelsContainer_76a1a1"
+      >
+        <div
+          aria-labelledby="tab-github-actions"
+          class="_panel_76a1a1 _activePanel_76a1a1"
+          id="panel-github-actions"
+          role="tabpanel"
+        >
+          <div
+            class="_steps_76a1a1"
+          >
+            <div
+              class="_step_76a1a1"
+            >
+              <h3>
+                Step 1: Prerequisites
+              </h3>
+              <div
+                data-lang="text"
+                data-testid="code-block"
+              >
+                - Python 3.11+
+- An Anthropic API key  →  console.anthropic.com
+              </div>
+              <p
+                class="_note_76a1a1"
+              >
+                Get your key at
+                 
+                <a
+                  href="https://console.anthropic.com"
+                  rel="noopener noreferrer"
+                  target="_blank"
+                >
+                  https://console.anthropic.com
+                </a>
+              </p>
+            </div>
+            <div
+              class="_step_76a1a1"
+            >
+              <h3>
+                Step 2: Add the workflow file
+              </h3>
+              <p>
+                Create 
+                <code>
+                  .github/workflows/lychee-review.yml
+                </code>
+                :
+              </p>
+              <div
+                data-filename=".github/workflows/lychee-review.yml"
+                data-lang="yaml"
+                data-testid="code-block"
+              >
+                name: Lychee PR Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    if: &gt;-
+      (github.event_name == 'pull_request' &&
+       github.event.pull_request.head.repo.full_name == github.repository &&
+       secrets.ANTHROPIC_API_KEY != '') ||
+      (github.event_name == 'issue_comment' &&
+       github.event.issue.pull_request &&
+       contains(github.event.comment.body, '@lychee') &&
+       secrets.ANTHROPIC_API_KEY != '')
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -e .
+      - run: python scripts/run_action.py
+        env:
+          GITHUB_TOKEN: \${{ secrets.GITHUB_TOKEN }}
+          ANTHROPIC_API_KEY: \${{ secrets.ANTHROPIC_API_KEY }}
+              </div>
+              <p
+                class="_note_76a1a1"
+              >
+                GITHUB_TOKEN is provided automatically; ANTHROPIC_API_KEY is the only secret to configure.
+              </p>
+            </div>
+            <div
+              class="_step_76a1a1"
+            >
+              <h3>
+                Step 3: Add the repository secret
+              </h3>
+              <blockquote
+                class="_callout_76a1a1"
+              >
+                In your GitHub repository: 
+                <strong>
+                  Settings → Secrets and variables → Actions → New repository secret
+                </strong>
+                <br />
+                Name: 
+                <code>
+                  ANTHROPIC_API_KEY
+                </code>
+                 / Value: your Anthropic API key
+              </blockquote>
+            </div>
+            <div
+              class="_step_76a1a1"
+            >
+              <h3>
+                Step 4: Optional — add a .lychee.yml
+              </h3>
+              <details
+                class="_details_76a1a1"
+              >
+                <summary>
+                  Optional — add a .lychee.yml
+                </summary>
+                <div
+                  class="_detailsContent_76a1a1"
+                >
+                  <div
+                    data-filename=".lychee.yml"
+                    data-lang="yaml"
+                    data-testid="code-block"
+                  >
+                    # .lychee.yml (optional — all defaults are sensible)
+model:
+  default: claude-sonnet-4-6
+
+review:
+  severity_threshold: info
+  tone: balanced
+
+features:
+  cost_footer: true
+                  </div>
+                  <p
+                    class="_note_76a1a1"
+                  >
+                    Lychee runs with all defaults if this file is absent. See the full
+                     
+                    <a
+                      href="/docs/configuration"
+                    >
+                      Configuration reference
+                    </a>
+                     for all options.
+                  </p>
+                </div>
+              </details>
+            </div>
+            <div
+              class="_step_76a1a1"
+            >
+              <h3>
+                Step 5: Open a pull request
+              </h3>
+              <blockquote
+                class="_callout_76a1a1"
+              >
+                Open or push to any PR in your repository. Lychee will post a review comment automatically.
+              </blockquote>
+              <a
+                class="_cta_76a1a1"
+                href="#output"
+              >
+                See what the output looks like →
+              </a>
+            </div>
+          </div>
+        </div>
+        <div
+          aria-labelledby="tab-github-app"
+          class="_panel_76a1a1 "
+          hidden=""
+          id="panel-github-app"
+          role="tabpanel"
+        >
+          <div
+            class="_steps_76a1a1"
+          >
+            <div
+              class="_step_76a1a1"
+            >
+              <h3>
+                Step 1: Register a GitHub App
+              </h3>
+              <div
+                data-lang="text"
+                data-testid="code-block"
+              >
+                github.com/settings/apps/new
+
+Required permissions:
+  Repository → Contents: Read
+  Repository → Pull requests: Read & Write
+  Repository → Issues: Read & Write
+
+Subscribe to events:
+  Pull request
+  Issue comment
+
+Webhook URL: https://&lt;your-host&gt;:8000/webhook
+              </div>
+              <p
+                class="_note_76a1a1"
+              >
+                Note the App ID and generate a private key (PEM) after creation.
+              </p>
+            </div>
+            <div
+              class="_step_76a1a1"
+            >
+              <h3>
+                Step 2: Configure environment variables
+              </h3>
+              <div
+                class="_tableWrapper_76a1a1"
+              >
+                <table
+                  class="_table_76a1a1"
+                >
+                  <thead>
+                    <tr>
+                      <th>
+                        Variable
+                      </th>
+                      <th>
+                        Description
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>
+                        <code>
+                          LYCHEE_WEBHOOK_SECRET
+                        </code>
+                      </td>
+                      <td>
+                        Webhook secret from App settings
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>
+                        <code>
+                          LYCHEE_APP_ID
+                        </code>
+                      </td>
+                      <td>
+                        GitHub App ID
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>
+                        <code>
+                          LYCHEE_PRIVATE_KEY_PATH
+                        </code>
+                      </td>
+                      <td>
+                        Path to your PEM private key file
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>
+                        <code>
+                          ANTHROPIC_API_KEY
+                        </code>
+                      </td>
+                      <td>
+                        Anthropic API key
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div
+              class="_step_76a1a1"
+            >
+              <h3>
+                Step 3: Deploy with Docker
+              </h3>
+              <div
+                data-lang="bash"
+                data-testid="code-block"
+              >
+                docker build -t lychee .
+docker run -d \\
+  -p 8000:8000 \\
+  -e LYCHEE_WEBHOOK_SECRET="your-secret" \\
+  -e LYCHEE_APP_ID="12345" \\
+  -e LYCHEE_PRIVATE_KEY_PATH="/app/private-key.pem" \\
+  -e ANTHROPIC_API_KEY="sk-ant-..." \\
+  -v /path/to/private-key.pem:/app/private-key.pem:ro \\
+  -v /path/to/data:/app/data \\
+  lychee
+              </div>
+              <p
+                class="_note_76a1a1"
+              >
+                <i>
+                  The container exposes port 8000 and includes a built-in health check at GET /health.
+                </i>
+              </p>
+            </div>
+            <div
+              class="_step_76a1a1"
+            >
+              <h3>
+                Step 4: Or run directly
+              </h3>
+              <div
+                data-lang="bash"
+                data-testid="code-block"
+              >
+                export LYCHEE_WEBHOOK_SECRET="..."
+export LYCHEE_APP_ID="..."
+export LYCHEE_PRIVATE_KEY_PATH="/path/to/private-key.pem"
+export ANTHROPIC_API_KEY="sk-ant-..."
+
+python -m scripts.run_server
+              </div>
+            </div>
+            <div
+              class="_step_76a1a1"
+            >
+              <h3>
+                Step 5: Install the App on your repositories
+              </h3>
+              <p>
+                After deploying, install the GitHub App on the repositories you want to review.
+              </p>
+              <a
+                class="_cta_76a1a1"
+                href="/docs/deployment"
+              >
+                Full deployment guide →
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+`;
