@@ -34,7 +34,7 @@ describe('PipelineDiagram', () => {
 
   it('renders all seven stage labels in order', () => {
     const { container } = render(<PipelineDiagram />);
-    const labels = container.querySelectorAll('.stageLabel');
+    const labels = container.querySelectorAll('[class*="stageLabel"]');
     expect(labels).toHaveLength(7);
     
     PIPELINE_STAGES.forEach((stage, index) => {

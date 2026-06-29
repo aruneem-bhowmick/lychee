@@ -1,0 +1,294 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`HowItWorks > matches snapshot for regression locking 1`] = `
+<div>
+  <section
+    class="section"
+    id="how-it-works"
+  >
+    <div
+      class="container"
+    >
+      <h2>
+        How It Works
+      </h2>
+      <ol
+        class="_pipeline_936b6f"
+      >
+        <li
+          class="_stageItem_936b6f"
+        >
+          <div
+            class="_stageCard_936b6f stage"
+            data-stage-index="0"
+          >
+            <div
+              class="_stageLabel_936b6f"
+            >
+              PR Event
+            </div>
+          </div>
+          <span
+            aria-hidden="true"
+            class="_arrow_936b6f"
+          >
+            ↓
+          </span>
+        </li>
+        <li
+          class="_stageItem_936b6f"
+        >
+          <div
+            class="_stageCard_936b6f stage"
+            data-stage-index="1"
+          >
+            <div
+              class="_stageLabel_936b6f"
+            >
+              Context Assembly (diff, files, commits, metadata)
+            </div>
+          </div>
+          <span
+            aria-hidden="true"
+            class="_arrow_936b6f"
+          >
+            ↓
+          </span>
+        </li>
+        <li
+          class="_stageItem_936b6f"
+        >
+          <div
+            class="_stageCard_936b6f stage"
+            data-stage-index="2"
+          >
+            <span
+              class="_optionalBadge_936b6f"
+            >
+              Optional
+            </span>
+            <div
+              class="_stageLabel_936b6f"
+            >
+              Triage Pass
+            </div>
+            <div
+              class="_stageDetail_936b6f"
+            >
+              Haiku classifies trivial vs. substantive
+            </div>
+          </div>
+          <span
+            aria-hidden="true"
+            class="_arrow_936b6f"
+          >
+            ↓
+          </span>
+        </li>
+        <li
+          class="_stageItem_936b6f"
+        >
+          <div
+            class="_stageCard_936b6f stage"
+            data-stage-index="3"
+          >
+            <div
+              class="_stageLabel_936b6f"
+            >
+              Model Selection (Haiku / Sonnet / Opus based on size + scope rules)
+            </div>
+          </div>
+          <span
+            aria-hidden="true"
+            class="_arrow_936b6f"
+          >
+            ↓
+          </span>
+        </li>
+        <li
+          class="_stageItem_936b6f"
+        >
+          <div
+            class="_stageCard_936b6f stage"
+            data-stage-index="4"
+          >
+            <div
+              class="_stageLabel_936b6f"
+            >
+              Prompt Construction (persona + rubric + PR context + conventions)
+            </div>
+          </div>
+          <span
+            aria-hidden="true"
+            class="_arrow_936b6f"
+          >
+            ↓
+          </span>
+        </li>
+        <li
+          class="_stageItem_936b6f"
+        >
+          <div
+            class="_stageCard_936b6f stage"
+            data-stage-index="5"
+          >
+            <div
+              class="_stageLabel_936b6f"
+            >
+              Claude API (structured tool call → ReviewResult)
+            </div>
+          </div>
+          <span
+            aria-hidden="true"
+            class="_arrow_936b6f"
+          >
+            ↓
+          </span>
+        </li>
+        <li
+          class="_stageItem_936b6f"
+        >
+          <div
+            class="_stageCard_936b6f stage"
+            data-stage-index="6"
+          >
+            <div
+              class="_stageLabel_936b6f"
+            >
+              Render + Post (Nectar → The Peel → Pits → upsert comment)
+            </div>
+          </div>
+        </li>
+      </ol>
+      <div
+        class="_tableWrapper_d4f43d"
+      >
+        <table
+          class="_comparisonTable_d4f43d"
+        >
+          <thead>
+            <tr>
+              <th
+                scope="col"
+              >
+                <span
+                  style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px;"
+                >
+                  Feature
+                </span>
+              </th>
+              <th
+                scope="col"
+              >
+                CLI Mode (GitHub Actions)
+              </th>
+              <th
+                scope="col"
+              >
+                Server Mode (GitHub App)
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th
+                scope="row"
+              >
+                Trigger
+              </th>
+              <td>
+                PR event in your repo's CI
+              </td>
+              <td>
+                Webhook from GitHub
+              </td>
+            </tr>
+            <tr>
+              <th
+                scope="row"
+              >
+                Infrastructure
+              </th>
+              <td>
+                Zero — runs in the Actions runner
+              </td>
+              <td>
+                A persistent server (Docker or bare metal)
+              </td>
+            </tr>
+            <tr>
+              <th
+                scope="row"
+              >
+                State
+              </th>
+              <td>
+                Stateless
+              </td>
+              <td>
+                SQLite (per-PR SHA + comment ID)
+              </td>
+            </tr>
+            <tr>
+              <th
+                scope="row"
+              >
+                Scale
+              </th>
+              <td>
+                One repo
+              </td>
+              <td>
+                Multiple repos per deployment
+              </td>
+            </tr>
+            <tr>
+              <th
+                scope="row"
+              >
+                Auth
+              </th>
+              <td>
+                GITHUB_TOKEN (auto) + ANTHROPIC_API_KEY
+              </td>
+              <td>
+                App JWT + installation tokens
+              </td>
+            </tr>
+            <tr>
+              <th
+                scope="row"
+              >
+                Entry point
+              </th>
+              <td>
+                scripts/run_action.py
+              </td>
+              <td>
+                scripts/run_server.py
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p
+        class="_tableNote_d4f43d"
+      >
+        <em>
+          Both modes run the same review engine and produce identical output.
+        </em>
+      </p>
+      <div
+        class="_ctaWrapper_d4f43d"
+      >
+        <a
+          class="_ctaLink_d4f43d"
+          href="/docs/architecture"
+        >
+          See the full architecture →
+        </a>
+      </div>
+    </div>
+  </section>
+</div>
+`;

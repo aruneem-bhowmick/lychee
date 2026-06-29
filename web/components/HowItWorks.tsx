@@ -44,7 +44,7 @@ export default function HowItWorks(): JSX.Element {
           <table className={styles.comparisonTable}>
             <thead>
               <tr>
-                <th scope="col"></th>
+                <th scope="col"><span style={{ border: 0, clip: 'rect(0 0 0 0)', height: '1px', margin: '-1px', overflow: 'hidden', padding: 0, position: 'absolute', width: '1px' }}>Feature</span></th>
                 <th scope="col">CLI Mode (GitHub Actions)</th>
                 <th scope="col">Server Mode (GitHub App)</th>
               </tr>
