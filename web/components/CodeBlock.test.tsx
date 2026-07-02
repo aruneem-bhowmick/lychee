@@ -4,10 +4,17 @@ import CodeBlock from './CodeBlock';
 import { axe } from 'jest-axe';
 import React from 'react';
 
-// Wrap async Server Component to test it synchronously
+/**
+ * Resolves an async Server Component's element by invoking its function
+ * type directly with its props, then renders the resulting JSX. RTL's
+ * `render` only accepts already-resolved elements, so this is how async
+ * Server Components (like `CodeBlock`) get exercised in tests.
+ *
+ * @param element - The unresolved async Server Component element.
+ * @returns The RTL render result for the resolved element.
+ */
 async function renderAsync(element: JSX.Element) {
-  // @ts-expect-error - RSC can be awaited in tests
-  const resolved = await element.type(element.props);
+  const resolved = await (element.type as unknown as (props: unknown) => Promise<JSX.Element>)(element.props);
   return render(resolved);
 }
 
@@ -20,13 +27,16 @@ Object.assign(navigator, {
 
 describe('CodeBlock', () => {
   it('renders filename, lang tag, and code', async () => {
-    await renderAsync(
+    const { container } = await renderAsync(
       <CodeBlock code="pip install -e ." lang="bash" filename=".lychee.yml" />
     );
 
     expect(screen.getByText('.lychee.yml')).toBeInTheDocument();
     expect(screen.getByText('bash')).toBeInTheDocument();
-    expect(screen.getByText(/pip install -e ./)).toBeInTheDocument();
+    // shiki splits the code into one <span> per token, so no single
+    // element's direct text matches the full phrase; check the rendered
+    // text as a whole instead of relying on RTL's default text matcher.
+    expect(container.textContent).toContain('pip install -e .');
 
     const copyBtn = screen.getByRole('button', { name: 'Copy code to clipboard' });
     expect(copyBtn).toBeInTheDocument();
@@ -49,12 +59,12 @@ describe('CodeBlock', () => {
 
   it('preserves whitespace and formatting for code', async () => {
     const codeWithSpaces = `  line 1\n    line 2`;
-    await renderAsync(<CodeBlock code={codeWithSpaces} lang="text" />);
-    // Testing library's getByText ignores spacing in queries, 
-    // so we verify using text content directly
-    const codeElement = screen.getByText((_, element) => {
-      return element?.textContent?.includes('  line 1') ?? false;
-    });
-    expect(codeElement).toBeInTheDocument();
+    const { container } = await renderAsync(<CodeBlock code={codeWithSpaces} lang="text" />);
+    // Testing library's getByText ignores spacing in queries, and shiki
+    // wraps every token in its own element (so several ancestors share
+    // the same textContent) — checking the rendered text directly avoids
+    // both pitfalls.
+    expect(container.textContent).toContain('  line 1');
+    expect(container.textContent).toContain('    line 2');
   });
 });

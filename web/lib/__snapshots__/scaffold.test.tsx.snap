@@ -1,0 +1,1835 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`Component Rendering and Accessibility > matches the Home component snapshot 1`] = `
+<div>
+  <section
+    aria-labelledby="hero-tagline"
+    class="_hero_a105f2"
+    id="hero"
+  >
+    <img
+      alt="Lychee"
+      class="_logo_a105f2"
+      src="/lychee-banner.svg"
+    />
+    <h1
+      class="_tagline_a105f2"
+      id="hero-tagline"
+    >
+      Peel back your pull requests.
+    </h1>
+    <p
+      class="_valueProp_a105f2"
+    >
+      Self-hosted, Claude-powered PR reviews that run concurrently, report cost to the cent, and never post twice.
+    </p>
+    <div
+      class="_badges_a105f2"
+    >
+      <span
+        class="_badge_a105f2"
+        data-variant="ripe"
+      >
+        🟢
+         
+        Ripe
+      </span>
+      <span
+        class="_badge_a105f2"
+        data-variant="unripe"
+      >
+        🟡
+         
+        Unripe
+      </span>
+      <span
+        class="_badge_a105f2"
+        data-variant="sour"
+      >
+        🔴
+         
+        Sour
+      </span>
+    </div>
+    <div
+      class="_actions_a105f2"
+    >
+      <a
+        class="_ctaPrimary_a105f2"
+        href="/#setup"
+      >
+        Get Started
+      </a>
+      <a
+        class="_ctaSecondary_a105f2"
+        href="https://github.com/aspect-analytics/lychee"
+        rel="noopener noreferrer"
+        target="_blank"
+      >
+        View on GitHub
+      </a>
+    </div>
+  </section>
+  <section
+    class="_section_9bee24 _fadeUp_9bee24"
+    id="features"
+  >
+    <div
+      class="_container_9bee24"
+    >
+      <h2
+        class="_heading_9bee24"
+      >
+        Why Lychee
+      </h2>
+      <div
+        class="_grid_9bee24"
+      >
+        <article
+          class="_card_c81049"
+        >
+          <span
+            aria-hidden="true"
+            class="_icon_c81049"
+          >
+            ⚖️
+          </span>
+          <h3
+            class="_title_c81049"
+          >
+            Smart Model Tiering
+          </h3>
+          <p
+            class="_body_c81049"
+          >
+            Trivial PRs go to Haiku. Standard reviews use Sonnet. Diffs over 100,000 characters escalate automatically to Opus. Scope rules let you pin specific paths or PR labels to a different model — terraform changes can always get Opus, docs PRs can always get Haiku.
+          </p>
+        </article>
+        <article
+          class="_card_c81049"
+        >
+          <span
+            aria-hidden="true"
+            class="_icon_c81049"
+          >
+            🔕
+          </span>
+          <h3
+            class="_title_c81049"
+          >
+            No-Spam Ergonomics
+          </h3>
+          <p
+            class="_body_c81049"
+          >
+            Every PR gets one review comment, identified by a hidden HTML marker. When new commits arrive, Lychee finds and updates that comment in place — no new notifications, no duplicate threads. Inline findings are fingerprinted (SHA-256) so they are never posted twice across pushes.
+          </p>
+        </article>
+        <article
+          class="_card_c81049"
+        >
+          <span
+            aria-hidden="true"
+            class="_icon_c81049"
+          >
+            💰
+          </span>
+          <h3
+            class="_title_c81049"
+          >
+            Predictable Cost
+          </h3>
+          <p
+            class="_body_c81049"
+          >
+            Every review reports its exact token usage and USD cost in the comment footer. Set a \`budget_cap_usd\` in \`.lychee.yml\` and Lychee will halt and report a partial result rather than exceeding it. No surprise bills.
+          </p>
+        </article>
+        <article
+          class="_card_c81049"
+        >
+          <span
+            aria-hidden="true"
+            class="_icon_c81049"
+          >
+            🗂️
+          </span>
+          <h3
+            class="_title_c81049"
+          >
+            Map-Reduce for Large PRs
+          </h3>
+          <p
+            class="_body_c81049"
+          >
+            PRs exceeding 50 changed files don't get skipped or truncated. Lychee partitions them into groups of 10, reviews each group separately, then merges the results into one coherent review. The output contract is identical regardless of PR size.
+          </p>
+        </article>
+        <article
+          class="_card_c81049"
+        >
+          <span
+            aria-hidden="true"
+            class="_icon_c81049"
+          >
+            💬
+          </span>
+          <h3
+            class="_title_c81049"
+          >
+            Interactive Commands
+          </h3>
+          <p
+            class="_body_c81049"
+          >
+            Drop \`@lychee peel\` in any PR comment for a full on-demand review. \`@lychee juice\` for just the summary. \`@lychee pit\` for the single most critical finding. \`@lychee ripe?\` for the merge-readiness verdict. Commands respect the same config as automatic reviews and support an allow-list for access control.
+          </p>
+        </article>
+      </div>
+    </div>
+  </section>
+  <section
+    class="section"
+    id="how-it-works"
+  >
+    <div
+      class="container"
+    >
+      <h2>
+        How It Works
+      </h2>
+      <ol
+        class="_pipeline_7dd205"
+      >
+        <li
+          class="_stageItem_7dd205"
+        >
+          <div
+            class="_stageCard_7dd205 stage"
+            data-stage-index="0"
+          >
+            <div
+              class="_stageLabel_7dd205"
+            >
+              PR Event
+            </div>
+          </div>
+          <span
+            aria-hidden="true"
+            class="_arrow_7dd205"
+          >
+            ↓
+          </span>
+        </li>
+        <li
+          class="_stageItem_7dd205"
+        >
+          <div
+            class="_stageCard_7dd205 stage"
+            data-stage-index="1"
+          >
+            <div
+              class="_stageLabel_7dd205"
+            >
+              Context Assembly (diff, files, commits, metadata)
+            </div>
+          </div>
+          <span
+            aria-hidden="true"
+            class="_arrow_7dd205"
+          >
+            ↓
+          </span>
+        </li>
+        <li
+          class="_stageItem_7dd205"
+        >
+          <div
+            class="_stageCard_7dd205 stage"
+            data-stage-index="2"
+          >
+            <span
+              class="_optionalBadge_7dd205"
+            >
+              Optional
+            </span>
+            <div
+              class="_stageLabel_7dd205"
+            >
+              Triage Pass
+            </div>
+            <div
+              class="_stageDetail_7dd205"
+            >
+              Haiku classifies trivial vs. substantive
+            </div>
+          </div>
+          <span
+            aria-hidden="true"
+            class="_arrow_7dd205"
+          >
+            ↓
+          </span>
+        </li>
+        <li
+          class="_stageItem_7dd205"
+        >
+          <div
+            class="_stageCard_7dd205 stage"
+            data-stage-index="3"
+          >
+            <div
+              class="_stageLabel_7dd205"
+            >
+              Model Selection (Haiku / Sonnet / Opus based on size + scope rules)
+            </div>
+          </div>
+          <span
+            aria-hidden="true"
+            class="_arrow_7dd205"
+          >
+            ↓
+          </span>
+        </li>
+        <li
+          class="_stageItem_7dd205"
+        >
+          <div
+            class="_stageCard_7dd205 stage"
+            data-stage-index="4"
+          >
+            <div
+              class="_stageLabel_7dd205"
+            >
+              Prompt Construction (persona + rubric + PR context + conventions)
+            </div>
+          </div>
+          <span
+            aria-hidden="true"
+            class="_arrow_7dd205"
+          >
+            ↓
+          </span>
+        </li>
+        <li
+          class="_stageItem_7dd205"
+        >
+          <div
+            class="_stageCard_7dd205 stage"
+            data-stage-index="5"
+          >
+            <div
+              class="_stageLabel_7dd205"
+            >
+              Claude API (structured tool call → ReviewResult)
+            </div>
+          </div>
+          <span
+            aria-hidden="true"
+            class="_arrow_7dd205"
+          >
+            ↓
+          </span>
+        </li>
+        <li
+          class="_stageItem_7dd205"
+        >
+          <div
+            class="_stageCard_7dd205 stage"
+            data-stage-index="6"
+          >
+            <div
+              class="_stageLabel_7dd205"
+            >
+              Render + Post (Nectar → The Peel → Pits → upsert comment)
+            </div>
+          </div>
+        </li>
+      </ol>
+      <div
+        class="_tableWrapper_181ad6"
+      >
+        <table
+          class="_comparisonTable_181ad6"
+        >
+          <thead>
+            <tr>
+              <th
+                scope="col"
+              >
+                <span
+                  style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px;"
+                >
+                  Feature
+                </span>
+              </th>
+              <th
+                scope="col"
+              >
+                CLI Mode (GitHub Actions)
+              </th>
+              <th
+                scope="col"
+              >
+                Server Mode (GitHub App)
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th
+                scope="row"
+              >
+                Trigger
+              </th>
+              <td>
+                PR event in your repo's CI
+              </td>
+              <td>
+                Webhook from GitHub
+              </td>
+            </tr>
+            <tr>
+              <th
+                scope="row"
+              >
+                Infrastructure
+              </th>
+              <td>
+                Zero — runs in the Actions runner
+              </td>
+              <td>
+                A persistent server (Docker or bare metal)
+              </td>
+            </tr>
+            <tr>
+              <th
+                scope="row"
+              >
+                State
+              </th>
+              <td>
+                Stateless
+              </td>
+              <td>
+                SQLite (per-PR SHA + comment ID)
+              </td>
+            </tr>
+            <tr>
+              <th
+                scope="row"
+              >
+                Scale
+              </th>
+              <td>
+                One repo
+              </td>
+              <td>
+                Multiple repos per deployment
+              </td>
+            </tr>
+            <tr>
+              <th
+                scope="row"
+              >
+                Auth
+              </th>
+              <td>
+                GITHUB_TOKEN (auto) + ANTHROPIC_API_KEY
+              </td>
+              <td>
+                App JWT + installation tokens
+              </td>
+            </tr>
+            <tr>
+              <th
+                scope="row"
+              >
+                Entry point
+              </th>
+              <td>
+                scripts/run_action.py
+              </td>
+              <td>
+                scripts/run_server.py
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p
+        class="_tableNote_181ad6"
+      >
+        <em>
+          Both modes run the same review engine and produce identical output.
+        </em>
+      </p>
+      <div
+        class="_ctaWrapper_181ad6"
+      >
+        <a
+          class="_ctaLink_181ad6"
+          href="/docs/architecture"
+        >
+          See the full architecture →
+        </a>
+      </div>
+    </div>
+  </section>
+  <section
+    class="_section_3c3d5c"
+    id="setup"
+  >
+    <div
+      class="_container_3c3d5c"
+    >
+      <h2>
+        Setup
+      </h2>
+      <div
+        aria-label="Setup mode"
+        class="_tablist_3c3d5c"
+        role="tablist"
+      >
+        <button
+          aria-controls="panel-github-actions"
+          aria-selected="true"
+          class="_tab_3c3d5c _activeTab_3c3d5c"
+          id="tab-github-actions"
+          role="tab"
+          tabindex="0"
+        >
+          GitHub Actions
+        </button>
+        <button
+          aria-controls="panel-github-app"
+          aria-selected="false"
+          class="_tab_3c3d5c "
+          id="tab-github-app"
+          role="tab"
+          tabindex="-1"
+        >
+          GitHub App
+        </button>
+      </div>
+      <div
+        class="_panelsContainer_3c3d5c"
+      >
+        <div
+          aria-labelledby="tab-github-actions"
+          class="_panel_3c3d5c _activePanel_3c3d5c"
+          id="panel-github-actions"
+          role="tabpanel"
+        >
+          <div
+            class="_steps_3c3d5c"
+          >
+            <div
+              class="_step_3c3d5c"
+            >
+              <h3>
+                Step 1: Prerequisites
+              </h3>
+              <div
+                data-testid="code-block-mock"
+              >
+                CodeBlock Mock
+              </div>
+              <p
+                class="_note_3c3d5c"
+              >
+                Get your key at
+                 
+                <a
+                  href="https://console.anthropic.com"
+                  rel="noopener noreferrer"
+                  target="_blank"
+                >
+                  https://console.anthropic.com
+                </a>
+              </p>
+            </div>
+            <div
+              class="_step_3c3d5c"
+            >
+              <h3>
+                Step 2: Add the workflow file
+              </h3>
+              <p>
+                Create 
+                <code>
+                  .github/workflows/lychee-review.yml
+                </code>
+                :
+              </p>
+              <div
+                data-testid="code-block-mock"
+              >
+                CodeBlock Mock
+              </div>
+              <p
+                class="_note_3c3d5c"
+              >
+                GITHUB_TOKEN is provided automatically; ANTHROPIC_API_KEY is the only secret to configure.
+              </p>
+            </div>
+            <div
+              class="_step_3c3d5c"
+            >
+              <h3>
+                Step 3: Add the repository secret
+              </h3>
+              <blockquote
+                class="_callout_3c3d5c"
+              >
+                In your GitHub repository: 
+                <strong>
+                  Settings → Secrets and variables → Actions → New repository secret
+                </strong>
+                <br />
+                Name: 
+                <code>
+                  ANTHROPIC_API_KEY
+                </code>
+                 / Value: your Anthropic API key
+              </blockquote>
+            </div>
+            <div
+              class="_step_3c3d5c"
+            >
+              <h3>
+                Step 4: Optional — add a .lychee.yml
+              </h3>
+              <details
+                class="_details_3c3d5c"
+              >
+                <summary>
+                  Optional — add a .lychee.yml
+                </summary>
+                <div
+                  class="_detailsContent_3c3d5c"
+                >
+                  <div
+                    data-testid="code-block-mock"
+                  >
+                    CodeBlock Mock
+                  </div>
+                  <p
+                    class="_note_3c3d5c"
+                  >
+                    Lychee runs with all defaults if this file is absent. See the full
+                     
+                    <a
+                      href="/docs/configuration"
+                    >
+                      Configuration reference
+                    </a>
+                     for all options.
+                  </p>
+                </div>
+              </details>
+            </div>
+            <div
+              class="_step_3c3d5c"
+            >
+              <h3>
+                Step 5: Open a pull request
+              </h3>
+              <blockquote
+                class="_callout_3c3d5c"
+              >
+                Open or push to any PR in your repository. Lychee will post a review comment automatically.
+              </blockquote>
+              <a
+                class="_cta_3c3d5c"
+                href="#output"
+              >
+                See what the output looks like →
+              </a>
+            </div>
+          </div>
+        </div>
+        <div
+          aria-labelledby="tab-github-app"
+          class="_panel_3c3d5c "
+          hidden=""
+          id="panel-github-app"
+          role="tabpanel"
+        >
+          <div
+            class="_steps_3c3d5c"
+          >
+            <div
+              class="_step_3c3d5c"
+            >
+              <h3>
+                Step 1: Register a GitHub App
+              </h3>
+              <div
+                data-testid="code-block-mock"
+              >
+                CodeBlock Mock
+              </div>
+              <p
+                class="_note_3c3d5c"
+              >
+                Note the App ID and generate a private key (PEM) after creation.
+              </p>
+            </div>
+            <div
+              class="_step_3c3d5c"
+            >
+              <h3>
+                Step 2: Configure environment variables
+              </h3>
+              <div
+                class="_tableWrapper_3c3d5c"
+              >
+                <table
+                  class="_table_3c3d5c"
+                >
+                  <thead>
+                    <tr>
+                      <th>
+                        Variable
+                      </th>
+                      <th>
+                        Description
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>
+                        <code>
+                          LYCHEE_WEBHOOK_SECRET
+                        </code>
+                      </td>
+                      <td>
+                        Webhook secret from App settings
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>
+                        <code>
+                          LYCHEE_APP_ID
+                        </code>
+                      </td>
+                      <td>
+                        GitHub App ID
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>
+                        <code>
+                          LYCHEE_PRIVATE_KEY_PATH
+                        </code>
+                      </td>
+                      <td>
+                        Path to your PEM private key file
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>
+                        <code>
+                          ANTHROPIC_API_KEY
+                        </code>
+                      </td>
+                      <td>
+                        Anthropic API key
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div
+              class="_step_3c3d5c"
+            >
+              <h3>
+                Step 3: Deploy with Docker
+              </h3>
+              <div
+                data-testid="code-block-mock"
+              >
+                CodeBlock Mock
+              </div>
+              <p
+                class="_note_3c3d5c"
+              >
+                <i>
+                  The container exposes port 8000 and includes a built-in health check at GET /health.
+                </i>
+              </p>
+            </div>
+            <div
+              class="_step_3c3d5c"
+            >
+              <h3>
+                Step 4: Or run directly
+              </h3>
+              <div
+                data-testid="code-block-mock"
+              >
+                CodeBlock Mock
+              </div>
+            </div>
+            <div
+              class="_step_3c3d5c"
+            >
+              <h3>
+                Step 5: Install the App on your repositories
+              </h3>
+              <p>
+                After deploying, install the GitHub App on the repositories you want to review.
+              </p>
+              <a
+                class="_cta_3c3d5c"
+                href="/docs/deployment"
+              >
+                Full deployment guide →
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  <section
+    class="section _section_74f609"
+    id="output"
+  >
+    <div
+      class="container"
+    >
+      <h2
+        class="_title_74f609"
+      >
+        What you'll see in your PR
+      </h2>
+      <div
+        class="_showcaseWrapper_74f609"
+      >
+        <div
+          class="_prContext_74f609"
+        >
+          Repository: 
+          <code
+            class="_inlineCode_74f609"
+          >
+            acme-corp/billing-service
+          </code>
+          <br />
+          PR title: 
+          <code
+            class="_inlineCode_74f609"
+          >
+            feat: add Stripe webhook handler for payment events
+          </code>
+          <br />
+          Author: 
+          <code
+            class="_inlineCode_74f609"
+          >
+            @dev
+          </code>
+        </div>
+        <div
+          class="_commentFrame_74f609"
+        >
+          <div
+            class="_headerStrip_74f609"
+          >
+            <div
+              class="_avatar_74f609"
+            />
+            <span
+              class="_author_74f609"
+            >
+              lychee-bot
+            </span>
+          </div>
+          <div
+            class="_commentBody_74f609"
+          >
+            <div>
+              <div
+                class="_monospaceText_74f609"
+              >
+                &lt;!-- lychee:review --&gt;
+              </div>
+              <div
+                class="_headerTitle_74f609"
+              >
+                🌴 Lychee peeled this PR · claude-sonnet-4-6
+              </div>
+            </div>
+            <div
+              class="_annotatable_74f609"
+              data-annotate="ripeness"
+            >
+              <div
+                class="_badge_74f609"
+              >
+                🟡 Unripe
+              </div>
+              <span
+                class="_annotation_74f609"
+              >
+                Ripeness verdict: Ripe / Unripe / Sour
+              </span>
+            </div>
+            <div
+              class="_nectarBlock_74f609 _annotatable_74f609"
+              data-annotate="nectar"
+            >
+              <p>
+                This PR adds a Stripe webhook handler to process 
+                <code
+                  class="_inlineCode_74f609"
+                >
+                  payment_intent.succeeded
+                </code>
+                 and 
+                <code
+                  class="_inlineCode_74f609"
+                >
+                  charge.failed
+                </code>
+                 events, updating order status in the database. The implementation is functional but has a critical security gap in webhook signature verification and two correctness issues in the error-handling path that should be addressed before merging.
+              </p>
+              <span
+                class="_annotation_74f609"
+              >
+                Nectar — the distilled summary
+              </span>
+            </div>
+            <div
+              class="_annotatable_74f609"
+              data-annotate="peel"
+            >
+              <ul
+                class="_peelList_74f609"
+              >
+                <li>
+                  <code
+                    class="_inlineCode_74f609"
+                  >
+                    src/webhooks/stripe.py
+                  </code>
+                   — New handler module. Core logic is sound but the signature verification step is absent.
+                </li>
+                <li>
+                  <code
+                    class="_inlineCode_74f609"
+                  >
+                    src/models/order.py
+                  </code>
+                   — Adds 
+                  <code
+                    class="_inlineCode_74f609"
+                  >
+                    update_status()
+                  </code>
+                  . The method does not validate the transition (e.g., 
+                  <code
+                    class="_inlineCode_74f609"
+                  >
+                    completed → pending
+                  </code>
+                   should be rejected).
+                </li>
+                <li>
+                  <code
+                    class="_inlineCode_74f609"
+                  >
+                    tests/test_stripe_webhook.py
+                  </code>
+                   — Covers the happy path but lacks tests for invalid signatures and malformed payloads.
+                </li>
+              </ul>
+              <span
+                class="_annotation_74f609"
+              >
+                The Peel — file-by-file walkthrough
+              </span>
+            </div>
+            <div
+              class="_annotatable_74f609"
+              data-annotate="pits"
+            >
+              <div
+                class="_pitsTableWrapper_74f609"
+              >
+                <table
+                  class="_pitsTable_74f609"
+                >
+                  <thead>
+                    <tr>
+                      <th>
+                        Severity
+                      </th>
+                      <th>
+                        Category
+                      </th>
+                      <th>
+                        Finding
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td
+                        class="_severityCell_74f609 _severitycritical_74f609"
+                      >
+                        🔴
+                         
+                        critical
+                      </td>
+                      <td>
+                        security
+                      </td>
+                      <td>
+                        <code
+                          class="_inlineCode_74f609"
+                        >
+                          stripe.py:47
+                        </code>
+                         — Webhook payload is processed without verifying the 
+                        <code
+                          class="_inlineCode_74f609"
+                        >
+                          Stripe-Signature
+                        </code>
+                         header. An attacker can POST arbitrary payloads and trigger order status changes. Use 
+                        <code
+                          class="_inlineCode_74f609"
+                        >
+                          stripe.Webhook.construct_event()
+                        </code>
+                         with your webhook secret.
+                      </td>
+                    </tr>
+                    <tr>
+                      <td
+                        class="_severityCell_74f609 _severitymajor_74f609"
+                      >
+                        🟠
+                         
+                        major
+                      </td>
+                      <td>
+                        correctness
+                      </td>
+                      <td>
+                        <code
+                          class="_inlineCode_74f609"
+                        >
+                          order.py:83
+                        </code>
+                         — 
+                        <code
+                          class="_inlineCode_74f609"
+                        >
+                          update_status()
+                        </code>
+                         accepts any target status without validating the transition. A 
+                        <code
+                          class="_inlineCode_74f609"
+                        >
+                          completed
+                        </code>
+                         order can be moved back to 
+                        <code
+                          class="_inlineCode_74f609"
+                        >
+                          pending
+                        </code>
+                        , which may cause double-fulfillment.
+                      </td>
+                    </tr>
+                    <tr>
+                      <td
+                        class="_severityCell_74f609 _severityminor_74f609"
+                      >
+                        🟡
+                         
+                        minor
+                      </td>
+                      <td>
+                        tests
+                      </td>
+                      <td>
+                        <code
+                          class="_inlineCode_74f609"
+                        >
+                          test_stripe_webhook.py
+                        </code>
+                         — No test for an invalid or missing 
+                        <code
+                          class="_inlineCode_74f609"
+                        >
+                          Stripe-Signature
+                        </code>
+                         header. Add a test confirming a 
+                        <code
+                          class="_inlineCode_74f609"
+                        >
+                          400
+                        </code>
+                         response and no database write on bad signatures.
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <span
+                class="_annotation_74f609"
+              >
+                Pits — findings with severity & category
+              </span>
+            </div>
+            <div
+              class="_annotatable_74f609"
+              data-annotate="footer"
+            >
+              <div
+                class="_monospaceText_74f609"
+              >
+                Tokens: 4,821 in · 612 out · $0.023  ·  Reviewed to the core by Lychee 🌴
+                <br />
+                &lt;!-- lychee:state {"last_reviewed_sha": "a3f9c12"} --&gt;
+              </div>
+              <span
+                class="_annotation_74f609"
+              >
+                Cost footer — exact token usage and USD cost
+              </span>
+            </div>
+          </div>
+        </div>
+        <p
+          class="_closingParagraph_74f609"
+        >
+          Every Lychee review follows this structure — always one comment, always updated in place, always the same shape regardless of PR size. Severity levels: 
+          <code
+            class="_inlineCode_74f609"
+          >
+            info
+          </code>
+          , 
+          <code
+            class="_inlineCode_74f609"
+          >
+            minor
+          </code>
+          , 
+          <code
+            class="_inlineCode_74f609"
+          >
+            major
+          </code>
+          , 
+          <code
+            class="_inlineCode_74f609"
+          >
+            critical
+          </code>
+          . Categories: 
+          <code
+            class="_inlineCode_74f609"
+          >
+            correctness
+          </code>
+          , 
+          <code
+            class="_inlineCode_74f609"
+          >
+            security
+          </code>
+          , 
+          <code
+            class="_inlineCode_74f609"
+          >
+            performance
+          </code>
+          , 
+          <code
+            class="_inlineCode_74f609"
+          >
+            tests
+          </code>
+          , 
+          <code
+            class="_inlineCode_74f609"
+          >
+            style
+          </code>
+          , 
+          <code
+            class="_inlineCode_74f609"
+          >
+            docs
+          </code>
+          , 
+          <code
+            class="_inlineCode_74f609"
+          >
+            other
+          </code>
+          . See the 
+          <a
+            href="/docs/glossary"
+          >
+            Glossary
+          </a>
+           for the full vocabulary.
+        </p>
+      </div>
+    </div>
+  </section>
+  <section
+    class="_section_947488"
+    id="commands"
+  >
+    <div
+      class="_container_947488"
+    >
+      <h2
+        class="_heading_947488"
+      >
+        Interactive Commands
+      </h2>
+      <div
+        class="_tableWrapper_947488"
+      >
+        <table
+          class="_table_947488"
+        >
+          <thead>
+            <tr>
+              <th
+                scope="col"
+              >
+                Comment
+              </th>
+              <th
+                scope="col"
+              >
+                What it posts
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>
+                <code
+                  class="_code_947488"
+                >
+                  @lychee peel
+                </code>
+              </td>
+              <td>
+                Full review: Nectar + The Peel + Pits (same as automatic review)
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <code
+                  class="_code_947488"
+                >
+                  @lychee juice
+                </code>
+              </td>
+              <td>
+                Nectar section only — the short summary paragraph
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <code
+                  class="_code_947488"
+                >
+                  @lychee pit
+                </code>
+              </td>
+              <td>
+                The single highest-severity finding only
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <code
+                  class="_code_947488"
+                >
+                  @lychee ripe?
+                </code>
+              </td>
+              <td>
+                Ripeness verdict only — 🟢 Ripe, 🟡 Unripe, or 🔴 Sour
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p
+        class="_description_947488"
+      >
+        Commands respect all the same configuration as automatic reviews: 
+        <code>
+          severity_threshold
+        </code>
+        , 
+        <code>
+          tone
+        </code>
+        , 
+        <code>
+          scope_rules
+        </code>
+        , 
+        <code>
+          inline_comments
+        </code>
+        , and 
+        <code>
+          cost_footer
+        </code>
+         all apply. Access can be restricted to specific GitHub logins via 
+        <code>
+          authorization.allowed_users
+        </code>
+         in 
+        <code>
+          .lychee.yml
+        </code>
+        . Unknown commands receive a help message listing all four.
+      </p>
+      <p
+        class="_snippetTitle_947488"
+      >
+        Enable commands by adding to .lychee.yml:
+      </p>
+      <div
+        class="_codeBlockWrapper_947488"
+      >
+        <div
+          data-testid="code-block-mock"
+        >
+          CodeBlock Mock
+        </div>
+      </div>
+      <a
+        class="_cta_947488"
+        href="/docs/commands"
+      >
+        Full command reference →
+      </a>
+    </div>
+  </section>
+  <section
+    class="_section_6b9967"
+    id="configure"
+  >
+    <div
+      class="_container_6b9967"
+    >
+      <h2
+        class="_heading_6b9967"
+      >
+        Configuration
+      </h2>
+      <div
+        aria-label="Configuration sampler"
+        class="_tablist_6b9967"
+        role="tablist"
+      >
+        <button
+          aria-controls="panel-minimal"
+          aria-selected="true"
+          class="_tab_6b9967 _activeTab_6b9967"
+          id="tab-minimal"
+          role="tab"
+          tabindex="0"
+        >
+          Minimal
+        </button>
+        <button
+          aria-controls="panel-full"
+          aria-selected="false"
+          class="_tab_6b9967 "
+          id="tab-full"
+          role="tab"
+          tabindex="-1"
+        >
+          Full-featured
+        </button>
+        <button
+          aria-controls="panel-monorepo"
+          aria-selected="false"
+          class="_tab_6b9967 "
+          id="tab-monorepo"
+          role="tab"
+          tabindex="-1"
+        >
+          Monorepo with scope rules
+        </button>
+      </div>
+      <div
+        class="_panelsContainer_6b9967"
+      >
+        <div
+          aria-labelledby="tab-minimal"
+          class="_panel_6b9967 _activePanel_6b9967"
+          id="panel-minimal"
+          role="tabpanel"
+        >
+          <div
+            data-testid="code-block-mock"
+          >
+            CodeBlock Mock
+          </div>
+        </div>
+        <div
+          aria-labelledby="tab-full"
+          class="_panel_6b9967 "
+          hidden=""
+          id="panel-full"
+          role="tabpanel"
+        >
+          <div
+            data-testid="code-block-mock"
+          >
+            CodeBlock Mock
+          </div>
+        </div>
+        <div
+          aria-labelledby="tab-monorepo"
+          class="_panel_6b9967 "
+          hidden=""
+          id="panel-monorepo"
+          role="tabpanel"
+        >
+          <div
+            data-testid="code-block-mock"
+          >
+            CodeBlock Mock
+          </div>
+        </div>
+      </div>
+      <h3
+        class="_tableSectionTitle_6b9967"
+      >
+        Key Knobs
+      </h3>
+      <div
+        class="_tableWrapper_6b9967"
+      >
+        <table
+          class="_table_6b9967"
+        >
+          <thead>
+            <tr>
+              <th
+                scope="col"
+              >
+                Key
+              </th>
+              <th
+                scope="col"
+              >
+                Default
+              </th>
+              <th
+                scope="col"
+              >
+                What it controls
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td
+                class="_monoCell_6b9967"
+              >
+                <code>
+                  model.default
+                </code>
+              </td>
+              <td
+                class="_monoCell_6b9967"
+              >
+                <code>
+                  claude-sonnet-4-6
+                </code>
+              </td>
+              <td>
+                Model for standard reviews
+              </td>
+            </tr>
+            <tr>
+              <td
+                class="_monoCell_6b9967"
+              >
+                <code>
+                  review.severity_threshold
+                </code>
+              </td>
+              <td
+                class="_monoCell_6b9967"
+              >
+                <code>
+                  info
+                </code>
+              </td>
+              <td>
+                Minimum severity shown in output
+              </td>
+            </tr>
+            <tr>
+              <td
+                class="_monoCell_6b9967"
+              >
+                <code>
+                  review.tone
+                </code>
+              </td>
+              <td
+                class="_monoCell_6b9967"
+              >
+                <code>
+                  balanced
+                </code>
+              </td>
+              <td>
+                balanced / concise / detailed
+              </td>
+            </tr>
+            <tr>
+              <td
+                class="_monoCell_6b9967"
+              >
+                <code>
+                  review.budget_cap_usd
+                </code>
+              </td>
+              <td
+                class="_monoCell_6b9967"
+              >
+                <code>
+                  null
+                </code>
+              </td>
+              <td>
+                Max USD per review; null = no cap
+              </td>
+            </tr>
+            <tr>
+              <td
+                class="_monoCell_6b9967"
+              >
+                <code>
+                  features.inline_comments
+                </code>
+              </td>
+              <td
+                class="_monoCell_6b9967"
+              >
+                <code>
+                  false
+                </code>
+              </td>
+              <td>
+                Post findings as inline diff comments
+              </td>
+            </tr>
+            <tr>
+              <td
+                class="_monoCell_6b9967"
+              >
+                <code>
+                  features.triage_pass
+                </code>
+              </td>
+              <td
+                class="_monoCell_6b9967"
+              >
+                <code>
+                  false
+                </code>
+              </td>
+              <td>
+                Pre-classify PRs to route trivial ones cheaper
+              </td>
+            </tr>
+            <tr>
+              <td
+                class="_monoCell_6b9967"
+              >
+                <code>
+                  features.commands
+                </code>
+              </td>
+              <td
+                class="_monoCell_6b9967"
+              >
+                <code>
+                  false
+                </code>
+              </td>
+              <td>
+                Enable @lychee command handling
+              </td>
+            </tr>
+            <tr>
+              <td
+                class="_monoCell_6b9967"
+              >
+                <code>
+                  conventions_file
+                </code>
+              </td>
+              <td
+                class="_monoCell_6b9967"
+              >
+                <code>
+                  null
+                </code>
+              </td>
+              <td>
+                Path to a conventions file appended to the prompt
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div
+        class="_ctaWrapper_6b9967"
+      >
+        <a
+          class="_cta_6b9967"
+          href="/docs/configuration"
+        >
+          Full configuration reference →
+        </a>
+      </div>
+    </div>
+  </section>
+  <section
+    class="section"
+    id="contribute"
+  >
+    <div
+      class="container"
+    >
+      <h2>
+        Contribute
+      </h2>
+      <div
+        class="_content_ae15cf"
+      >
+        <div
+          class="_setup_ae15cf"
+        >
+          <h3>
+            1. Clone and install
+          </h3>
+          <div
+            data-testid="code-block-mock"
+          >
+            CodeBlock Mock
+          </div>
+        </div>
+        <div
+          class="_setup_ae15cf"
+        >
+          <h3>
+            2. Run the test suite
+          </h3>
+          <div
+            data-testid="code-block-mock"
+          >
+            CodeBlock Mock
+          </div>
+          <blockquote
+            class="_callout_ae15cf"
+          >
+            Coverage is enforced at 80% (branch coverage). The default invocation excludes 
+            <code>
+              e2e
+            </code>
+             tests, which require live GitHub and Claude API access. See 
+            <a
+              href="/docs/canary-setup"
+            >
+              Canary Setup
+            </a>
+             to configure those.
+          </blockquote>
+          <div
+            data-testid="code-block-mock"
+          >
+            CodeBlock Mock
+          </div>
+        </div>
+        <div
+          class="_setup_ae15cf"
+        >
+          <h3>
+            3. Code standards at a glance
+          </h3>
+          <div
+            class="_tableWrapper_ae15cf"
+          >
+            <table
+              class="_table_ae15cf"
+            >
+              <thead>
+                <tr>
+                  <th
+                    scope="col"
+                  >
+                    Standard
+                  </th>
+                  <th
+                    scope="col"
+                  >
+                    Enforced by
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>
+                    Type annotations (strict)
+                  </td>
+                  <td>
+                    <code>
+                      mypy --strict
+                    </code>
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    Linting
+                  </td>
+                  <td>
+                    <code>
+                      ruff
+                    </code>
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    Formatting
+                  </td>
+                  <td>
+                    <code>
+                      black
+                    </code>
+                     (100-char line length)
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    Immutable models
+                  </td>
+                  <td>
+                    Pydantic 
+                    <code>
+                      frozen=True
+                    </code>
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    Pure functions for prompt & render
+                  </td>
+                  <td>
+                    Asserted by unit tests
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    No global state
+                  </td>
+                  <td>
+                    Code review
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            CI runs lint → type-check → engine integrity hash → test on every PR. All gates must be green before merge.
+          </p>
+        </div>
+      </div>
+      <div
+        class="_workflow_ae15cf"
+      >
+        <h3>
+          Contribution Workflow
+        </h3>
+        <ol>
+          <li>
+            Fork the repository and create a feature branch.
+          </li>
+          <li>
+            Make your changes; ensure 
+            <code>
+              pytest
+            </code>
+             and 
+            <code>
+              mypy
+            </code>
+             pass locally.
+          </li>
+          <li>
+            Use 
+            <code>
+              lychee review --dry-run --fixture tests/fixtures/pr_payload.json
+            </code>
+             to preview rendering changes without API calls.
+          </li>
+          <li>
+            Open a PR — Lychee will review it automatically.
+          </li>
+        </ol>
+      </div>
+      <aside
+        aria-label="Security reporting"
+        class="_securityNotice_ae15cf"
+      >
+        <p>
+          <strong>
+            Found a security issue?
+          </strong>
+           Do not open a public GitHub issue. Email the maintainers directly or use GitHub's private vulnerability reporting (
+          <strong>
+            Security tab → Report a vulnerability
+          </strong>
+          ). We acknowledge within 48 hours and provide a fix timeline within 7 days.
+        </p>
+      </aside>
+      <div
+        class="_ctas_ae15cf"
+      >
+        <a
+          class="_ctaLink_ae15cf"
+          href="/docs/development"
+        >
+          Development guide →
+        </a>
+        <a
+          class="_ctaLink_ae15cf"
+          href="/docs/roadmap"
+        >
+          Roadmap →
+        </a>
+      </div>
+    </div>
+  </section>
+</div>
+`;
