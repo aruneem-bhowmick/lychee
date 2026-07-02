@@ -1,9 +1,25 @@
+import type { Metadata } from 'next';
 import { getDocBySlug } from '@/lib/docs';
 import DocsSidebar from '@/components/DocsSidebar';
 import docsStyles from './docs.module.css';
 import styles from './page.module.css';
 
 export const dynamic = 'force-static';
+
+/**
+ * Docs index metadata. `title` is a plain string so the root layout's
+ * template renders it as `Documentation · Lychee Docs`.
+ */
+export const metadata: Metadata = {
+  title: 'Documentation',
+  description: 'Everything you need to evaluate, run, and contribute to Lychee.',
+  alternates: {
+    canonical: 'https://lychee.vercel.app/docs',
+  },
+  openGraph: {
+    images: ['/og-image.png'],
+  },
+};
 
 /** A group of doc slugs shown together under one section heading on the index. */
 export interface DocsIndexGroup {
