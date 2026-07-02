@@ -1,0 +1,138 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`DocsSidebar Component > Visual/Snapshot > matches the snapshot with getting-started active 1`] = `
+<div>
+  <div
+    class="_wrapper_fa708a"
+  >
+    <button
+      aria-controls="docs-sidebar-nav"
+      aria-expanded="false"
+      class="_toggle_fa708a"
+      type="button"
+    >
+      Browse docs
+    </button>
+    <nav
+      aria-label="Documentation"
+      class="_sidebar_fa708a "
+      id="docs-sidebar-nav"
+    >
+      <ul
+        class="_list_fa708a"
+      >
+        <li>
+          <a
+            aria-current="page"
+            class="_link_fa708a _active_fa708a"
+            href="/docs/getting-started"
+          >
+            Getting Started
+          </a>
+        </li>
+        <li>
+          <a
+            class="_link_fa708a "
+            href="/docs/configuration"
+          >
+            Configuration
+          </a>
+        </li>
+        <li>
+          <a
+            class="_link_fa708a "
+            href="/docs/commands"
+          >
+            Commands
+          </a>
+        </li>
+      </ul>
+      <hr
+        class="_divider_fa708a"
+      />
+      <ul
+        class="_list_fa708a"
+      >
+        <li>
+          <a
+            class="_link_fa708a "
+            href="/docs/architecture"
+          >
+            Architecture
+          </a>
+        </li>
+        <li>
+          <a
+            class="_link_fa708a "
+            href="/docs/glossary"
+          >
+            Glossary
+          </a>
+        </li>
+      </ul>
+      <hr
+        class="_divider_fa708a"
+      />
+      <ul
+        class="_list_fa708a"
+      >
+        <li>
+          <a
+            class="_link_fa708a "
+            href="/docs/deployment"
+          >
+            Deployment
+          </a>
+        </li>
+        <li>
+          <a
+            class="_link_fa708a "
+            href="/docs/security"
+          >
+            Security
+          </a>
+        </li>
+        <li>
+          <a
+            class="_link_fa708a "
+            href="/docs/canary-setup"
+          >
+            Canary Setup
+          </a>
+        </li>
+        <li>
+          <a
+            class="_link_fa708a "
+            href="/docs/api-reference"
+          >
+            API Reference
+          </a>
+        </li>
+      </ul>
+      <hr
+        class="_divider_fa708a"
+      />
+      <ul
+        class="_list_fa708a"
+      >
+        <li>
+          <a
+            class="_link_fa708a "
+            href="/docs/development"
+          >
+            Development
+          </a>
+        </li>
+        <li>
+          <a
+            class="_link_fa708a "
+            href="/docs/roadmap"
+          >
+            Roadmap
+          </a>
+        </li>
+      </ul>
+    </nav>
+  </div>
+</div>
+`;
