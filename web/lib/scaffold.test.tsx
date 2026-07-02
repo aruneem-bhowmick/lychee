@@ -3,6 +3,25 @@ import path from 'path';
 import { render, screen } from '@testing-library/react';
 import { axe } from 'jest-axe';
 import React from 'react';
+import { vi } from 'vitest';
+
+vi.mock('next/font/google', () => ({
+  Inter: () => ({ variable: '--font-inter' }),
+  JetBrains_Mono: () => ({ variable: '--font-jetbrains-mono' }),
+}));
+
+// `Home` composes several async Server Components (via `CodeBlock`) that
+// RTL's synchronous `render` cannot resolve; mock it the same way
+// `app/page.test.tsx` does so this file's own Home-rendering checks work.
+vi.mock('@/components/CodeBlock', () => ({
+  default: () => <div data-testid="code-block-mock">CodeBlock Mock</div>,
+}));
+
+vi.mock('next/navigation', () => ({
+  usePathname: () => '/',
+  useSearchParams: () => new URLSearchParams(),
+}));
+
 import Home from '../app/page';
 import RootLayout from '../app/layout';
 
@@ -52,7 +71,7 @@ describe('Scaffold Configuration invariants', () => {
 describe('Component Rendering and Accessibility', () => {
   it('renders the Home component correctly', () => {
     render(<Home />);
-    expect(screen.getByText('Lychee')).toBeInTheDocument();
+    expect(screen.getByText(/Peel back your pull requests\./i)).toBeInTheDocument();
   });
 
   it('matches the Home component snapshot', () => {
