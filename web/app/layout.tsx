@@ -1,4 +1,5 @@
 import React from 'react';
+import type { Metadata } from 'next';
 import { Inter, JetBrains_Mono } from 'next/font/google';
 import '@/styles/globals.css';
 import NavBar from '@/components/NavBar';
@@ -15,6 +16,35 @@ const mono = JetBrains_Mono({
   variable: '--font-jetbrains-mono',
   weight: ['400']
 });
+
+const SITE_URL = 'https://lychee.vercel.app';
+const VALUE_PROPOSITION =
+  'Self-hosted, Claude-powered PR reviews that run concurrently, report cost to the cent, and never post twice.';
+
+/**
+ * Base, site-wide metadata inherited by every route. `metadataBase`
+ * resolves the relative Open Graph image and canonical URLs declared by
+ * individual pages; the title template appends `· Lychee Docs` to any page
+ * that sets only a plain string `title` (the landing page opts out with an
+ * absolute title). `/og-image.png` is a placeholder asset — swapping in
+ * final artwork at the same path requires no code changes.
+ */
+export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: 'Lychee — Peel back your pull requests',
+    template: '%s · Lychee Docs',
+  },
+  description: VALUE_PROPOSITION,
+  openGraph: {
+    title: 'Lychee — Peel back your pull requests',
+    description: VALUE_PROPOSITION,
+    images: ['/og-image.png'],
+    url: '/',
+    siteName: 'Lychee',
+    type: 'website',
+  },
+};
 
 /**
  * Root layout component for the application.
