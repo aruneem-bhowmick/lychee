@@ -20,7 +20,8 @@ vi.mock('@/lib/docs', async (importOriginal) => {
 });
 
 import { DOC_SLUGS, getDocBySlug } from '@/lib/docs';
-import DocsIndexPage, { DOCS_INDEX_GROUPS, dynamic } from './page';
+import DocsIndexPage, { dynamic } from './page';
+import { DOCS_INDEX_GROUPS } from './docs-index-groups';
 import styles from './page.module.css';
 
 const mockedGetDocBySlug = vi.mocked(getDocBySlug);
