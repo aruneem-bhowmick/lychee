@@ -13,7 +13,7 @@ exports[`HowItWorks > matches snapshot for regression locking 1`] = `
         How It Works
       </h2>
       <ol
-        class="_pipeline_7dd205"
+        class="_pipeline_7dd205 "
       >
         <li
           class="_stageItem_7dd205"
@@ -21,6 +21,7 @@ exports[`HowItWorks > matches snapshot for regression locking 1`] = `
           <div
             class="_stageCard_7dd205 stage"
             data-stage-index="0"
+            style="animation-delay: 0ms;"
           >
             <div
               class="_stageLabel_7dd205"
@@ -41,6 +42,7 @@ exports[`HowItWorks > matches snapshot for regression locking 1`] = `
           <div
             class="_stageCard_7dd205 stage"
             data-stage-index="1"
+            style="animation-delay: 80ms;"
           >
             <div
               class="_stageLabel_7dd205"
@@ -61,6 +63,7 @@ exports[`HowItWorks > matches snapshot for regression locking 1`] = `
           <div
             class="_stageCard_7dd205 stage"
             data-stage-index="2"
+            style="animation-delay: 160ms;"
           >
             <span
               class="_optionalBadge_7dd205"
@@ -91,6 +94,7 @@ exports[`HowItWorks > matches snapshot for regression locking 1`] = `
           <div
             class="_stageCard_7dd205 stage"
             data-stage-index="3"
+            style="animation-delay: 240ms;"
           >
             <div
               class="_stageLabel_7dd205"
@@ -111,6 +115,7 @@ exports[`HowItWorks > matches snapshot for regression locking 1`] = `
           <div
             class="_stageCard_7dd205 stage"
             data-stage-index="4"
+            style="animation-delay: 320ms;"
           >
             <div
               class="_stageLabel_7dd205"
@@ -131,6 +136,7 @@ exports[`HowItWorks > matches snapshot for regression locking 1`] = `
           <div
             class="_stageCard_7dd205 stage"
             data-stage-index="5"
+            style="animation-delay: 400ms;"
           >
             <div
               class="_stageLabel_7dd205"
@@ -151,6 +157,7 @@ exports[`HowItWorks > matches snapshot for regression locking 1`] = `
           <div
             class="_stageCard_7dd205 stage"
             data-stage-index="6"
+            style="animation-delay: 480ms;"
           >
             <div
               class="_stageLabel_7dd205"
