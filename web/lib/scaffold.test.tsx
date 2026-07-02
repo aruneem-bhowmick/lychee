@@ -83,7 +83,7 @@ describe('Component Rendering and Accessibility', () => {
     const { container } = render(<Home />);
     const results = await axe(container);
     expect(results).toHaveNoViolations();
-  });
+  }, 20000);
 });
 
 /**

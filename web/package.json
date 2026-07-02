@@ -9,6 +9,8 @@
     "lint": "next lint",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:e2e": "playwright test",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -22,6 +24,7 @@
     "shiki": "^1.2.2"
   },
   "devDependencies": {
+    "@playwright/test": "^1.61.1",
     "@testing-library/jest-dom": "^6.4.2",
     "@testing-library/react": "^14.2.2",
     "@testing-library/user-event": "^14.5.2",
@@ -30,6 +33,7 @@
     "@types/react": "^18.2.78",
     "@types/react-dom": "^18.2.25",
     "@vitejs/plugin-react": "^6.0.3",
+    "@vitest/coverage-v8": "^4.1.9",
     "eslint": "^8.57.0",
     "eslint-config-next": "^15.5.16",
     "glob": "^10.5.0",
