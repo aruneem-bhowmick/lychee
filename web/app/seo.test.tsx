@@ -1,3 +1,5 @@
+import { readFileSync, statSync } from 'node:fs';
+import path from 'node:path';
 import type { Metadata } from 'next';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -39,6 +41,23 @@ function asDefaultTemplate(title: Metadata['title']): { default: string; templat
 /** Narrows a resolved `Metadata.title` down to its `{ absolute }` shape for assertions. */
 function asAbsolute(title: Metadata['title']): { absolute: string } {
   return title as { absolute: string };
+}
+
+const BANNED_WORDS = /powerful|seamless|easy to use|best-in-class|next-generation/i;
+
+/**
+ * Reads a PNG's declared width/height straight out of its IHDR chunk,
+ * without pulling in an image-decoding dependency just for a test.
+ *
+ * @param filePath - Absolute path to the PNG file.
+ * @returns The image's declared pixel dimensions.
+ */
+function readPngDimensions(filePath: string): { width: number; height: number } {
+  const buffer = readFileSync(filePath);
+  return {
+    width: buffer.readUInt32BE(16),
+    height: buffer.readUInt32BE(20),
+  };
 }
 
 describe('SEO metadata', () => {
@@ -156,5 +175,122 @@ describe('SEO metadata', () => {
       const metadata = await generateDocMetadata({ params: { slug: 'glossary' } });
       expect(metadata.alternates?.canonical).toBe(`${SITE_URL}/docs/glossary`);
     });
+  });
+
+  /**
+   * Component: N/A — metadata is resolved to `<head>` tags by the Next.js
+   * framework at the route-segment level, not rendered as DOM by these
+   * page/layout components in a unit test. Covered by the Unit assertions
+   * on the exported objects above.
+   */
+  describe('Component', () => {
+    it.skip('N/A — metadata is not rendered DOM in RSC unit tests; covered by Unit tests above.');
+  });
+
+  /**
+   * Accessibility: N/A — metadata/head tags are not DOM subject to axe.
+   */
+  describe('Accessibility', () => {
+    it.skip('N/A — metadata/head tags are not subject to axe DOM accessibility checks.');
+  });
+
+  /**
+   * Smoke: every route's metadata can be imported/computed without
+   * throwing, and the committed OG image exists with the right shape.
+   */
+  describe('Smoke', () => {
+    it('resolves metadata for every route without throwing', async () => {
+      expect(rootLayout.metadata).toBeDefined();
+      expect(landingPage.metadata).toBeDefined();
+      expect(docsIndexPage.metadata).toBeDefined();
+      await expect(generateDocMetadata({ params: { slug: 'roadmap' } })).resolves.toBeDefined();
+    });
+
+    it('commits og-image.png as a non-zero-byte file', () => {
+      const ogImagePath = path.join(__dirname, '..', 'public', 'og-image.png');
+      const stats = statSync(ogImagePath);
+      expect(stats.size).toBeGreaterThan(0);
+    });
+
+    it('commits og-image.png as a real 1200x630 PNG', () => {
+      const ogImagePath = path.join(__dirname, '..', 'public', 'og-image.png');
+      const signature = readFileSync(ogImagePath).subarray(0, 8);
+      expect(signature.toString('hex')).toBe('89504e470d0a1a0a');
+
+      const { width, height } = readPngDimensions(ogImagePath);
+      expect(width).toBe(1200);
+      expect(height).toBe(630);
+    });
+  });
+
+  /**
+   * Sanity: narrow invariants that guard against silent metadata drift —
+   * the canonical domain, OG image path, and a banned-word sweep.
+   */
+  describe('Sanity', () => {
+    it('resolves metadataBase to the deployed domain exactly', () => {
+      expect(rootLayout.metadata.metadataBase).toEqual(new URL(SITE_URL));
+    });
+
+    it('references /og-image.png as the OG image on every route', async () => {
+      const docMetadata = await generateDocMetadata({ params: { slug: 'configuration' } });
+      [
+        rootLayout.metadata.openGraph?.images,
+        landingPage.metadata.openGraph?.images,
+        docsIndexPage.metadata.openGraph?.images,
+        docMetadata.openGraph?.images,
+      ].forEach((images) => expect(images).toEqual(['/og-image.png']));
+    });
+
+    it('never uses a banned word in any description', async () => {
+      const docMetadata = await generateDocMetadata({ params: { slug: 'configuration' } });
+      [
+        rootLayout.metadata.description,
+        landingPage.metadata.description,
+        docsIndexPage.metadata.description,
+        docMetadata.description,
+      ].forEach((description) => expect(description ?? '').not.toMatch(BANNED_WORDS));
+    });
+
+    it('reproduces the value-prop sentence verbatim on the base and landing metadata', () => {
+      expect(rootLayout.metadata.description).toBe(landingPage.metadata.description);
+      expect(rootLayout.metadata.description).toBe(VALUE_PROPOSITION);
+    });
+  });
+
+  /**
+   * Regression: serialized-metadata snapshots lock titles, descriptions,
+   * and canonicals so future edits can't silently drift them.
+   */
+  describe('Regression: serialized metadata snapshots', () => {
+    it('matches the landing page metadata snapshot', () => {
+      expect(landingPage.metadata).toMatchSnapshot();
+    });
+
+    it('matches the docs index metadata snapshot', () => {
+      expect(docsIndexPage.metadata).toMatchSnapshot();
+    });
+
+    it('matches a sample doc metadata snapshot', async () => {
+      const metadata = await generateDocMetadata({ params: { slug: 'configuration' } });
+      expect(metadata).toMatchSnapshot();
+    });
+  });
+
+  /**
+   * End-to-end: N/A in this prompt — covered by the metadata-object unit
+   * tests above; a Playwright check of `document.title` / canonical link
+   * tags on built pages is optional follow-up polish work.
+   */
+  describe('End-to-end', () => {
+    it.skip('N/A — covered by metadata-object unit tests above.');
+  });
+
+  /**
+   * Responsive/Mobile: N/A — metadata is resolved independently of
+   * viewport size.
+   */
+  describe('Responsive/Mobile', () => {
+    it.skip('N/A — metadata is viewport-independent.');
   });
 });

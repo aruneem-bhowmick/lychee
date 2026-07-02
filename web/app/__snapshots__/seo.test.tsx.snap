@@ -1,0 +1,53 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`SEO metadata > Regression: serialized metadata snapshots > matches a sample doc metadata snapshot 1`] = `
+{
+  "alternates": {
+    "canonical": "https://lychee.vercel.app/docs/configuration",
+  },
+  "description": "Configure Lychee for your repository.",
+  "openGraph": {
+    "description": "Configure Lychee for your repository.",
+    "images": [
+      "/og-image.png",
+    ],
+    "title": "Configuration · Lychee Docs",
+    "url": "/docs/configuration",
+  },
+  "title": "Configuration",
+}
+`;
+
+exports[`SEO metadata > Regression: serialized metadata snapshots > matches the docs index metadata snapshot 1`] = `
+{
+  "alternates": {
+    "canonical": "https://lychee.vercel.app/docs",
+  },
+  "description": "Everything you need to evaluate, run, and contribute to Lychee.",
+  "openGraph": {
+    "images": [
+      "/og-image.png",
+    ],
+  },
+  "title": "Documentation",
+}
+`;
+
+exports[`SEO metadata > Regression: serialized metadata snapshots > matches the landing page metadata snapshot 1`] = `
+{
+  "alternates": {
+    "canonical": "https://lychee.vercel.app/",
+  },
+  "description": "Self-hosted, Claude-powered PR reviews that run concurrently, report cost to the cent, and never post twice.",
+  "openGraph": {
+    "description": "Self-hosted, Claude-powered PR reviews that run concurrently, report cost to the cent, and never post twice.",
+    "images": [
+      "/og-image.png",
+    ],
+    "title": "Lychee — Peel back your pull requests",
+  },
+  "title": {
+    "absolute": "Lychee — Peel back your pull requests",
+  },
+}
+`;
