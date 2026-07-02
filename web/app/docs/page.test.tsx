@@ -21,6 +21,7 @@ vi.mock('@/lib/docs', async (importOriginal) => {
 
 import { DOC_SLUGS, getDocBySlug } from '@/lib/docs';
 import DocsIndexPage, { DOCS_INDEX_GROUPS, dynamic } from './page';
+import styles from './page.module.css';
 
 const mockedGetDocBySlug = vi.mocked(getDocBySlug);
 
@@ -183,5 +184,45 @@ describe('DocsIndexPage', () => {
    */
   describe('End-to-end', () => {
     it.skip('N/A — covered by component tests; full docs navigation is exercised by a separate end-to-end suite.');
+  });
+
+  /**
+   * Regression: a golden snapshot locking the group/slug structure, so
+   * reordering or removing a group or entry fails the test.
+   */
+  describe('Regression', () => {
+    it('matches the DOCS_INDEX_GROUPS snapshot', () => {
+      expect(DOCS_INDEX_GROUPS).toMatchSnapshot();
+    });
+  });
+
+  /**
+   * Visual/Snapshot: golden render output for the full page.
+   */
+  describe('Visual/Snapshot', () => {
+    it('matches the rendered index snapshot', () => {
+      const { container } = render(<DocsIndexPage />);
+      expect(container).toMatchSnapshot();
+    });
+  });
+
+  /**
+   * Responsive/Mobile: entries render as 4 grouped definition lists
+   * carrying the grid class that switches to multi-column at 768px, with
+   * each entry wrapped in its own card.
+   */
+  describe('Responsive/Mobile', () => {
+    it('renders 4 entry lists carrying the responsive grid class', () => {
+      const { container } = render(<DocsIndexPage />);
+      const lists = container.querySelectorAll('dl');
+      expect(lists).toHaveLength(4);
+      lists.forEach((list) => expect(list).toHaveClass(styles.entries));
+    });
+
+    it('wraps each of the 11 entries in a card', () => {
+      const { container } = render(<DocsIndexPage />);
+      const cards = container.querySelectorAll(`.${styles.card}`);
+      expect(cards).toHaveLength(11);
+    });
   });
 });
