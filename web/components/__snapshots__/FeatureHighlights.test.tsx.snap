@@ -13,7 +13,7 @@ exports[`FeatureHighlights Component > matches snapshot for all card bodies (reg
 exports[`FeatureHighlights Component > matches snapshot for full render (regression) 1`] = `
 <div>
   <section
-    class="_section_9bee24 _fadeUp_9bee24"
+    class="_section_9bee24"
     id="features"
   >
     <div
