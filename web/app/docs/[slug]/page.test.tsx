@@ -87,27 +87,27 @@ describe('DocPageRoute', () => {
    */
   describe('Component: rendering', () => {
     it('renders the doc title alongside the sidebar', async () => {
-      await renderRoute(<DocPageRoute params={{ slug: 'glossary' }} />);
+      await renderRoute(<DocPageRoute params={Promise.resolve({ slug: 'glossary' })} />);
 
       expect(screen.getByRole('heading', { level: 1, name: 'Glossary' })).toBeInTheDocument();
       expect(screen.getByRole('navigation', { name: 'Documentation' })).toBeInTheDocument();
     });
 
     it('renders the GFM table with real <table> markup', async () => {
-      await renderRoute(<DocPageRoute params={{ slug: 'glossary' }} />);
+      await renderRoute(<DocPageRoute params={Promise.resolve({ slug: 'glossary' })} />);
 
       expect(screen.getByRole('table')).toBeInTheDocument();
       expect(screen.getByText('Alpha')).toBeInTheDocument();
     });
 
     it('renders a highlighted code block', async () => {
-      const { container } = await renderRoute(<DocPageRoute params={{ slug: 'glossary' }} />);
+      const { container } = await renderRoute(<DocPageRoute params={Promise.resolve({ slug: 'glossary' })} />);
       expect(container.querySelector('pre')).toBeInTheDocument();
       expect(container.textContent).toContain('echo hi');
     });
 
     it('rewrites the internal doc link and leaves the external one untouched', async () => {
-      await renderRoute(<DocPageRoute params={{ slug: 'glossary' }} />);
+      await renderRoute(<DocPageRoute params={Promise.resolve({ slug: 'glossary' })} />);
 
       const internal = screen.getByRole('link', { name: 'config link' });
       expect(internal).toHaveAttribute('href', '/docs/configuration#scope-rules');
@@ -117,7 +117,7 @@ describe('DocPageRoute', () => {
     });
 
     it('assigns a slug id to the second-level heading', async () => {
-      await renderRoute(<DocPageRoute params={{ slug: 'glossary' }} />);
+      await renderRoute(<DocPageRoute params={Promise.resolve({ slug: 'glossary' })} />);
       expect(screen.getByRole('heading', { level: 2, name: 'Overview' })).toHaveAttribute(
         'id',
         'overview'
@@ -130,7 +130,7 @@ describe('DocPageRoute', () => {
    */
   describe('Accessibility', () => {
     it('has no accessibility violations', async () => {
-      const { container } = await renderRoute(<DocPageRoute params={{ slug: 'glossary' }} />);
+      const { container } = await renderRoute(<DocPageRoute params={Promise.resolve({ slug: 'glossary' })} />);
       const results = await axe(container);
       expect(results).toHaveNoViolations();
     });
@@ -143,7 +143,7 @@ describe('DocPageRoute', () => {
   describe('Smoke', () => {
     it('renders without crashing', async () => {
       await expect(
-        renderRoute(<DocPageRoute params={{ slug: 'glossary' }} />)
+        renderRoute(<DocPageRoute params={Promise.resolve({ slug: 'glossary' })} />)
       ).resolves.toBeDefined();
     });
   });

@@ -19,7 +19,7 @@ export function generateStaticParams(): Array<{ slug: string }> {
 }
 
 export interface DocPageRouteProps {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }
 
 /**
@@ -33,7 +33,8 @@ export interface DocPageRouteProps {
  * @returns The resolved metadata for the doc page.
  */
 export async function generateMetadata({ params }: DocPageRouteProps): Promise<Metadata> {
-  const doc = getDocBySlug(params.slug);
+  const { slug } = await params;
+  const doc = getDocBySlug(slug);
 
   return {
     title: doc.title,
@@ -42,10 +43,10 @@ export async function generateMetadata({ params }: DocPageRouteProps): Promise<M
       title: `${doc.title} · Lychee Docs`,
       description: doc.description,
       images: ['/og-image.png'],
-      url: `/docs/${params.slug}`,
+      url: `/docs/${slug}`,
     },
     alternates: {
-      canonical: `https://lychee.vercel.app/docs/${params.slug}`,
+      canonical: `https://lychee.vercel.app/docs/${slug}`,
     },
   };
 }
@@ -59,7 +60,8 @@ export async function generateMetadata({ params }: DocPageRouteProps): Promise<M
  * @returns The rendered doc page.
  */
 export default async function DocPageRoute({ params }: DocPageRouteProps): Promise<JSX.Element> {
-  const doc = getDocBySlug(params.slug);
+  const { slug } = await params;
+  const doc = getDocBySlug(slug);
 
   const { content } = await compileMDX({
     source: doc.content,

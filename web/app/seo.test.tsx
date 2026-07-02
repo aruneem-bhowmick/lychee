@@ -149,30 +149,30 @@ describe('SEO metadata', () => {
    */
   describe('API/Data: dynamic doc metadata', () => {
     it('calls getDocBySlug with the requested slug', async () => {
-      await generateDocMetadata({ params: { slug: 'configuration' } });
+      await generateDocMetadata({ params: Promise.resolve({ slug: 'configuration' }) });
       expect(mockedGetDocBySlug).toHaveBeenCalledWith('configuration');
     });
 
     it('sets title/description from the resolved doc', async () => {
-      const metadata = await generateDocMetadata({ params: { slug: 'configuration' } });
+      const metadata = await generateDocMetadata({ params: Promise.resolve({ slug: 'configuration' }) });
       expect(metadata.title).toBe('Configuration');
       expect(metadata.description).toBe('Configure Lychee for your repository.');
     });
 
     it('builds the Open Graph title using the docs template explicitly', async () => {
-      const metadata = await generateDocMetadata({ params: { slug: 'configuration' } });
+      const metadata = await generateDocMetadata({ params: Promise.resolve({ slug: 'configuration' }) });
       expect(metadata.openGraph?.title).toBe('Configuration · Lychee Docs');
       expect(metadata.openGraph?.description).toBe('Configure Lychee for your repository.');
       expect(metadata.openGraph?.images).toEqual(['/og-image.png']);
     });
 
     it('sets the canonical URL to the slug-specific doc route', async () => {
-      const metadata = await generateDocMetadata({ params: { slug: 'configuration' } });
+      const metadata = await generateDocMetadata({ params: Promise.resolve({ slug: 'configuration' }) });
       expect(metadata.alternates?.canonical).toBe(`${SITE_URL}/docs/configuration`);
     });
 
     it('resolves a different canonical URL for a different slug', async () => {
-      const metadata = await generateDocMetadata({ params: { slug: 'glossary' } });
+      const metadata = await generateDocMetadata({ params: Promise.resolve({ slug: 'glossary' }) });
       expect(metadata.alternates?.canonical).toBe(`${SITE_URL}/docs/glossary`);
     });
   });
@@ -203,7 +203,7 @@ describe('SEO metadata', () => {
       expect(rootLayout.metadata).toBeDefined();
       expect(landingPage.metadata).toBeDefined();
       expect(docsIndexPage.metadata).toBeDefined();
-      await expect(generateDocMetadata({ params: { slug: 'roadmap' } })).resolves.toBeDefined();
+      await expect(generateDocMetadata({ params: Promise.resolve({ slug: 'roadmap' }) })).resolves.toBeDefined();
     });
 
     it('commits og-image.png as a non-zero-byte file', () => {
@@ -233,7 +233,7 @@ describe('SEO metadata', () => {
     });
 
     it('references /og-image.png as the OG image on every route', async () => {
-      const docMetadata = await generateDocMetadata({ params: { slug: 'configuration' } });
+      const docMetadata = await generateDocMetadata({ params: Promise.resolve({ slug: 'configuration' }) });
       [
         rootLayout.metadata.openGraph?.images,
         landingPage.metadata.openGraph?.images,
@@ -243,7 +243,7 @@ describe('SEO metadata', () => {
     });
 
     it('never uses a banned word in any description', async () => {
-      const docMetadata = await generateDocMetadata({ params: { slug: 'configuration' } });
+      const docMetadata = await generateDocMetadata({ params: Promise.resolve({ slug: 'configuration' }) });
       [
         rootLayout.metadata.description,
         landingPage.metadata.description,
@@ -272,7 +272,7 @@ describe('SEO metadata', () => {
     });
 
     it('matches a sample doc metadata snapshot', async () => {
-      const metadata = await generateDocMetadata({ params: { slug: 'configuration' } });
+      const metadata = await generateDocMetadata({ params: Promise.resolve({ slug: 'configuration' }) });
       expect(metadata).toMatchSnapshot();
     });
   });
