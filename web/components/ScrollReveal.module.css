@@ -1,0 +1,18 @@
+.reveal {
+  opacity: 1;
+}
+
+.reveal.revealed {
+  animation-name: fade-up;
+  animation-duration: var(--dur-slow, 400ms);
+  animation-timing-function: var(--ease-standard, ease);
+  animation-fill-mode: both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal.revealed {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+}
