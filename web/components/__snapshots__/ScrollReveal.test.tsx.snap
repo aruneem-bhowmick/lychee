@@ -1,0 +1,25 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`ScrollReveal > matches the snapshot after reveal 1`] = `
+<div>
+  <div
+    class="_reveal_b94b86 _revealed_b94b86"
+  >
+    <p>
+      Revealed content
+    </p>
+  </div>
+</div>
+`;
+
+exports[`ScrollReveal > matches the snapshot before reveal 1`] = `
+<div>
+  <div
+    class="_reveal_b94b86 "
+  >
+    <p>
+      Revealed content
+    </p>
+  </div>
+</div>
+`;
