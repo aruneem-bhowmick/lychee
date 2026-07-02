@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import { compileMDX } from 'next-mdx-remote/rsc';
 import { getAllDocSlugs, getDocBySlug } from '@/lib/docs';
 import { getRehypePlugins } from '@/lib/rehype-plugins';
@@ -17,11 +18,36 @@ export function generateStaticParams(): Array<{ slug: string }> {
   return getAllDocSlugs().map((slug) => ({ slug }));
 }
 
-// Per-page <title>/<meta> generation is not implemented yet; this route
-// currently relies on the root layout's defaults.
-
 export interface DocPageRouteProps {
   params: { slug: string };
+}
+
+/**
+ * Builds per-doc metadata from the resolved doc's `title`/`description`.
+ * The plain-string `title` picks up the root layout's `%s · Lychee Docs`
+ * template for the `<title>` tag; `openGraph.title` restates that same
+ * combined string explicitly, since Open Graph fields are not passed
+ * through the title template.
+ *
+ * @param props - Route props containing the requested slug.
+ * @returns The resolved metadata for the doc page.
+ */
+export async function generateMetadata({ params }: DocPageRouteProps): Promise<Metadata> {
+  const doc = getDocBySlug(params.slug);
+
+  return {
+    title: doc.title,
+    description: doc.description,
+    openGraph: {
+      title: `${doc.title} · Lychee Docs`,
+      description: doc.description,
+      images: ['/og-image.png'],
+      url: `/docs/${params.slug}`,
+    },
+    alternates: {
+      canonical: `https://lychee.vercel.app/docs/${params.slug}`,
+    },
+  };
 }
 
 /**
