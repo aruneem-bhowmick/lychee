@@ -47,7 +47,9 @@
 }
 
 .navLink.active {
-  color: var(--color-primary);
+  color: var(--color-accent-pink);
+  text-decoration: underline;
+  text-underline-offset: 6px;
 }
 
 .menuToggle {
