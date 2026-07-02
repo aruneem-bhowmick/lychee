@@ -38,7 +38,7 @@ export const FEATURES: ReadonlyArray<FeatureCardProps> = [
  */
 export default function FeatureHighlights(): JSX.Element {
   return (
-    <section id="features" className={`${styles.section} ${styles.fadeUp}`}>
+    <section id="features" className={styles.section}>
       <div className={styles.container}>
         <h2 className={styles.heading}>Why Lychee</h2>
         <div className={styles.grid}>

@@ -8,6 +8,7 @@ import OutputShowcase from '@/components/OutputShowcase';
 import CommandsTable from '@/components/CommandsTable';
 import ConfigSampler from '@/components/ConfigSampler';
 import ContributeSection from '@/components/ContributeSection';
+import ScrollReveal from '@/components/ScrollReveal';
 
 export const dynamic = 'force-static';
 
@@ -41,13 +42,27 @@ export default function Home(): JSX.Element {
   return (
     <>
       <Hero />
-      <FeatureHighlights />
-      <HowItWorks />
-      <SetupTabs />
-      <OutputShowcase />
-      <CommandsTable />
-      <ConfigSampler />
-      <ContributeSection />
+      <ScrollReveal>
+        <FeatureHighlights />
+      </ScrollReveal>
+      <ScrollReveal>
+        <HowItWorks />
+      </ScrollReveal>
+      <ScrollReveal>
+        <SetupTabs />
+      </ScrollReveal>
+      <ScrollReveal>
+        <OutputShowcase />
+      </ScrollReveal>
+      <ScrollReveal>
+        <CommandsTable />
+      </ScrollReveal>
+      <ScrollReveal>
+        <ConfigSampler />
+      </ScrollReveal>
+      <ScrollReveal>
+        <ContributeSection />
+      </ScrollReveal>
     </>
   );
 }
