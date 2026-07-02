@@ -1,14 +1,31 @@
 import type { Metadata } from 'next';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('next/font/google', () => ({
   Inter: () => ({ variable: '--font-inter' }),
   JetBrains_Mono: () => ({ variable: '--font-jetbrains-mono' }),
 }));
 
+vi.mock('@/lib/docs', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/docs')>();
+  return {
+    ...actual,
+    getDocBySlug: vi.fn((slug: string) => ({
+      slug,
+      title: 'Configuration',
+      description: 'Configure Lychee for your repository.',
+      content: '',
+    })),
+  };
+});
+
+import { getDocBySlug } from '@/lib/docs';
 import * as rootLayout from './layout';
 import * as landingPage from './page';
 import * as docsIndexPage from './docs/page';
+import { generateMetadata as generateDocMetadata } from './docs/[slug]/page';
+
+const mockedGetDocBySlug = vi.mocked(getDocBySlug);
 
 const SITE_URL = 'https://lychee.vercel.app';
 const VALUE_PROPOSITION =
@@ -25,6 +42,10 @@ function asAbsolute(title: Metadata['title']): { absolute: string } {
 }
 
 describe('SEO metadata', () => {
+  beforeEach(() => {
+    mockedGetDocBySlug.mockClear();
+  });
+
   /**
    * Unit tests for the root layout's base metadata: the title template,
    * default description, and Open Graph defaults every route inherits.
@@ -99,6 +120,41 @@ describe('SEO metadata', () => {
 
     it('references the committed OG image', () => {
       expect(docsIndexPage.metadata.openGraph?.images).toEqual(['/og-image.png']);
+    });
+  });
+
+  /**
+   * API/Data: `generateMetadata` for `/docs/[slug]` resolves its title,
+   * description, and canonical from `getDocBySlug`, mocked here so the
+   * assertions don't depend on real doc content.
+   */
+  describe('API/Data: dynamic doc metadata', () => {
+    it('calls getDocBySlug with the requested slug', async () => {
+      await generateDocMetadata({ params: { slug: 'configuration' } });
+      expect(mockedGetDocBySlug).toHaveBeenCalledWith('configuration');
+    });
+
+    it('sets title/description from the resolved doc', async () => {
+      const metadata = await generateDocMetadata({ params: { slug: 'configuration' } });
+      expect(metadata.title).toBe('Configuration');
+      expect(metadata.description).toBe('Configure Lychee for your repository.');
+    });
+
+    it('builds the Open Graph title using the docs template explicitly', async () => {
+      const metadata = await generateDocMetadata({ params: { slug: 'configuration' } });
+      expect(metadata.openGraph?.title).toBe('Configuration · Lychee Docs');
+      expect(metadata.openGraph?.description).toBe('Configure Lychee for your repository.');
+      expect(metadata.openGraph?.images).toEqual(['/og-image.png']);
+    });
+
+    it('sets the canonical URL to the slug-specific doc route', async () => {
+      const metadata = await generateDocMetadata({ params: { slug: 'configuration' } });
+      expect(metadata.alternates?.canonical).toBe(`${SITE_URL}/docs/configuration`);
+    });
+
+    it('resolves a different canonical URL for a different slug', async () => {
+      const metadata = await generateDocMetadata({ params: { slug: 'glossary' } });
+      expect(metadata.alternates?.canonical).toBe(`${SITE_URL}/docs/glossary`);
     });
   });
 });
