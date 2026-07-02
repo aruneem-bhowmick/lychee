@@ -58,7 +58,7 @@ export default function Hero({ badges = defaultBadges }: HeroProps): JSX.Element
       {/* Ripeness badge row */}
       <div className={styles.badges}>
         {badges.map((b, i) => (
-          <span key={i} className={styles.badge} data-variant={b.variant}>
+          <span key={i} className={`${styles.badge} badge-pulse`} data-variant={b.variant}>
             {b.emoji} {b.label}
           </span>
         ))}

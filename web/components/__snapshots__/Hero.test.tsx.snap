@@ -27,7 +27,7 @@ exports[`Hero Component > matches the snapshot for regression locking 1`] = `
       class="_badges_a105f2"
     >
       <span
-        class="_badge_a105f2"
+        class="_badge_a105f2 badge-pulse"
         data-variant="ripe"
       >
         🟢
@@ -35,7 +35,7 @@ exports[`Hero Component > matches the snapshot for regression locking 1`] = `
         Ripe
       </span>
       <span
-        class="_badge_a105f2"
+        class="_badge_a105f2 badge-pulse"
         data-variant="unripe"
       >
         🟡
@@ -43,7 +43,7 @@ exports[`Hero Component > matches the snapshot for regression locking 1`] = `
         Unripe
       </span>
       <span
-        class="_badge_a105f2"
+        class="_badge_a105f2 badge-pulse"
         data-variant="sour"
       >
         🔴

@@ -72,4 +72,11 @@ describe('Hero Component', () => {
     const { container } = render(<Hero />);
     expect(container).toMatchSnapshot();
   });
+
+  it('applies the one-shot badge-pulse animation class to every badge', () => {
+    render(<Hero />);
+    ['🟢 Ripe', '🟡 Unripe', '🔴 Sour'].forEach((label) => {
+      expect(screen.getByText(label)).toHaveClass('badge-pulse');
+    });
+  });
 });
