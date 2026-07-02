@@ -41,6 +41,7 @@ function mountSections(ids: string[]): void {
   });
 }
 
+/** Removes any section elements mountSections added, for test cleanup. */
 function clearSections(): void {
   SECTION_IDS.forEach((id) => document.getElementById(id)?.remove());
 }
