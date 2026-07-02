@@ -22,8 +22,22 @@
   border-radius: var(--radius-card);
   padding: var(--spacing-4);
   text-align: center;
-  opacity: 1; /* For LP-R16 */
-  transition: opacity var(--motion-duration-slow) var(--motion-easing-default);
+  opacity: 1;
+}
+
+.pipeline.inView .stageCard {
+  animation-name: fade-up;
+  animation-duration: var(--dur-slow, 400ms);
+  animation-timing-function: var(--ease-standard, ease);
+  animation-fill-mode: both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pipeline.inView .stageCard {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
 }
 
 .stageLabel {

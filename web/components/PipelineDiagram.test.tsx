@@ -1,9 +1,31 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import PipelineDiagram, { PIPELINE_STAGES } from './PipelineDiagram';
 import { axe, toHaveNoViolations } from 'jest-axe';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 expect.extend(toHaveNoViolations);
+
+type ObserverCallback = (entries: Array<Partial<IntersectionObserverEntry>>) => void;
+
+/** Minimal IntersectionObserver stand-in for triggering the pipeline's sequential reveal by hand. */
+class MockIntersectionObserver {
+  static instances: MockIntersectionObserver[] = [];
+  callback: ObserverCallback;
+  disconnect = () => {};
+
+  constructor(callback: ObserverCallback) {
+    this.callback = callback;
+    MockIntersectionObserver.instances.push(this);
+  }
+
+  observe() {}
+  unobserve() {}
+
+  trigger(entries: Array<Partial<IntersectionObserverEntry>>) {
+    this.callback(entries);
+  }
+}
 
 describe('PipelineDiagram', () => {
   it('has exactly 7 stages', () => {
@@ -63,5 +85,55 @@ describe('PipelineDiagram', () => {
   it('matches snapshot', () => {
     const { container } = render(<PipelineDiagram />);
     expect(container).toMatchSnapshot();
+  });
+
+  it('gives every stage card an increasing animation-delay by index, 80ms apart', () => {
+    const { container } = render(<PipelineDiagram />);
+    const cards = container.querySelectorAll<HTMLElement>('[data-stage-index]');
+
+    cards.forEach((card, index) => {
+      expect(card.style.animationDelay).toBe(`${index * 80}ms`);
+    });
+  });
+
+  it('renders all stages fully visible before any intersection fires (static fallback)', () => {
+    const { container } = render(<PipelineDiagram />);
+    const list = container.querySelector('ol');
+    expect(list?.className).not.toContain('inView');
+  });
+
+  describe('sequential reveal on scroll into view', () => {
+    beforeEach(() => {
+      MockIntersectionObserver.instances = [];
+      (global as any).IntersectionObserver = MockIntersectionObserver;
+    });
+
+    afterEach(() => {
+      delete (global as any).IntersectionObserver;
+    });
+
+    it('adds the inView class once the diagram intersects the viewport', () => {
+      const { container } = render(<PipelineDiagram />);
+      const list = container.querySelector('ol') as HTMLElement;
+      const observer = MockIntersectionObserver.instances[0];
+
+      act(() => {
+        observer.trigger([{ isIntersecting: true, target: list }]);
+      });
+
+      expect(list.className).toContain('inView');
+    });
+
+    it('does not add the inView class on a non-intersecting entry', () => {
+      const { container } = render(<PipelineDiagram />);
+      const list = container.querySelector('ol') as HTMLElement;
+      const observer = MockIntersectionObserver.instances[0];
+
+      act(() => {
+        observer.trigger([{ isIntersecting: false, target: list }]);
+      });
+
+      expect(list.className).not.toContain('inView');
+    });
   });
 });
