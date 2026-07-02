@@ -1,0 +1,17 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`link-rewriter lib > Regression: reverse filename map > matches the snapshot of every known filename rewritten to its slug route 1`] = `
+{
+  "docs/API-REFERENCE.md": "/docs/api-reference",
+  "docs/ARCHITECTURE.md": "/docs/architecture",
+  "docs/CANARY-SETUP.md": "/docs/canary-setup",
+  "docs/COMMANDS.md": "/docs/commands",
+  "docs/CONFIGURATION.md": "/docs/configuration",
+  "docs/DEPLOYMENT.md": "/docs/deployment",
+  "docs/DEVELOPMENT.md": "/docs/development",
+  "docs/GETTING-STARTED.md": "/docs/getting-started",
+  "docs/GLOSSARY.md": "/docs/glossary",
+  "docs/ROADMAP.md": "/docs/roadmap",
+  "docs/SECURITY.md": "/docs/security",
+}
+`;
