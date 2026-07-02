@@ -54,7 +54,7 @@ export default function OutputShowcase(): JSX.Element {
   return (
     <section id="output" className={`section ${styles.section}`}>
       <div className="container">
-        <h2 className={styles.title}>What you'll see in your PR</h2>
+        <h2 className={styles.title}>What you&apos;ll see in your PR</h2>
         
         <div className={styles.showcaseWrapper}>
           <div className={styles.prContext}>

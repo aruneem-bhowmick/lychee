@@ -1,4 +1,5 @@
 import React from 'react';
+import Link from 'next/link';
 import CodeBlock from './CodeBlock';
 import SetupTabsClient, { SetupTabId } from './SetupTabsClient';
 import styles from './SetupTabs.module.css';
@@ -129,7 +130,7 @@ export default function SetupTabs({ defaultTab = 'github-actions' }: SetupTabsPr
             <CodeBlock code={LYCHEE_YML} lang="yaml" filename=".lychee.yml" />
             <p className={styles.note}>
               Lychee runs with all defaults if this file is absent. See the full{' '}
-              <a href="/docs/configuration">Configuration reference</a> for all options.
+              <Link href="/docs/configuration">Configuration reference</Link> for all options.
             </p>
           </div>
         </details>
@@ -205,9 +206,9 @@ export default function SetupTabs({ defaultTab = 'github-actions' }: SetupTabsPr
       <div className={styles.step}>
         <h3>Step 5: Install the App on your repositories</h3>
         <p>After deploying, install the GitHub App on the repositories you want to review.</p>
-        <a href="/docs/deployment" className={styles.cta}>
+        <Link href="/docs/deployment" className={styles.cta}>
           Full deployment guide →
-        </a>
+        </Link>
       </div>
     </div>
   );

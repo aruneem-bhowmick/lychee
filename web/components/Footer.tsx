@@ -1,4 +1,5 @@
 import React from 'react';
+import Link from 'next/link';
 import styles from './Footer.module.css';
 
 /**
@@ -29,11 +30,11 @@ export default function Footer({ version = 'v0.1.5' }: FooterProps): JSX.Element
             <div className={styles.linkColumn}>
               <h2 className={styles.linkHeading}>Docs</h2>
               <ul className={styles.linkList}>
-                <li><a href="/docs/getting-started" className={styles.footerLink}>Getting Started</a></li>
-                <li><a href="/docs/configuration" className={styles.footerLink}>Configuration</a></li>
-                <li><a href="/docs/commands" className={styles.footerLink}>Commands</a></li>
-                <li><a href="/docs/architecture" className={styles.footerLink}>Architecture</a></li>
-                <li><a href="/docs/deployment" className={styles.footerLink}>Deployment</a></li>
+                <li><Link href="/docs/getting-started" className={styles.footerLink}>Getting Started</Link></li>
+                <li><Link href="/docs/configuration" className={styles.footerLink}>Configuration</Link></li>
+                <li><Link href="/docs/commands" className={styles.footerLink}>Commands</Link></li>
+                <li><Link href="/docs/architecture" className={styles.footerLink}>Architecture</Link></li>
+                <li><Link href="/docs/deployment" className={styles.footerLink}>Deployment</Link></li>
               </ul>
             </div>
 
@@ -42,9 +43,9 @@ export default function Footer({ version = 'v0.1.5' }: FooterProps): JSX.Element
               <ul className={styles.linkList}>
                 <li><a href="https://github.com/aspect-analytics/lychee" target="_blank" rel="noopener noreferrer" className={styles.footerLink}>GitHub</a></li>
                 <li><a href="https://github.com/aspect-analytics/lychee/blob/main/CHANGELOG.md" target="_blank" rel="noopener noreferrer" className={styles.footerLink}>CHANGELOG</a></li>
-                <li><a href="/docs/roadmap" className={styles.footerLink}>Roadmap</a></li>
-                <li><a href="/docs/security" className={styles.footerLink}>Security</a></li>
-                <li><a href="/docs/glossary" className={styles.footerLink}>Glossary</a></li>
+                <li><Link href="/docs/roadmap" className={styles.footerLink}>Roadmap</Link></li>
+                <li><Link href="/docs/security" className={styles.footerLink}>Security</Link></li>
+                <li><Link href="/docs/glossary" className={styles.footerLink}>Glossary</Link></li>
               </ul>
             </div>
           </div>
@@ -58,7 +59,7 @@ export default function Footer({ version = 'v0.1.5' }: FooterProps): JSX.Element
           <div className={styles.bottomLinks}>
             <span className={styles.versionBadge}>{version}</span>
             <span className={styles.footerLink}>MIT License</span>
-            <a href="/docs" className={styles.footerLink}>Spec</a>
+            <Link href="/docs" className={styles.footerLink}>Spec</Link>
           </div>
         </div>
       </div>

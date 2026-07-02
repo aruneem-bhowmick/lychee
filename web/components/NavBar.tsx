@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import styles from './NavBar.module.css';
 import { useScrollSpy } from '@/lib/useScrollSpy';
 
@@ -120,7 +121,7 @@ export default function NavBar({ links = DEFAULT_LINKS, activeId: activeIdProp }
   return (
     <header className={styles.nav} role="banner">
       <div className={styles.inner}>
-        <a href="/#hero" className={styles.brand} onClick={(e) => handleNavClick(e, '/#hero')}>Lychee</a>
+        <Link href="/#hero" className={styles.brand} onClick={(e) => handleNavClick(e, '/#hero')}>Lychee</Link>
 
         <nav aria-label="Primary" className={styles.desktopNav}>
           <ul className={styles.navList}>

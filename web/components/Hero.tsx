@@ -1,4 +1,5 @@
 import React from 'react';
+import Link from 'next/link';
 import styles from './Hero.module.css';
 
 /**
@@ -66,9 +67,9 @@ export default function Hero({ badges = defaultBadges }: HeroProps): JSX.Element
 
       {/* Primary CTAs */}
       <div className={styles.actions}>
-        <a href="/#setup" className={styles.ctaPrimary}>
+        <Link href="/#setup" className={styles.ctaPrimary}>
           Get Started
-        </a>
+        </Link>
         <a
           href="https://github.com/aspect-analytics/lychee"
           target="_blank"
