@@ -1,0 +1,431 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`DocsIndexPage > Regression > matches the DOCS_INDEX_GROUPS snapshot 1`] = `
+[
+  {
+    "section": "Getting Started & Configuration",
+    "slugs": [
+      "getting-started",
+      "configuration",
+      "commands",
+    ],
+  },
+  {
+    "section": "Architecture & Design",
+    "slugs": [
+      "architecture",
+      "glossary",
+    ],
+  },
+  {
+    "section": "Operations, Deployment & Security",
+    "slugs": [
+      "deployment",
+      "security",
+      "canary-setup",
+      "api-reference",
+    ],
+  },
+  {
+    "section": "Development & Project Trajectory",
+    "slugs": [
+      "development",
+      "roadmap",
+    ],
+  },
+]
+`;
+
+exports[`DocsIndexPage > Visual/Snapshot > matches the rendered index snapshot 1`] = `
+<div>
+  <div
+    class="_layout_367bbf"
+  >
+    <div
+      class="_wrapper_fa708a"
+    >
+      <button
+        aria-controls="docs-sidebar-nav"
+        aria-expanded="false"
+        class="_toggle_fa708a"
+        type="button"
+      >
+        Browse docs
+      </button>
+      <nav
+        aria-label="Documentation"
+        class="_sidebar_fa708a "
+        id="docs-sidebar-nav"
+      >
+        <ul
+          class="_list_fa708a"
+        >
+          <li>
+            <a
+              class="_link_fa708a "
+              href="/docs/getting-started"
+            >
+              Getting Started
+            </a>
+          </li>
+          <li>
+            <a
+              class="_link_fa708a "
+              href="/docs/configuration"
+            >
+              Configuration
+            </a>
+          </li>
+          <li>
+            <a
+              class="_link_fa708a "
+              href="/docs/commands"
+            >
+              Commands
+            </a>
+          </li>
+        </ul>
+        <hr
+          class="_divider_fa708a"
+        />
+        <ul
+          class="_list_fa708a"
+        >
+          <li>
+            <a
+              class="_link_fa708a "
+              href="/docs/architecture"
+            >
+              Architecture
+            </a>
+          </li>
+          <li>
+            <a
+              class="_link_fa708a "
+              href="/docs/glossary"
+            >
+              Glossary
+            </a>
+          </li>
+        </ul>
+        <hr
+          class="_divider_fa708a"
+        />
+        <ul
+          class="_list_fa708a"
+        >
+          <li>
+            <a
+              class="_link_fa708a "
+              href="/docs/deployment"
+            >
+              Deployment
+            </a>
+          </li>
+          <li>
+            <a
+              class="_link_fa708a "
+              href="/docs/security"
+            >
+              Security
+            </a>
+          </li>
+          <li>
+            <a
+              class="_link_fa708a "
+              href="/docs/canary-setup"
+            >
+              Canary Setup
+            </a>
+          </li>
+          <li>
+            <a
+              class="_link_fa708a "
+              href="/docs/api-reference"
+            >
+              API Reference
+            </a>
+          </li>
+        </ul>
+        <hr
+          class="_divider_fa708a"
+        />
+        <ul
+          class="_list_fa708a"
+        >
+          <li>
+            <a
+              class="_link_fa708a "
+              href="/docs/development"
+            >
+              Development
+            </a>
+          </li>
+          <li>
+            <a
+              class="_link_fa708a "
+              href="/docs/roadmap"
+            >
+              Roadmap
+            </a>
+          </li>
+        </ul>
+      </nav>
+    </div>
+    <div
+      class="_content_aeeb66"
+    >
+      <h1>
+        Documentation
+      </h1>
+      <p
+        class="_intro_aeeb66"
+      >
+        Everything you need to evaluate, run, and contribute to Lychee.
+      </p>
+      <section
+        class="_group_aeeb66"
+      >
+        <h2>
+          Getting Started & Configuration
+        </h2>
+        <dl
+          class="_entries_aeeb66"
+        >
+          <div
+            class="_card_aeeb66"
+          >
+            <dt
+              class="_cardTitle_aeeb66"
+            >
+              <a
+                href="/docs/getting-started"
+              >
+                Getting Started
+              </a>
+            </dt>
+            <dd
+              class="_cardDescription_aeeb66"
+            >
+              Description for getting-started.
+            </dd>
+          </div>
+          <div
+            class="_card_aeeb66"
+          >
+            <dt
+              class="_cardTitle_aeeb66"
+            >
+              <a
+                href="/docs/configuration"
+              >
+                Configuration
+              </a>
+            </dt>
+            <dd
+              class="_cardDescription_aeeb66"
+            >
+              Description for configuration.
+            </dd>
+          </div>
+          <div
+            class="_card_aeeb66"
+          >
+            <dt
+              class="_cardTitle_aeeb66"
+            >
+              <a
+                href="/docs/commands"
+              >
+                Commands
+              </a>
+            </dt>
+            <dd
+              class="_cardDescription_aeeb66"
+            >
+              Description for commands.
+            </dd>
+          </div>
+        </dl>
+      </section>
+      <section
+        class="_group_aeeb66"
+      >
+        <h2>
+          Architecture & Design
+        </h2>
+        <dl
+          class="_entries_aeeb66"
+        >
+          <div
+            class="_card_aeeb66"
+          >
+            <dt
+              class="_cardTitle_aeeb66"
+            >
+              <a
+                href="/docs/architecture"
+              >
+                Architecture
+              </a>
+            </dt>
+            <dd
+              class="_cardDescription_aeeb66"
+            >
+              Description for architecture.
+            </dd>
+          </div>
+          <div
+            class="_card_aeeb66"
+          >
+            <dt
+              class="_cardTitle_aeeb66"
+            >
+              <a
+                href="/docs/glossary"
+              >
+                Glossary
+              </a>
+            </dt>
+            <dd
+              class="_cardDescription_aeeb66"
+            >
+              Description for glossary.
+            </dd>
+          </div>
+        </dl>
+      </section>
+      <section
+        class="_group_aeeb66"
+      >
+        <h2>
+          Operations, Deployment & Security
+        </h2>
+        <dl
+          class="_entries_aeeb66"
+        >
+          <div
+            class="_card_aeeb66"
+          >
+            <dt
+              class="_cardTitle_aeeb66"
+            >
+              <a
+                href="/docs/deployment"
+              >
+                Deployment
+              </a>
+            </dt>
+            <dd
+              class="_cardDescription_aeeb66"
+            >
+              Description for deployment.
+            </dd>
+          </div>
+          <div
+            class="_card_aeeb66"
+          >
+            <dt
+              class="_cardTitle_aeeb66"
+            >
+              <a
+                href="/docs/security"
+              >
+                Security
+              </a>
+            </dt>
+            <dd
+              class="_cardDescription_aeeb66"
+            >
+              Description for security.
+            </dd>
+          </div>
+          <div
+            class="_card_aeeb66"
+          >
+            <dt
+              class="_cardTitle_aeeb66"
+            >
+              <a
+                href="/docs/canary-setup"
+              >
+                Canary Setup
+              </a>
+            </dt>
+            <dd
+              class="_cardDescription_aeeb66"
+            >
+              Description for canary-setup.
+            </dd>
+          </div>
+          <div
+            class="_card_aeeb66"
+          >
+            <dt
+              class="_cardTitle_aeeb66"
+            >
+              <a
+                href="/docs/api-reference"
+              >
+                API Reference
+              </a>
+            </dt>
+            <dd
+              class="_cardDescription_aeeb66"
+            >
+              Description for api-reference.
+            </dd>
+          </div>
+        </dl>
+      </section>
+      <section
+        class="_group_aeeb66"
+      >
+        <h2>
+          Development & Project Trajectory
+        </h2>
+        <dl
+          class="_entries_aeeb66"
+        >
+          <div
+            class="_card_aeeb66"
+          >
+            <dt
+              class="_cardTitle_aeeb66"
+            >
+              <a
+                href="/docs/development"
+              >
+                Development
+              </a>
+            </dt>
+            <dd
+              class="_cardDescription_aeeb66"
+            >
+              Description for development.
+            </dd>
+          </div>
+          <div
+            class="_card_aeeb66"
+          >
+            <dt
+              class="_cardTitle_aeeb66"
+            >
+              <a
+                href="/docs/roadmap"
+              >
+                Roadmap
+              </a>
+            </dt>
+            <dd
+              class="_cardDescription_aeeb66"
+            >
+              Description for roadmap.
+            </dd>
+          </div>
+        </dl>
+      </section>
+    </div>
+  </div>
+</div>
+`;
