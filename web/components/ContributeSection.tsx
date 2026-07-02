@@ -93,7 +93,7 @@ pytest --snapshot-update`} />
 
         <aside className={styles.securityNotice} aria-label="Security reporting">
           <p>
-            <strong>Found a security issue?</strong> Do not open a public GitHub issue. Email the maintainers directly or use GitHub's private vulnerability reporting (<strong>Security tab → Report a vulnerability</strong>). We acknowledge within 48 hours and provide a fix timeline within 7 days.
+            <strong>Found a security issue?</strong> Do not open a public GitHub issue. Email the maintainers directly or use GitHub&apos;s private vulnerability reporting (<strong>Security tab → Report a vulnerability</strong>). We acknowledge within 48 hours and provide a fix timeline within 7 days.
           </p>
         </aside>
 

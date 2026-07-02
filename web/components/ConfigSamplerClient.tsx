@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, KeyboardEvent } from 'react';
+import Link from 'next/link';
 import styles from './ConfigSampler.module.css';
 
 /**
@@ -226,9 +227,9 @@ export default function ConfigSamplerClient({
         </div>
 
         <div className={styles.ctaWrapper}>
-          <a href="/docs/configuration" className={styles.cta}>
+          <Link href="/docs/configuration" className={styles.cta}>
             Full configuration reference →
-          </a>
+          </Link>
         </div>
       </div>
     </section>
